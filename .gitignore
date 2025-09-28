@@ -1,0 +1,16 @@
+**/__pycache__
+*.pyc
+.DS_Store
+
+*~
+*.bak
+*.swp
+*.zip
+
+*~
+*.bak
+*.swp
+*.zip
+
+\.pub
+//
