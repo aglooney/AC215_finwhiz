@@ -1,0 +1,50 @@
+FINRA RAG – Setup To-Dos and Exact Lines to Edit
+
+1) .env.example
+   - LINE 2  PROJECT_ID=your-gcp-project         -> replace with your GCP project ID
+   - LINE 3  GCS_BUCKET=your-gcs-bucket          -> replace with your target bucket (no gs://)
+   - LINE 4  LOCATION=us-central1                -> adjust if different (e.g., us-east1)
+   - LINE 5  VERTEX_DATASTORE_ID=finra-rag       -> optional: your Vertex AI Search data store ID
+   - LINE 6  HTTP_USER_AGENT=finra-rag-bot/0.1 (+you@example.com) -> add a real contact email
+   - LINE 7  RPS=1.0                             -> change crawl speed if needed (be polite)
+
+2) Makefile
+   - No hard-coded values if you use .env. If you prefer, replace `$$GCS_BUCKET` in the `export` rule with your bucket name.
+
+3) config files
+   - config/crawl_allowlist.yml
+     * Verify the `seeds` list includes exactly what you want to crawl first.
+     * Expand `allow` only if you’re confident paths comply with robots/ToS.
+
+   - config/crawl_blocklist.yml
+     * Add extra deny patterns here if your dry-run shows unwanted paths.
+
+   - config/selectors.yml
+     * Usually fine; tweak if FINRA markup changes and you miss content.
+
+4) src/crawl/run_crawl.py
+   - CLI defaults pull `RPS` and `HTTP_USER_AGENT` from the environment:
+     * `rps`: Option default uses env RPS  (around LINE ~23)
+     * `user_agent`: Option default uses env HTTP_USER_AGENT (around LINE ~24)
+   - If you want a fixed UA or RPS in code, edit those defaults there.
+
+5) src/export/to_gcs.py
+   - When running, pass `--bucket` and `--prefix` or let Makefile pass `--bucket $$GCS_BUCKET`.
+   - No code edits required if you provide CLI args / env.
+
+6) Vertex AI Search (console)
+   - Point your Data Store source at: gs://<GCS_BUCKET>/finra/exports/jsonl/
+   - Turn on periodic sync or reindex after uploads.
+
+7) First-time run checklist
+   - python3 -m venv rag_venv && source rag_venv/bin/activate
+   - pip install -r requirements.txt
+   - cp .env.example .env  (then edit lines listed above)
+   - make crawl   (fetch a few pages; adjust max_pages with `--max-pages` if needed)
+   - make transform
+   - make export  (uploads JSONL to your bucket)
+   - In Vertex, verify ingestion and test queries.
+
+Notes:
+- Line numbers refer to the versions in this drop; if you add/remove lines, search for the variable name (e.g., PROJECT_ID) to locate them quickly.
+- Keep crawl rates conservative and always honor robots.txt and Terms.
