@@ -14,6 +14,10 @@ ENV PYTHONUNBUFFERED=1
 ENV UV_LINK_MODE=copy
 ENV UV_PROJECT_ENVIRONMENT=/home/app/.venv
 
+# This is done for the tutorial only
+ENV GOOGLE_APPLICATION_CREDENTIALS=secrets/reliable-sight-471200-v5-96e7a2bfec46.json
+ENV GCS_BUCKET=fw_ws
+
 # Ensure we have an up to date baseline, install dependencies and
 # create a user so we don't run the app as root
 
