@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterator
 
-import fitz
+import pymupdf
 
 
 @dataclass
@@ -15,7 +15,7 @@ class PdfBlock:
 
 def pdf_to_blocks(pdf_bytes: bytes) -> list[PdfBlock]:
     """Convert a PDF payload into page-level text blocks."""
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
     try:
         blocks: list[PdfBlock] = []
         for page in doc:
