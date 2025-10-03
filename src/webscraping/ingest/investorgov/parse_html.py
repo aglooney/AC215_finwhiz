@@ -6,18 +6,14 @@ from bs4 import BeautifulSoup
 from google.cloud import storage
 from datetime import datetime
 
-# ---------------------------
-# CONFIG
-# ---------------------------
+#config
 BASE_URL = "https://www.investor.gov"
 ALERTS_URL = BASE_URL + "/news-alerts/investor-alerts-bulletins"
 OUTPUT_FILE = "investor_alerts.ndjson"
 BUCKET_NAME = os.getenv("GCS_BUCKET")  # set in .env
 DESTINATION_BLOB = "scraped/investor_alerts.ndjson"
 
-# ---------------------------
-# IngestRecord builder
-# ---------------------------
+#ingest builder
 def make_record(doc_id: str, url: str, title: str, text: str, chunk_id: int = 0):
     record_id = f"{doc_id}#c{chunk_id}"
     return {
@@ -33,9 +29,7 @@ def make_record(doc_id: str, url: str, title: str, text: str, chunk_id: int = 0)
         "page": None
     }
 
-# ---------------------------
-# SCRAPER
-# ---------------------------
+#scraper
 def scrape_investor_alerts():
     response = requests.get(ALERTS_URL)
     response.raise_for_status()
@@ -56,27 +50,21 @@ def scrape_investor_alerts():
 
         yield make_record(doc_id, url, title, text)
 
-# ---------------------------
-# WRITE NDJSON
-# ---------------------------
+#write ndjson
 def write_ndjson(records, file_path):
     with open(file_path, "w", encoding="utf-8") as f:
         for record in records:
             f.write(json.dumps(record) + "\n")
 
-# ---------------------------
-# UPLOAD TO GCS
-# ---------------------------
+#gcs_upload
 def upload_to_gcs(bucket_name, source_file, destination_blob):
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(destination_blob)
     blob.upload_from_filename(source_file)
-    print(f"✅ Uploaded {source_file} to gs://{bucket_name}/{destination_blob}")
+    print(f"Uploaded {source_file} to gs://{bucket_name}/{destination_blob}")
 
-# ---------------------------
-# MAIN
-# ---------------------------
+
 if __name__ == "__main__":
     records = list(scrape_investor_alerts())
     write_ndjson(records, OUTPUT_FILE)

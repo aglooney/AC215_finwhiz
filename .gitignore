@@ -214,3 +214,8 @@ __marimo__/
 
 #DS_Store
 *.DS_Store
+#chroma_db
+**/chroma_storage/
+
+#data
+data/
