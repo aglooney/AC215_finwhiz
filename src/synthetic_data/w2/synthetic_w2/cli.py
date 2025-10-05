@@ -13,7 +13,7 @@ from .generator import W2RecordGenerator
 from .pdf_filler import W2PdfFiller
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "outputs"
 DEFAULT_TEMPLATE_PDF = PROJECT_ROOT / "assets" / "irs_w-2_fillable.pdf"
 DEFAULT_FIELD_MAP = PROJECT_ROOT / "assets" / "copy_b_field_map.yaml"
