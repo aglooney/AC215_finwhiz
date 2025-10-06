@@ -36,8 +36,7 @@ WORKDIR /app
 # Copy the source code
 COPY --chown=app:app . ./
 
-RUN uv sync && \
-    uv add sentence-transformers einops chromadb transformers torch faiss-cpu numpy pandas tqdm google-cloud-storage requests
+RUN uv sync
 
 # Entry point
 ENTRYPOINT ["/bin/bash"]
