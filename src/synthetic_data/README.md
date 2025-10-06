@@ -20,14 +20,13 @@ Each synthetic employee produces a paired `w2_<idx>.json` (ground-truth structur
 ## Container usage
 Build from the project root so the Docker build context includes the repository:
 ```bash
-docker build -f synthetic_data/w2/Dockerfile -t finwhiz-synthetic-w2 .
+docker build -t synthetic_data -f src/synthetic_data/Dockerfile .
 ```
 Generate documents (override CLI args as needed). Mount a host directory if you want the PDFs outside the container:
 ```bash
-docker run --rm \
-  -v "$(pwd)/synthetic_data/w2/outputs:/data" \
-  finwhiz-synthetic-w2 \
-  --count 5 --output-dir /data --seed 42
+docker run --rm --ti \
+  -v "$(pwd)":/app \
+  synthetic_data \
 ```
 
 The container entrypoint is the Typer CLI (`python -m synthetic_w2`), so any arguments after the image name are forwarded.

@@ -1,6 +1,7 @@
 from google.cloud import storage
 import logging
 import os
+from chromadb.config import Settings
 
 from dotenv import load_dotenv
 
