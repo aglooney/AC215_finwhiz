@@ -1,0 +1,16 @@
+seeds:
+  - "https://www.consumerfinance.gov/consumer-tools/retirement/"
+  - "https://www.consumerfinance.gov/consumer-tools/credit-cards/"
+  - "https://www.consumerfinance.gov/consumer-tools/mortgages/"
+  - "https://www.consumerfinance.gov/consumer-tools/student-loans/"
+  - "https://www.consumerfinance.gov/consumer-tools/auto-loans/"
+  - "https://www.consumerfinance.gov/consumer-tools/bank-accounts/"
+  - "https://www.consumerfinance.gov/consumer-tools/debt-collection/"
+  - "https://www.consumerfinance.gov/owning-a-home/"
+  - "https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/"
+  - "https://www.consumerfinance.gov/ask-cfpb/what-is-a-credit-score-en-315/"
+
+allow_domains:
+  - "www.consumerfinance.gov"
+
+max_pages: 20
