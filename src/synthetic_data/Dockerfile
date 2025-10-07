@@ -23,14 +23,18 @@ RUN set -ex; \
     chown app:app /app
 
 USER app
-WORKDIR /app
 
 # Copy repo contents (uv will scope to project path)
-COPY --chown=app:app . ./
+COPY src/synthetic_data /app
 
-# Install Python dependencies for the synthetic W-2 project
-RUN uv sync --project synthetic_data/w2
+#Install Python dependencies for synthetic data generation
+WORKDIR /app/src/synthetic_data
+RUN uv sync
+
+
 
 # Default entry: expose Typer CLI; command can be overridden at runtime
-ENTRYPOINT ["uv", "run", "--project", "synthetic_data/w2", "-m", "synthetic_w2"]
-CMD ["generate", "--output-dir", "synthetic_data/w2/outputs", "--count", "1"]
+#ENTRYPOINT ["python", "-m", "w2.synthetic_w2.cli"]
+#CMD ["generate", "--output-dir", "app/outputs", "--count", "1"]
+ENTRYPOINT ["/bin/bash"]
+CMD ["-c", "source /home/app/.venv/bin/activate && exec python -m w2.synthetic_w2.cli"]
