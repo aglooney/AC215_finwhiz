@@ -1,4 +1,0 @@
-deny:
-  - ^https://www\.finra\.org/.*(/search|/user|/login|/arbitration|/enforcement).*
-  - \?                      # skip query pages
-  - \.(xls|zip|mp4)$        # skip heavy binaries
