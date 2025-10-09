@@ -9,9 +9,10 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("sentence-transformers").setLevel(logging.WARNING)
 load_dotenv()
 
-BUCKET_NAME = os.getenv("GCS_BUCKET")   # set in .env
-KEY_PATH = os.getenv("GOOGLE_APPLICATION_CREDENTIALS") # set in .env
+BUCKET_NAME = os.environ.get("GCS_BUCKET") 
 
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ.get("BUCKET_CREDENTIALS")
+KEY_PATH = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") 
 
 client = storage.Client.from_service_account_json(KEY_PATH)
 bucket = client.bucket(BUCKET_NAME)

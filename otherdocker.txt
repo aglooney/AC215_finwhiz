@@ -1,0 +1,29 @@
+embedder:
+    build:
+      context: ./src/embedder
+      dockerfile: Dockerfile
+    container_name: finwhiz_embedder
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    command: ["bash", "-c", "source /home/app/.venv/bin/activate && python src/embedder/embedding.py"]
+    volumes:
+      - .:/app
+    networks:
+      - finwhiz_network
+    restart: "no"
+
+  webscraper:
+    build:
+      context: ./src/webscraping
+      dockerfile: Dockerfile
+    image: finwhiz_webscraper
+    container_name: finwhiz_webscraper
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped

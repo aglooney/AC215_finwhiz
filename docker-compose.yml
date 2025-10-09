@@ -1,0 +1,51 @@
+services:
+  retriever:
+    build:
+      context: ./src/retriever
+      dockerfile: Dockerfile
+    image: finwhiz_retriever
+    container_name: finwhiz_retriever
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    restart: unless-stopped
+
+  llm:
+    build:
+      context: ./src/llm
+      dockerfile: Dockerfile
+    image: finwhiz_llm
+    container_name: finwhiz_llm
+    volumes:
+      - .:/app
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    depends_on:
+      - retriever
+    restart: unless-stopped
+
+  query_client:
+    build:
+      context: ./src/query_client
+      dockerfile: Dockerfile
+    container_name: finwhiz_query
+    volumes:
+      - .:/app
+    depends_on:
+      - retriever
+      - llm
+    stdin_open: true   
+    tty: true          
+
+networks:
+  finwhiz_network:
+    driver: bridge
