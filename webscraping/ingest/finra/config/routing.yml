@@ -1,0 +1,8 @@
+rules:
+  default:
+    chunk_by: "h2"
+    max_tokens: 280
+    promote_blocks: [".tip", ".warning", ".do-dont"]
+  professional-designations:
+    chunk_by: "h2"
+    keep_tables: true

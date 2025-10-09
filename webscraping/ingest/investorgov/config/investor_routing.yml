@@ -1,0 +1,13 @@
+routes:
+  - match: ^https://www\.investor\.gov/introduction-investing
+    tags: [education, basics]
+  - match: ^https://www\.investor\.gov/introduction-investing/investing-basics/investment-products
+    tags: [products]
+  - match: ^https://www\.investor\.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins
+    tags: [alerts, bulletins]
+  - match: ^https://www\.investor\.gov/financial-tools-calculators
+    tags: [tools, calculators]
+  - match: ^https://www\.investor\.gov/additional-resources
+    tags: [resources]
+  - match: \.pdf$
+    tags: [pdf]
