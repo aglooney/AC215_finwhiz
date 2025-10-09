@@ -35,10 +35,13 @@ WORKDIR /app
 # Copy the source code
 COPY --chown=app:app . ./
 
-RUN uv sync && \
-    uv add requests beautifulsoup4 PyMuPDF google-cloud-storage PyYaml pandas
+RUN uv sync 
 
 # Entry point
+#ENTRYPOINT ["python", "-m", "ingest.normalize"]
 ENTRYPOINT ["/bin/bash"]
 # Get into the uv virtual environment shell
 CMD ["-c", "source /home/app/.venv/bin/activate && exec bash"]
+
+#How to run the file:
+# python -m src.webscraping.ingest.irs.normalize.py

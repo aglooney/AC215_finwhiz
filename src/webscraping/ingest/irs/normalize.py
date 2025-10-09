@@ -183,7 +183,7 @@ def ingest_from_config(config_path: Path, *, output_dir: Path, bucket: Optional[
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Normalize IRS documents for FinWhiz ingest")
-    parser.add_argument("--config", type=Path, required=True, help="Path to crawl_config.yaml")
+    parser.add_argument("--config", type=Path, default=str(Path(__file__).parent/"crawl_config.yaml"), help="Path to crawl_config.yaml")
     parser.add_argument(
         "--output-dir", type=Path, default=Path("data/tmp"), help="Directory to store NDJSON output"
     )

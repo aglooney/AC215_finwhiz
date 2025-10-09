@@ -1,4 +1,4 @@
-# FinWhiz 🐋💸
+# FinWhiz
 
 **FinWhiz** is an AI-powered financial education app designed to make finance accessible and personalized.  
 It leverages **Retrieval-Augmented Generation (RAG)** with a **Large Language Model (LLM)** to provide two complementary experiences:
@@ -6,11 +6,11 @@ It leverages **Retrieval-Augmented Generation (RAG)** with a **Large Language Mo
 1. **Financial Education Chatbot**  
    - Ask general finance-related questions (e.g., "What’s the difference between a Roth IRA and a traditional IRA?").  
    - The chatbot retrieves information from curated financial education resources and explains concepts in clear, simple language.
-
+<!-- 
 2. **Personal Finance Assistant**  
    - Securely input your own financial information (e.g., income, expenses, savings goals).  
    - The chatbot uses a dedicated RAG pipeline over your personal data to answer tailored questions like:  
-     > "Based on my current spending, how much can I safely put into retirement savings each month?"
+     > "Based on my current spending, how much can I safely put into retirement savings each month?" -->
 
 ---
 
@@ -20,8 +20,8 @@ It leverages **Retrieval-Augmented Generation (RAG)** with a **Large Language Mo
 - **Two data layers**:
   - **General knowledge base** of financial concepts.  
   - **User-specific knowledge base** for personalized advice.  
-- **Privacy-first design** — personal data stays separate from the general model context.  
-- **Interactive UI** for chatting, data entry, and visualizing insights.  
+<!-- - **Privacy-first design** — personal data stays separate from the general model context.  
+- **Interactive UI** for chatting, data entry, and visualizing insights.   -->
 
 ---
 
@@ -31,12 +31,10 @@ AC215_finwhiz/
 ├── data/ # Educational datasets & knowledge base
 ├── user_data/ # Encrypted personal financial data (per user)
 ├── src/
-│ ├── rag/ # RAG pipelines (general + personal)
-│ ├── chatbot/ # LLM interface & conversation manager
-│ ├── ui/ # Frontend code (chat + dashboards)
-│ └── utils/ # Helper scripts
-├── tests/ # Unit/integration tests
-├── requirements.txt # Python dependencies
+│ ├── embedder/ # Embedding model and script to create vectordb
+│ ├── llm/ # LLM interface
+│ ├── query_client/ # Chat Feature
+│ └── retriever/ #Embeds user query and retrieves relevant information from vectordb 
 └── README.md # This file
 ```
 
