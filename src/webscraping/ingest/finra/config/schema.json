@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Chunk",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "source_url": { "type": "string" },
+    "canonical_url": { "type": "string" },
+    "title": { "type": "string" },
+    "section": { "type": "array", "items": { "type": "string" } },
+    "publish_date": { "type": "string" },
+    "updated_date": { "type": "string" },
+    "content": { "type": "string" },
+    "headings_path": { "type": "string" },
+    "type": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "compliance": { "type": "object" }
+  },
+  "required": ["id", "source_url", "title", "content"]
+}
