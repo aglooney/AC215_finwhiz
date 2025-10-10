@@ -15,7 +15,7 @@ from fetch import FetchResult, fetch_url
 from parse_html_cf import extract_main_html
 from parse_pdf import pdf_to_blocks
 from schema import IngestRecord, make_record
-from write_gcs import write_ndjson_gcs
+from write_gcs import upload_file_to_gcs
 
 LOGGER = logging.getLogger(__name__)
 
@@ -175,8 +175,7 @@ def ingest_from_config(config_path: Path, *, output_dir: Path, bucket: Optional[
 
         if bucket and gcs_prefix:
             gcs_path = f"{gcs_prefix.rstrip('/')}/{slug}/{year}/{slug}.ndjson"
-            LOGGER.info("Uploading %s to gs://%s/%s", slug, bucket, gcs_path)
-            write_ndjson_gcs(bucket, gcs_path, (record.to_dict() for record in records))
+            upload_file_to_gcs(local_path, bucket, gcs_path)
 
 
 def parse_args() -> argparse.Namespace:
