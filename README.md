@@ -31,6 +31,7 @@ AC215_finwhiz/
 ├── data/ # Educational datasets & knowledge base
 ├── user_data/ # Encrypted personal financial data (per user)
 ├── src/
+│ ├── agentic_user_data_processing/ # Session + user document microservice
 │ ├── embedder/ # Embedding model and script to create vectordb
 │ ├── llm/ # LLM interface
 │ ├── query_client/ # Chat Feature
@@ -63,9 +64,16 @@ AC215_finwhiz/
     ```
 3. Set Environment Variables
     ```bash
+    cp .env.example .env  # create locally, file is gitignored
+    # inside .env (values shown as examples only)
+    GOOGLE_APPLICATION_CREDENTIALS=secrets/reliable-sight-471200-v5.json
+    USER_UPLOAD_BUCKET=fw_user_uploads
+    DATABASE_URL=postgresql+psycopg://finwhiz:finwhiz@postgres:5432/finwhiz
+    GCS_BUCKET=fw_ws
     ```
-4. Run the app
+4. Run the services
     ```bash
+    docker-compose up --build agent retriever llm query_client
     ```
 
 ## Security and Privacy
