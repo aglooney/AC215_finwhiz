@@ -10,7 +10,7 @@ ENV UV_PROJECT_ENVIRONMENT=/home/app/.venv
 RUN set -ex && \
     apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y build-essential git && \
+    apt-get install -y build-essential git pdftk-java && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

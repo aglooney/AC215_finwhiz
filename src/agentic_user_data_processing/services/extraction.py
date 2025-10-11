@@ -74,7 +74,12 @@ async def extract_w2_fields(pdf_bytes: bytes) -> schemas.W2Fields:
     try:
         llm = _get_llm()
         response = await asyncio.to_thread(llm.invoke, prompt)
-        data = json.loads(str(response))
+        raw = str(response).strip()
+        if raw.startswith("```"):
+            raw = raw.strip("`")
+            if raw.lower().startswith("json"):
+                raw = raw[4:].lstrip()
+        data = json.loads(raw)
         return schemas.W2Fields(**data)
     except (json.JSONDecodeError, RuntimeError, Exception):
         return schemas.W2Fields()
