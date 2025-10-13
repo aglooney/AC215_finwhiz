@@ -1,0 +1,14 @@
+seeds:
+  - "https://www.irs.gov/publications/p590a"
+  - "https://www.irs.gov/publications/p590b"
+  - "https://www.irs.gov/instructions/iw2w3"
+  - "https://www.irs.gov/publications/p560"
+  - "https://www.irs.gov/forms-pubs/about-publication-505"
+  - "https://www.irs.gov/forms-pubs/about-form-1099-misc"
+  - "https://www.irs.gov/forms-pubs/about-form-w-4"
+  - "https://www.irs.gov/retirement-plans/roth-iras"
+  - "https://www.irs.gov/retirement-plans/plan-participant-employee/amount-of-roth-ira-contributions-that-you-can-make-for-2024"
+
+allow_domains:
+  - "www.irs.gov"
+max_pages: 40

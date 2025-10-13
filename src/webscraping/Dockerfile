@@ -20,7 +20,6 @@ ENV GCS_BUCKET=fw_ws
 
 # Ensure we have an up to date baseline, install dependencies and
 # create a user so we don't run the app as root
-
 RUN set -ex;\
     apt-get update && \
     apt-get upgrade -y && \
@@ -29,8 +28,8 @@ RUN set -ex;\
     pip install --no-cache-dir --upgrade pip && \
     pip install uv && \
     useradd -ms /bin/bash app -d /home/app -u 1000 && \
-    mkdir -p /app && \
-    chown app:app /app
+    mkdir -p /app /app/data && \
+    chown -R app:app /app
 
 # Switch to the new user
 USER app
@@ -39,12 +38,14 @@ WORKDIR /app
 # Copy the source code
 COPY --chown=app:app . ./
 
+# Install dependencies
 RUN uv sync 
 
-# Entry point
-#ENTRYPOINT ["python", "-m", "ingest.normalize"]
+# Set PYTHONPATH so imports work correctly
+ENV PYTHONPATH=/app
+
+# Entry point - activate venv and run bash
 ENTRYPOINT ["/bin/bash"]
-# Get into the uv virtual environment shell
 CMD ["-c", "source /home/app/.venv/bin/activate && exec bash"]
 
 #How to run the file:

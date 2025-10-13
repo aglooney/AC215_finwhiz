@@ -1,0 +1,112 @@
+# IRS.gov Configuration for FinWhiz
+# Focus: Retirement accounts, tax forms, investment income, and small business taxation
+# Note: Handles both HTML pages and PDF publications from web URLs
+# All URLs manually verified: 2024-10-10
+
+seeds:
+  # ============================================================================
+  # Retirement Accounts
+  # ============================================================================
+  
+  # Core Publications (PDFs)
+  - "https://www.irs.gov/publications/p590a"  # Contributions to IRAs
+  - "https://www.irs.gov/publications/p590b"  # Distributions from IRAs
+  - "https://www.irs.gov/publications/p560"   # Retirement Plans for Small Business (SEP, SIMPLE)
+  
+  # Roth IRA Information (HTML)
+  - "https://www.irs.gov/retirement-plans/roth-iras"
+  - "https://www.irs.gov/retirement-plans/plan-participant-employee/amount-of-roth-ira-contributions-that-you-can-make-for-2024"
+  - "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-ira-contribution-limits"
+  
+  # 401(k) and Workplace Plans (HTML)
+  - "https://www.irs.gov/retirement-plans/plan-participant-employee/401k-resource-guide-plan-participants-401k-plan-overview"
+  - "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-401k-and-profit-sharing-plan-contribution-limits"
+  - "https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-catch-up-contributions"
+  
+  # ============================================================================
+  # Tax Forms and Instructions
+  # ============================================================================
+  
+  # Common Forms - "About" Pages (HTML)
+  - "https://www.irs.gov/forms-pubs/about-form-w-4"              # Employee's Withholding Certificate
+  - "https://www.irs.gov/forms-pubs/about-form-1099-misc"        # Miscellaneous Income
+  - "https://www.irs.gov/forms-pubs/about-form-1099-div"         # Dividends and Distributions
+  - "https://www.irs.gov/forms-pubs/about-form-1099-int"         # Interest Income
+  - "https://www.irs.gov/forms-pubs/about-form-1099-b"           # Proceeds from Broker/Barter Exchange
+  - "https://www.irs.gov/forms-pubs/about-schedule-c-form-1040"  # Profit or Loss from Business
+  - "https://www.irs.gov/forms-pubs/about-schedule-se-form-1040" # Self-Employment Tax
+  
+  # Form Instructions (PDF/HTML)
+  - "https://www.irs.gov/instructions/iw2w3"                     # W-2 and W-3 Instructions
+  - "https://www.irs.gov/forms-pubs/about-publication-505"       # Tax Withholding and Estimated Tax
+  
+  # ============================================================================
+  # Investment Income and Capital Gains
+  # ============================================================================
+  
+  - "https://www.irs.gov/publications/p550"  # Investment Income and Expenses (PDF)
+  - "https://www.irs.gov/taxtopics/tc409"    # Capital Gains and Losses
+  - "https://www.irs.gov/taxtopics/tc703"    # Basis of Assets
+  - "https://www.irs.gov/taxtopics/tc427"    # Stock Options
+  
+  # ============================================================================
+  # Tax Credits and Deductions
+  # ============================================================================
+  
+  - "https://www.irs.gov/credits-deductions/individuals/earned-income-tax-credit"
+  - "https://www.irs.gov/credits-deductions/individuals/child-tax-credit"
+  - "https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-llc"
+  - "https://www.irs.gov/taxtopics/tc503"    # Deductible Taxes
+  
+  # ============================================================================
+  # Self-Employment and Small Business
+  # ============================================================================
+  
+  - "https://www.irs.gov/businesses/small-businesses-self-employed/self-employed-individuals-tax-center"
+  - "https://www.irs.gov/taxtopics/tc554"    # Self-Employment Tax
+  
+  # ============================================================================
+  # Health Savings Accounts and Medical Expenses
+  # ============================================================================
+  
+  - "https://www.irs.gov/publications/p969"  # Health Savings Accounts and Other Tax-Favored Health Plans (PDF)
+  - "https://www.irs.gov/taxtopics/tc502"    # Medical and Dental Expenses
+  
+  # ============================================================================
+  # Education
+  # ============================================================================
+  
+  - "https://www.irs.gov/taxtopics/tc456"    # Student Loan Interest Deduction
+  - "https://www.irs.gov/publications/p970"  # Tax Benefits for Education (PDF)
+  - "https://www.irs.gov/taxtopics/tc313"    # Qualified Tuition Programs (529 Plans)
+  
+  # ============================================================================
+  # Filing Status, Dependents, and Standard Deduction
+  # ============================================================================
+  
+  - "https://www.irs.gov/publications/p501"  # Dependents, Standard Deduction, and Filing Information (PDF)
+  - "https://www.irs.gov/taxtopics/tc551"    # Standard Deduction
+  - "https://www.irs.gov/taxtopics/tc553"    # What to Do with Your Refund
+  
+  # ============================================================================
+  # Tax Withholding and Estimated Tax
+  # ============================================================================
+  
+  - "https://www.irs.gov/taxtopics/tc306"    # Penalty for Underpayment of Estimated Tax
+  
+  # ============================================================================
+  # 2024 Tax Year Updates
+  # ============================================================================
+  
+  - "https://www.irs.gov/newsroom/irs-provides-tax-inflation-adjustments-for-tax-year-2024"
+  - "https://www.irs.gov/newsroom/401k-limit-increases-to-23000-for-2024-ira-limit-rises-to-7000"
+
+allow_domains:
+  - "www.irs.gov"
+
+# Configuration
+authority: "irs.gov"
+default_doctype: "webpage"
+
+# Note: No max_pages limit - process all 37 URLs for production
+# For testing, use --max-pages flag: python normalize_irs.py --max-pages 5

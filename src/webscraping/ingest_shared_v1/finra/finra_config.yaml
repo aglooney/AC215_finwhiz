@@ -1,0 +1,60 @@
+# FINRA.org Configuration for FinWhiz
+# Focus: Investment education, basics, tools, and calculators
+# All URLs manually verified: 2024-10-10
+
+seeds:
+  # ============================================================================
+  # Main Hubs and Overview Pages
+  # ============================================================================
+  
+  - "https://www.finra.org/investors/investing"  # General investing hub
+  - "https://www.finra.org/investors/investing/investing-basics"  # Main basics page
+  - "https://www.finra.org/investors/personal-finance"  # Personal finance topics
+  
+  # ============================================================================
+  # Investing Basics
+  # ============================================================================
+  
+  - "https://www.finra.org/investors/investing/investing-basics/risk"
+  - "https://www.finra.org/investors/investing/investing-basics/asset-allocation-diversification"
+  - "https://www.finra.org/investors/investing/investing-basics/fees-commissions"
+  - "https://www.finra.org/investors/investing/investing-basics/buying-and-selling"
+  - "https://www.finra.org/investors/investing/investing-basics/evaluating-performance"
+  - "https://www.finra.org/investors/investing/investing-basics/volatility"
+  - "https://www.finra.org/investors/investing/investing-basics/smart-investing-courses"
+  
+  # ============================================================================
+  # Investment Products
+  # ============================================================================
+  
+  - "https://www.finra.org/investors/investing/investment-products/stocks"
+  
+  # ============================================================================
+  # Tools, Publications, and Resources
+  # ============================================================================
+  
+  - "https://www.finra.org/investors/tools-and-calculators"  # Main tools page
+  - "https://www.finra.org/investors/free-investor-publications"  # Publications archive
+  
+  # ============================================================================
+  # Interactive Calculators (nga.finra.org subdomain)
+  # ============================================================================
+  
+  - "https://max401kcalculator.nga.finra.org/"  # 401(k) Save the Max Calculator
+  - "https://rmdcalculator.nga.finra.org/"  # Required Minimum Distribution Calculator
+  - "https://retirementcalculator.nga.finra.org/"  # Retirement Savings Calculator
+  - "https://savingscalculator.nga.finra.org/"  # Savings Goal Calculator
+
+allow_domains:
+  - "www.finra.org"
+  - "max401kcalculator.nga.finra.org"
+  - "rmdcalculator.nga.finra.org"
+  - "retirementcalculator.nga.finra.org"
+  - "savingscalculator.nga.finra.org"
+
+# Configuration
+authority: "finra.org"
+default_doctype: "guide"
+
+# Note: No max_pages limit - process all 17 URLs for production
+# For testing, use --max-pages flag: python normalize_finra.py --max-pages 5

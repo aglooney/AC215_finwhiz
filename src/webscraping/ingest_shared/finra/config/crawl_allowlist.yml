@@ -1,0 +1,6 @@
+seeds:
+  - https://www.finra.org/investors/learn-to-invest
+  - https://www.finra.org/investors/investing-basics
+  - https://www.finra.org/investors/professional-designations
+allow:
+  - ^https://www\.finra\.org/investors/(learn-to-invest|investing-basics|professional-designations)($|/.*)
