@@ -1,0 +1,1 @@
+"""Consumer Finance document ingestion module."""

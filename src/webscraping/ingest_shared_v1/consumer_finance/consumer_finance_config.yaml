@@ -1,0 +1,95 @@
+# ConsumerFinance.gov Configuration for FinWhiz
+# Focus: Personal finance tools, credit, mortgages, student loans, retirement
+# WITH LINK FOLLOWING from hub pages
+
+seeds:
+  # ============================================================================
+  # Consumer Tools - Hub Pages (will follow links from these)
+  # ============================================================================
+  
+  - "https://www.consumerfinance.gov/consumer-tools/retirement/"
+  - "https://www.consumerfinance.gov/consumer-tools/credit-cards/"
+  - "https://www.consumerfinance.gov/consumer-tools/mortgages/"
+  - "https://www.consumerfinance.gov/consumer-tools/student-loans/"
+  - "https://www.consumerfinance.gov/consumer-tools/auto-loans/"
+  - "https://www.consumerfinance.gov/consumer-tools/bank-accounts/"
+  - "https://www.consumerfinance.gov/consumer-tools/debt-collection/"
+  - "https://www.consumerfinance.gov/consumer-tools/money-as-you-grow/"
+  - "https://www.consumerfinance.gov/consumer-tools/financial-well-being/"
+  - "https://www.consumerfinance.gov/consumer-tools/educator-tools/"
+  - "https://www.consumerfinance.gov/consumer-tools/fraud/"
+  
+  # ============================================================================
+  # Home Ownership - Hub Pages (will follow links)
+  # ============================================================================
+  
+  - "https://www.consumerfinance.gov/owning-a-home/"
+  - "https://www.consumerfinance.gov/owning-a-home/explore/"
+  - "https://www.consumerfinance.gov/owning-a-home/compare/"
+  - "https://www.consumerfinance.gov/owning-a-home/close/"
+  
+  # ============================================================================
+  # Paying for College - Hub Pages (will follow links)
+  # ============================================================================
+  
+  - "https://www.consumerfinance.gov/paying-for-college/"
+  - "https://www.consumerfinance.gov/paying-for-college/repay-student-debt/"
+  
+  # ============================================================================
+  # Ask CFPB - Individual FAQs (don't follow links from these)
+  # ============================================================================
+  
+  - "https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/"
+  - "https://www.consumerfinance.gov/ask-cfpb/what-is-a-credit-score-en-315/"
+  - "https://www.consumerfinance.gov/ask-cfpb/what-is-a-credit-report-en-309/"
+  - "https://www.consumerfinance.gov/ask-cfpb/how-do-i-dispute-an-error-on-my-credit-card-bill-en-314/"
+
+allow_domains:
+  - "www.consumerfinance.gov"
+
+# Configuration
+authority: "consumerfinance.gov"
+default_doctype: "guide"
+
+# ============================================================================
+# Link Following Configuration
+# ============================================================================
+
+# Follow links from these page patterns
+follow_links_from:
+  - "^https://www\\.consumerfinance\\.gov/consumer-tools/"
+  - "^https://www\\.consumerfinance\\.gov/owning-a-home/"
+  - "^https://www\\.consumerfinance\\.gov/paying-for-college/"
+
+# Only follow links that match these patterns
+link_allow_patterns:
+  - "^https://www\\.consumerfinance\\.gov/consumer-tools/.*"
+  - "^https://www\\.consumerfinance\\.gov/owning-a-home/.*"
+  - "^https://www\\.consumerfinance\\.gov/paying-for-college/.*"
+  - "^https://www\\.consumerfinance\\.gov/ask-cfpb/.*"
+
+# Don't follow links matching these patterns
+link_deny_patterns:
+  - "/search"
+  - "/complaint"
+  - "/data-research"
+  - "/about-us"
+  - "/policy-compliance"
+  - "/enforcement"
+  - "\\.zip$"  # Skip zip files
+  - "\\.xlsx?$"  # Skip Excel files
+  - "\\.docx?$"  # Skip Word files
+  - "/es-/"  # Spanish pages
+  - "/ar-/"  # Arabic pages
+  - "/zh-/"  # Chinese pages
+  - "/hmong-/"
+  - "/ko-/"  # Korean pages
+  - "/ru-/"  # Russian pages
+  - "/tl-/"  # Tagalog pages
+  - "/vi-/"  # Vietnamese pages
+  
+# Note: PDFs ARE followed and scraped! One PDF page = one NDJSON record
+
+# Note: Script will automatically discover and scrape linked articles
+# Use --max-pages flag to limit total pages scraped (for testing)
+# Example: python normalize_cf.py --max-pages 30
