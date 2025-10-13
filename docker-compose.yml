@@ -13,7 +13,12 @@ services:
       - .env
     environment:
       - PYTHONPATH=/app
+      - DATABASE_URL=${DATABASE_URL}
     restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - finwhiz_network
 
   llm:
     build:
@@ -29,9 +34,14 @@ services:
       - .env
     environment:
       - PYTHONPATH=/app
+      - AGENT_URL=http://agent:8010
+      - RETRIEVER_URL=http://retriever:8000/retrieve
     depends_on:
       - retriever
+      - agent
     restart: unless-stopped
+    networks:
+      - finwhiz_network
 
   query_client:
     build:
@@ -43,9 +53,58 @@ services:
     depends_on:
       - retriever
       - llm
+      - agent
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+      - LLM_URL=http://llm:8001/query
+      - AGENT_URL=http://agent:8010
     stdin_open: true   
-    tty: true          
+    tty: true
+    networks:
+      - finwhiz_network
+
+  agent:
+    build:
+      context: ./src/agentic_user_data_processing
+      dockerfile: Dockerfile
+    image: finwhiz_agent
+    container_name: finwhiz_agent
+    volumes:
+      - .:/app
+    ports:
+      - "8010:8010"
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app:/app/src
+      - DATABASE_URL=${DATABASE_URL}
+      - USER_UPLOAD_BUCKET=${USER_UPLOAD_BUCKET}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - finwhiz_network
+
+  postgres:
+    image: postgres:16
+    container_name: finwhiz_postgres
+    environment:
+      POSTGRES_USER: finwhiz
+      POSTGRES_PASSWORD: finwhiz
+      POSTGRES_DB: finwhiz
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - finwhiz_network
+    restart: unless-stopped
 
 networks:
   finwhiz_network:
     driver: bridge
+
+volumes:
+  postgres_data:
