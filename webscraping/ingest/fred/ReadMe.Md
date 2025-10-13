@@ -88,5 +88,3 @@ Best practice: keep .env and any credentials in .gitignore.
 “What sectors are showing growth or contraction?”
 
 ---
-
-👉 Do you want me to also add a **Quick Start** block at the very top (3 lines: clone repo → add `.env` → run `make fred`) so that anyone can spin it up in 2 minutes?
