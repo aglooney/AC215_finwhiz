@@ -1,0 +1,13 @@
+{
+  "properties": {
+    "id": { "type": "string" },
+    "source": { "type": "string" },
+    "title": { "type": "string" },
+    "content": { "type": "string" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["id", "source", "content"]
+}

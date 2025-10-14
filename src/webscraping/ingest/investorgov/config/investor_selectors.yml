@@ -1,0 +1,31 @@
+article_selectors:
+  include:
+    - main
+    - article
+    - div.region-content
+    - div.node__content
+  text:
+    - h1
+    - h2
+    - h3
+    - p
+    - li
+    - table
+    - strong
+    - em
+    - blockquote
+  exclude:
+    - header
+    - footer
+    - nav
+    - aside
+    - form
+    - script
+    - style
+    - div.breadcrumb
+    - div.region-sidebar
+
+pdf_handling:
+  enabled: true
+  max_pages: 30
+  keep_metadata: true
