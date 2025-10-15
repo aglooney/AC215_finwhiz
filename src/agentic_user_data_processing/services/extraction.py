@@ -17,8 +17,8 @@ load_dotenv()
 # ---------------------------------------------------------------------
 # GEMINI prompt
 # ---------------------------------------------------------------------
-EEXTRACTION_PROMPT = """You are a parsing assistant. Using the supplied text, extract the requested fields. First identify whether the document is a 1099-INT or a W2.
-Second, return ONLY valid JSON with the exact keys shown corresponding to the document tyupe.
+EXTRACTION_PROMPT = """You are a parsing assistant. Using the supplied text, extract the requested fields. First identify whether the document is a 1099-INT or a W2.
+Second, return ONLY valid JSON with the exact keys shown corresponding to the document type.
 
 Omit any fields you cannot find.
 
@@ -109,7 +109,13 @@ async def extract_w2_fields(pdf_bytes: bytes) -> schemas.W2Fields:
             if raw.lower().startswith("json"):
                 raw = raw[4:].lstrip()
         data = json.loads(raw)
-        return schemas.W2Fields(**data)
+        if "employee_name" in data or "employer_name" in data:
+            return schemas.W2Fields(**data)
+        elif "payer_name" in data or "recipient_name" in data:
+            return schemas.Form1099Fields(**data)
+        else:
+            # fallback
+            return schemas.W2Fields()
     except (json.JSONDecodeError, RuntimeError, Exception):
         return schemas.W2Fields()
     
