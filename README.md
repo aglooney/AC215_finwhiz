@@ -5,12 +5,11 @@ It leverages **Retrieval-Augmented Generation (RAG)** with a **Large Language Mo
 
 1. **Financial Education Chatbot**  
    - Ask general finance-related questions (e.g., "What’s the difference between a Roth IRA and a traditional IRA?").  
-   - The chatbot retrieves information from curated financial education resources and explains concepts in clear, simple language.
-<!-- 
+   - The chatbot retrieves information from curated financial education resources and explains concepts in clear, simple language. 
 2. **Personal Finance Assistant**  
    - Securely input your own financial information (e.g., income, expenses, savings goals).  
    - The chatbot uses a dedicated RAG pipeline over your personal data to answer tailored questions like:  
-     > "Based on my current spending, how much can I safely put into retirement savings each month?" -->
+     > "Based on my current spending, how much can I safely put into retirement savings each month?"
 
 ---
 
@@ -42,11 +41,12 @@ AC215_finwhiz/
 
 ## ⚙️ Tech Stack
 
-- **Backend**: Python, LangChain for RAG pipelines.  
+- **RAG Pipeline**: Python, LangChain
+- **API Service**: FastAPI
 - **Embedding Model**: jina-embeddings-v3
-- **LLM**: gemini-pro-v2.5
+- **LLM**: gemini-2.5-pro
 - **Educational Database**: Vector database ChromaDB for document retrieval
-- **User Database**: PostgreSQL
+- **User Database**: PostgreSQL with SQLAlchemy
 - **Frontend**: React  
 
 ---
@@ -57,45 +57,30 @@ AC215_finwhiz/
    ```bash
    git clone https://github.com/aglooney/AC215_finwhiz.git
    cd AC215_finwhiz
-2. Set Environment Variables
+2. Example Environment Variables:
     ```bash
-    cp .env.example .env  # create locally, file is gitignored
-    # inside .env (values shown as examples only)
-    GOOGLE_APPLICATION_CREDENTIALS=secrets/reliable-sight-471200-v5.json
-    USER_UPLOAD_BUCKET=fw_user_uploads
-    DATABASE_URL=postgresql+psycopg://finwhiz:finwhiz@postgres:5432/finwhiz
+    BUCKET_CREDENTIALS=/app/secrets/data-service-account.json
+    VERTEXAI_CREDENTIALS=/app/secrets/vertexai-service-account.json
     GCS_BUCKET=fw_ws
+    DATABASE_URL=postgresql+psycopg://finwhiz:finwhiz@postgres:5432/finwhiz
+    USER_UPLOAD_BUCKET=fw_user_uploads
+    AGENT_URL=http://agent:8010
+    LLM_URL=http://llm:8001
     ```
 3. Run the services
     ```bash
-    docker-compose up --build agent postgres retriever llm query_client
+    docker-compose up --build
     ```
-4. (Optional) Generate synthetic W-2s for testing
+4. (Optional) Basic Test for File Upload (just open a new terminal after all services from docker-compose are running)
     ```bash
-    docker run --rm \
-      --entrypoint /bin/bash \
-      -v "$(pwd)":/app \
-      synthetic_w2 \
-      -lc "python -m src.w2.synthetic_w2.cli --count 1 --seed 42 --output-dir synthetic_data/w2/outputs"
+    bash test_full_pipeline.sh
     ```
 
-With the stack running you can sanity-check the agent service:
-```bash
-SESSION_ID=$(curl -s -X POST http://127.0.0.1:8010/sessions/ \
-  -H "Content-Type: application/json" \
-  -d '{"user_id": "demo-user"}' | jq -r .id)
-
-curl -X POST http://127.0.0.1:8010/sessions/$SESSION_ID/w2 \
-  -F file=@src/synthetic_data/w2/outputs/w2_000.pdf
-
-curl http://127.0.0.1:8010/sessions/$SESSION_ID/context
-```
-Uploads are automatically flattened with `pdftk`, so `w2_fields` should be populated even for fillable forms.
 
 ## Next Steps
-- Integrate the agent-provided context with the RAG-LLM flow so responses combine Chroma results with user-specific data.
-- Add fallback logic for non-PDF uploads and extend integration tests around the `/sessions` endpoints.
-- Document the end-to-end client workflow once the agent/LLM handshake is finalized.
+- Add extensive integration testing
+- Make the embedding model more robust
+- Add support for more types of documents
 
 ## Security and Privacy
 - User financial information is stored locally and separately from global knowledge sources.
