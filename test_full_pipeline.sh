@@ -29,7 +29,7 @@ curl -s -X POST \
     "$AGENT_URL/sessions/$SESSION_ID/w2" | jq
 echo -e "\n"
 
-Send message to user
+#Send message to user
 echo "Logging user message"
 curl -s -X POST \
     -H "Content-Type: application/json" \
