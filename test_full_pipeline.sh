@@ -5,6 +5,7 @@ set -e
 AGENT_URL="http://localhost:8010"
 LLM_URL="http://localhost:8001/query"
 W2_FILE="src/synthetic_data/w2/outputs/w2_000.pdf"
+INT1099_FILE="src/synthetic_data/int_1099/outputs/1099int_001.pdf"
 
 #generate session IDs
 USER_ID=$(uuidgen)
@@ -28,7 +29,7 @@ curl -s -X POST \
     "$AGENT_URL/sessions/$SESSION_ID/w2" | jq
 echo -e "\n"
 
-#Send message to user
+Send message to user
 echo "Logging user message"
 curl -s -X POST \
     -H "Content-Type: application/json" \
@@ -43,6 +44,37 @@ echo -e "\n"
 
 #query LLM
 QUERY="Can you summarize my W-2?"
+echo "Querying LLM: $QUERY"
+LLM_RESPONSE=$(curl -s -X POST \
+    -H "Content-Type: application/json" \
+    -d "{\"query\": \"$QUERY\", \"session_id\": \"$SESSION_ID\", \"user_id\": \"$USER_ID\"}" \
+    "$LLM_URL")
+
+echo "LLM Response:"
+echo "$LLM_RESPONSE" | jq
+
+#upload example 1099
+echo "Uploading 1099"
+curl -s -X POST \
+    -F "file=@$INT1099_FILE" \
+    "$AGENT_URL/sessions/$SESSION_ID/1099" | jq
+echo -e "\n"
+
+#Send message to user
+echo "Logging user message"
+curl -s -X POST \
+    -H "Content-Type: application/json" \
+    -d "{\"role\": \"user\", \"content\": \"tell me about my personal 1099\"}" \
+    "$AGENT_URL/sessions/$SESSION_ID/messages" | jq
+echo -e "\n"
+
+#agent data retrieval
+echo "Current session context (with messages and 1099):"
+curl -s "$AGENT_URL/sessions/$SESSION_ID/context" | jq
+echo -e "\n"
+
+#query LLM
+QUERY="Can you summarize my 1099?"
 echo "Querying LLM: $QUERY"
 LLM_RESPONSE=$(curl -s -X POST \
     -H "Content-Type: application/json" \

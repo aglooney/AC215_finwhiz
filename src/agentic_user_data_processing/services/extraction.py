@@ -14,13 +14,17 @@ from . import parser
 
 load_dotenv()
 
-EXTRACTION_PROMPT = """You are a parsing assistant. Using the supplied W-2 text, extract the requested fields.
-Return ONLY valid JSON with the exact keys shown.
+# ---------------------------------------------------------------------
+# GEMINI prompt
+# ---------------------------------------------------------------------
+EEXTRACTION_PROMPT = """You are a parsing assistant. Using the supplied text, extract the requested fields. First identify whether the document is a 1099-INT or a W2.
+Second, return ONLY valid JSON with the exact keys shown corresponding to the document tyupe.
 
-W-2 text (may be truncated):
+Omit any fields you cannot find.
+
 {document_text}
 
-Output schema:
+IF W-2, make this output schema:
 {{
   "employee_name": "",
   "employee_ssn": "",
@@ -36,6 +40,29 @@ Output schema:
   "state": "",
   "state_wages": "",
   "state_income_tax": ""
+}}
+
+IF 1099-INT, make this output schema:
+{{
+  "payer_name": "",
+  "payer_address": "",
+  "payer_tin": "",
+  "recipient_name": "",
+  "recipient_address": "",
+  "recipient_tin": "",
+  "interest_income": "",
+  "nonemployee_comp": "",
+  "fed_tax_withheld": "",
+  "state_tax_withheld": "",
+  "state_number": "",
+  "state_income": "",
+  "rents": "",
+  "royalties": "",
+  "other_income": "",
+  "medical_healthcare_payments": "",
+  "substitute_payments": "",
+  "crop_insurance_proceeds": "",
+  "gross_proceeds_paid": ""
 }}
 
 Respond with JSON only.
@@ -85,3 +112,4 @@ async def extract_w2_fields(pdf_bytes: bytes) -> schemas.W2Fields:
         return schemas.W2Fields(**data)
     except (json.JSONDecodeError, RuntimeError, Exception):
         return schemas.W2Fields()
+    
