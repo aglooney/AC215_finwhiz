@@ -3,7 +3,7 @@ set -e
 
 #initial configuration
 AGENT_URL="http://localhost:8010"
-LLM_URL="http://localhost:8001/query"
+LLM_URL="http://localhost:8001"
 W2_FILE="src/synthetic_data/w2/outputs/w2_000.pdf"
 
 #generate session IDs
@@ -47,7 +47,7 @@ echo "Querying LLM: $QUERY"
 LLM_RESPONSE=$(curl -s -X POST \
     -H "Content-Type: application/json" \
     -d "{\"query\": \"$QUERY\", \"session_id\": \"$SESSION_ID\", \"user_id\": \"$USER_ID\"}" \
-    "$LLM_URL")
+    "$LLM_URL/query")
 
 echo "LLM Response:"
 echo "$LLM_RESPONSE" | jq

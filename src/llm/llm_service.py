@@ -58,7 +58,7 @@ class QueryRequest(BaseModel):
 
 def retrieve_context(query: str, top_k: int = 5) -> str:
     """Embed the query and retrieve context documents from Chroma."""
-    query_emb = embedder.encode(query, task="retrieval.passage", convert_to_numpy=True)
+    query_emb = embedder.encode(query, task="retrieval.query", convert_to_numpy=True)
     if query_emb.ndim == 1:
         query_emb = [query_emb.tolist()]
 
@@ -138,3 +138,8 @@ async def handle_query(req: QueryRequest):
         return {"answer": answer, "context": full_context}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+#health check
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}

@@ -2,7 +2,7 @@ import os
 import uuid
 import requests
 
-LLM_URL = os.environ.get("LLM_URL", "http://llm:8001/query")
+LLM_URL = os.environ.get("LLM_URL", "http://llm:8001")
 AGENT_URL = os.environ.get("AGENT_URL", "http://agent:8010")
 
 
@@ -27,7 +27,7 @@ def query_llm(user_id: str, session_id: str, query: str) -> str:
         "user_id": user_id,
         "top_k": 5,
     }
-    response = requests.post(LLM_URL, json=payload)
+    response = requests.post(f"{LLM_URL}/query", json=payload)
     response.raise_for_status()
     return response.json()
 

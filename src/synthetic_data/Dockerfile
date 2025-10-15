@@ -23,13 +23,15 @@ RUN set -ex; \
     chown app:app /app
 
 USER app
+WORKDIR /app
 
-# Copy repo contents (uv will scope to project path)
-COPY src/synthetic_data /app
+COPY --chown=app:app pyproject.toml uv.lock ./
 
-#Install Python dependencies for synthetic data generation
-WORKDIR /app/src/synthetic_data
+# Sync dependencies into uv virtual environment
 RUN uv sync
+
+# Copy the interactive script
+COPY --chown=app:app . ./
 
 
 
