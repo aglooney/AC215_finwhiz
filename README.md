@@ -33,9 +33,8 @@ AC215_finwhiz/
 ├── src/
 │ ├── agentic_user_data_processing/ # Session + user document microservice
 │ ├── embedder/ # Embedding model and script to create vectordb
-│ ├── llm/ # LLM interface
-│ ├── query_client/ # Chat Feature
-│ └── retriever/ #Embeds user query and retrieves relevant information from vectordb 
+│ ├── llm/ # RAG-LLM interface
+│ └── query_client/ # Chat Feature
 └── README.md # This file
 ```
 
@@ -45,10 +44,10 @@ AC215_finwhiz/
 
 - **Backend**: Python, LangChain for RAG pipelines.  
 - **Embedding Model**: jina-embeddings-v3
-- **LLM**: OpenAI GPT / open-source LLM (configurable).  
-- **Database**: Vector database ChromaDB for document retrieval
-- **Frontend**: React (or Streamlit/Next.js for rapid prototyping).  
-- **Security**: Encryption + separation of personal vs. educational data stores.  
+- **LLM**: gemini-pro-v2.5
+- **Educational Database**: Vector database ChromaDB for document retrieval
+- **User Database**: PostgreSQL
+- **Frontend**: React  
 
 ---
 
@@ -57,12 +56,8 @@ AC215_finwhiz/
 1. **Clone the repo**
    ```bash
    git clone https://github.com/aglooney/AC215_finwhiz.git
-   cd FinWhiz
-2. **Install Dependencies
-    ```bash
-
-    ```
-3. Set Environment Variables
+   cd AC215_finwhiz
+2. Set Environment Variables
     ```bash
     cp .env.example .env  # create locally, file is gitignored
     # inside .env (values shown as examples only)
@@ -71,17 +66,17 @@ AC215_finwhiz/
     DATABASE_URL=postgresql+psycopg://finwhiz:finwhiz@postgres:5432/finwhiz
     GCS_BUCKET=fw_ws
     ```
-4. Run the services
+3. Run the services
     ```bash
     docker-compose up --build agent postgres retriever llm query_client
     ```
-5. (Optional) Generate synthetic W-2s for testing
+4. (Optional) Generate synthetic W-2s for testing
     ```bash
     docker run --rm \
       --entrypoint /bin/bash \
       -v "$(pwd)":/app \
       synthetic_w2 \
-      -lc "python -m w2.synthetic_w2.cli --count 1 --seed 42 --output-dir synthetic_data/w2/outputs"
+      -lc "python -m src.w2.synthetic_w2.cli --count 1 --seed 42 --output-dir synthetic_data/w2/outputs"
     ```
 
 With the stack running you can sanity-check the agent service:
@@ -91,14 +86,14 @@ SESSION_ID=$(curl -s -X POST http://127.0.0.1:8010/sessions/ \
   -d '{"user_id": "demo-user"}' | jq -r .id)
 
 curl -X POST http://127.0.0.1:8010/sessions/$SESSION_ID/w2 \
-  -F file=@synthetic_data/w2/outputs/w2_000.pdf
+  -F file=@src/synthetic_data/w2/outputs/w2_000.pdf
 
 curl http://127.0.0.1:8010/sessions/$SESSION_ID/context
 ```
 Uploads are automatically flattened with `pdftk`, so `w2_fields` should be populated even for fillable forms.
 
 ## Next Steps
-- Integrate the agent-provided context with the retriever/LLM flow so responses combine Chroma results with user-specific data.
+- Integrate the agent-provided context with the RAG-LLM flow so responses combine Chroma results with user-specific data.
 - Add fallback logic for non-PDF uploads and extend integration tests around the `/sessions` endpoints.
 - Document the end-to-end client workflow once the agent/LLM handshake is finalized.
 

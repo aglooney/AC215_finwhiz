@@ -47,9 +47,11 @@ _llm: Optional[VertexAI] = None
 def _get_llm() -> VertexAI:
     global _llm
     if _llm is None:
-        credentials_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-        if not credentials_path:
-            raise RuntimeError("GOOGLE_APPLICATION_CREDENTIALS must be set for extraction")
+        VERTEXAI_CREDENTIALS = os.getenv("VERTEXAI_CREDENTIALS")
+        if not VERTEXAI_CREDENTIALS:
+            raise ValueError("VERTEXAI_CREDENTIALS must be set")
+
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = VERTEXAI_CREDENTIALS
         _llm = VertexAI(model_name="gemini-2.5-pro")
     return _llm
 
