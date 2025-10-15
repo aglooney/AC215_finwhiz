@@ -71,6 +71,26 @@ class W2Fields(BaseModel):
     state_wages: Optional[str] = None
     state_income_tax: Optional[str] = None
 
+class Form1099Fields(BaseModel):
+    payer_name: Optional[str] = None
+    payer_address: Optional[str] = None
+    payer_tin: Optional[str] = None
+    recipient_name: Optional[str] = None
+    recipient_address: Optional[str] = None
+    recipient_tin: Optional[str] = None
+    interest_income: Optional[str] = None
+    nonemployee_comp: Optional[str] = None
+    fed_tax_withheld: Optional[str] = None
+    state_tax_withheld: Optional[str] = None
+    state_number: Optional[str] = None
+    state_income: Optional[str] = None
+    rents: Optional[str] = None
+    royalties: Optional[str] = None
+    other_income: Optional[str] = None
+    medical_healthcare_payments: Optional[str] = None
+    substitute_payments: Optional[str] = None
+    crop_insurance_proceeds: Optional[str] = None
+    gross_proceeds_paid: Optional[str] = None
 
 class SessionContext(BaseModel):
     session_id: uuid.UUID
