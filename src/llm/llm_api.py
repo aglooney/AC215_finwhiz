@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from .language import query_llm  # Import the function above
 
-app = FastAPI()
+app = FastAPI(title="FinWhiz RAG Service")
 
 RETRIEVER_URL = os.environ.get("RETRIEVER_URL", "http://retriever:8000/retrieve")
 AGENT_URL = os.environ.get("AGENT_URL", "http://agent:8010")

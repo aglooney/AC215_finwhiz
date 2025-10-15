@@ -229,3 +229,6 @@ service-account-key.json
 
 #remove outputs
 **/outputs/
+
+#local uploads
+**/local_uploads/
