@@ -6,6 +6,9 @@ Values can be overridden using environment variables.
 """
 
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # GCP Project Settings
 GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID", "finwhiz-ac215")

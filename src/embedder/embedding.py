@@ -30,7 +30,7 @@ chroma_client = chromadb.Client(Settings(persist_directory=CHROMA_PATH))
 collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
 
 # Load embedding model
-logging.info("Loading SentenceTransformer embedding model...")
+logging.info("Loading SentenceTransformer embedding model")
 embedder = SentenceTransformer("jinaai/jina-embeddings-v3", trust_remote_code=True)
 BATCH_SIZE = 64  # batch size for embedding
 
@@ -142,4 +142,10 @@ def ingest_from_gcs():
 # Example usage
 if __name__ == "__main__":
     ingest_from_gcs()
-    logging.info("Upload Complete")
+    logging.info("Finished Making Database")
+
+    logging.info("Pushing Database to GCS")
+
+    upload_chroma_to_gcs(local_dir=CHROMA_PATH, bucket_name=BUCKET_NAME, dest_prefix="chroma_storage_backup")
+
+    logging.info("GCS Upload Complete")
