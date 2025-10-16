@@ -14,17 +14,13 @@ from . import parser
 
 load_dotenv()
 
-# ---------------------------------------------------------------------
-# GEMINI prompt
-# ---------------------------------------------------------------------
-EXTRACTION_PROMPT = """You are a parsing assistant. Using the supplied text, extract the requested fields. First identify whether the document is a 1099-INT or a W2.
-Second, return ONLY valid JSON with the exact keys shown corresponding to the document type.
+EXTRACTION_PROMPT = """You are a parsing assistant. Using the supplied W-2 text, extract the requested fields.
+Return ONLY valid JSON with the exact keys shown.
 
-Omit any fields you cannot find.
-
+W-2 text (may be truncated):
 {document_text}
 
-IF W-2, make this output schema:
+Output schema:
 {{
   "employee_name": "",
   "employee_ssn": "",
@@ -40,29 +36,6 @@ IF W-2, make this output schema:
   "state": "",
   "state_wages": "",
   "state_income_tax": ""
-}}
-
-IF 1099-INT, make this output schema:
-{{
-  "payer_name": "",
-  "payer_address": "",
-  "payer_tin": "",
-  "recipient_name": "",
-  "recipient_address": "",
-  "recipient_tin": "",
-  "interest_income": "",
-  "nonemployee_comp": "",
-  "fed_tax_withheld": "",
-  "state_tax_withheld": "",
-  "state_number": "",
-  "state_income": "",
-  "rents": "",
-  "royalties": "",
-  "other_income": "",
-  "medical_healthcare_payments": "",
-  "substitute_payments": "",
-  "crop_insurance_proceeds": "",
-  "gross_proceeds_paid": ""
 }}
 
 Respond with JSON only.
@@ -97,7 +70,7 @@ async def extract_w2_fields(pdf_bytes: bytes) -> schemas.W2Fields:
 
     if not document_text:
         return schemas.W2Fields()
-
+        
     prompt = EXTRACTION_PROMPT.format(document_text=document_text[:4000])
 
     try:
@@ -109,13 +82,6 @@ async def extract_w2_fields(pdf_bytes: bytes) -> schemas.W2Fields:
             if raw.lower().startswith("json"):
                 raw = raw[4:].lstrip()
         data = json.loads(raw)
-        if "employee_name" in data or "employer_name" in data:
-            return schemas.W2Fields(**data)
-        elif "payer_name" in data or "recipient_name" in data:
-            return schemas.Form1099Fields(**data)
-        else:
-            # fallback
-            return schemas.W2Fields()
+        return schemas.W2Fields(**data)
     except (json.JSONDecodeError, RuntimeError, Exception):
         return schemas.W2Fields()
-    
