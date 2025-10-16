@@ -8,44 +8,37 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from langchain_google_vertexai import VertexAI
-from google.cloud import aiplatform
 
 from .. import schemas
 from . import parser
 
 load_dotenv()
 
-# ---------------------------------------------------------------------
-# Gemini prompt (keys match your Form1099Fields schema)
-# ---------------------------------------------------------------------
-
-EXTRACTION_PROMPT_1099 = """You are a parsing assistant. Using the supplied 1099-INT text, extract the requested fields.
-Return ONLY valid JSON with the exact keys shown. Do not include any explanatory text.
+EXTRACTION_PROMPT_1099 = """You are a parsing assistant. Using the supplied 1099-INT text, extract only the fields defined below.
+Return ONLY valid JSON with the exact keys shown — no explanations or text outside the JSON.
 
 1099-INT text (may be truncated):
 {document_text}
 
 Output schema:
 {{
-  "payer_name": "",
-  "payer_address": "",
-  "payer_tin": "",
-  "recipient_name": "",
-  "recipient_address": "",
-  "recipient_tin": "",
-  "interest_income": "",
-  "nonemployee_comp": "",
-  "fed_tax_withheld": "",
-  "state_tax_withheld": "",
-  "state_number": "",
-  "state_income": "",
-  "rents": "",
-  "royalties": "",
-  "other_income": "",
-  "medical_healthcare_payments": "",
-  "substitute_payments": "",
-  "crop_insurance_proceeds": "",
-  "gross_proceeds_paid": ""
+  "box1_interest_income": "",
+  "box2_early_withdrawal_penalty": "",
+  "box3_us_savings_bond_interest": "",
+  "box4_federal_income_tax_withheld": "",
+  "box5_investment_expenses": "",
+  "box6_foreign_tax_paid": "",
+  "box7_foreign_country": "",
+  "box8_tax_exempt_interest": "",
+  "box9_private_activity_bond_interest": "",
+  "box10_market_discount": "",
+  "box11_bond_premium": "",
+  "box12_treasury_bond_premium": "",
+  "box13_tax_exempt_bond_premium": "",
+  "box14_cusip_number": "",
+  "state": "",
+  "state_id": "",
+  "state_tax_withheld": ""
 }}
 
 Respond with JSON only.
@@ -57,53 +50,27 @@ _llm: Optional[VertexAI] = None
 def _get_llm() -> VertexAI:
     """
     Lazy-init a global VertexAI LLM with proper credentials and project.
+    Matches W-2 extractor structure exactly.
     """
     global _llm
     if _llm is None:
-        creds_path = os.getenv("VERTEXAI_CREDENTIALS")
-        if not creds_path:
+        VERTEXAI_CREDENTIALS = os.getenv("VERTEXAI_CREDENTIALS")
+        if not VERTEXAI_CREDENTIALS:
             raise ValueError("VERTEXAI_CREDENTIALS must be set")
 
-        # Make sure Google client libs see the creds inside the container
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
-
-        # Initialize Vertex AI project/region
-        project_id = os.getenv("VERTEXAI_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT")
-        location = os.getenv("VERTEXAI_LOCATION", "us-central1")
-        if project_id:
-            aiplatform.init(project=project_id, location=location)
-
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = VERTEXAI_CREDENTIALS
         _llm = VertexAI(model_name="gemini-2.5-pro")
+        print("[_get_llm] Initialized VertexAI model (gemini-2.5-pro)")
     return _llm
-
-
-def _clean_json_text(raw: str) -> str:
-    """
-    Strip common LLM wrappers (```json ... ```, leading text) and
-    return just the content between the first '{' and the last '}'.
-    """
-    s = str(raw).strip()
-
-    if s.startswith("```"):
-        s = s.strip("`").lstrip()
-        if s.lower().startswith("json"):
-            s = s[4:].lstrip()
-
-    start, end = s.find("{"), s.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        s = s[start : end + 1]
-
-    return s
-
 
 async def extract_1099_fields(pdf_bytes: bytes) -> schemas.Form1099Fields:
     """
     Parse raw PDF bytes and use Gemini to extract 1099-INT key fields.
-    Includes detailed print debugging to trace every stage.
+    Mirrors W-2 logic but with detailed print debugging.
     """
     print("[extract_1099_fields] Starting extraction...")
 
-    # Step 1: Extract text
+    # Step 1: Extract text from PDF
     try:
         document_text = parser.extract_text_from_pdf(pdf_bytes)
         print(f"[extract_1099_fields] Extracted {len(document_text)} characters of text")
@@ -117,8 +84,9 @@ async def extract_1099_fields(pdf_bytes: bytes) -> schemas.Form1099Fields:
 
     print(f"[extract_1099_fields] Sample extracted text (first 600 chars):\n{document_text[:600]}")
 
-    # Step 2: Build prompt
-    prompt = EXTRACTION_PROMPT_1099.format(document_text=document_text[:8000])
+    # Step 2: Build prompt (truncate for safety)
+    prompt = EXTRACTION_PROMPT_1099.format(document_text=document_text[:4000])
+    print(f"[extract_1099_fields] Built prompt of length {len(prompt)} characters")
 
     # Step 3: Call Gemini
     try:
@@ -127,19 +95,23 @@ async def extract_1099_fields(pdf_bytes: bytes) -> schemas.Form1099Fields:
         response = await asyncio.to_thread(llm.invoke, prompt)
         print(f"[extract_1099_fields] Raw Gemini response: {response}")
 
-        raw = _clean_json_text(response)
-        print(f"[extract_1099_fields] Cleaned JSON text: {raw[:200]}...")
+        raw = str(response).strip()
+        if raw.startswith("```"):
+            raw = raw.strip("`")
+            if raw.lower().startswith("json"):
+                raw = raw[4:].lstrip()
+
+        print(f"[extract_1099_fields] Cleaned response (first 200 chars): {raw[:200]}")
 
         data = json.loads(raw)
-        print(f"[extract_1099_fields] Full parsed JSON: {json.dumps(data, indent=2)}")
+        print(f"[extract_1099_fields] Parsed JSON keys: {list(data.keys())}")
+
         for k, v in data.items():
             print(f"  - {k}: {v!r}")
 
+        print("[extract_1099_fields] Returning populated Form1099Fields object")
         return schemas.Form1099Fields(**data)
 
-    except json.JSONDecodeError as e:
-        print(f"[extract_1099_fields] JSON decode error: {e}")
-        return schemas.Form1099Fields()
-    except Exception as e:
-        print(f"[extract_1099_fields] General extraction error: {e}")
+    except (json.JSONDecodeError, RuntimeError, Exception) as e:
+        print(f"[extract_1099_fields] Extraction failed with error: {e}")
         return schemas.Form1099Fields()

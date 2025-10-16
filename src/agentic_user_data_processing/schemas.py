@@ -72,15 +72,23 @@ class W2Fields(BaseModel):
     state_income_tax: Optional[str] = None
 
 class Form1099Fields(BaseModel):
-    payer_name_address: Optional[str] = None
-    payer_tin: Optional[str] = None
-    recipient_name_address: Optional[str] = None
-    recipient_tin: Optional[str] = None
-    interest_income: Optional[str] = None
-    federal_income_tax_withheld: Optional[str] = None
-    state_tax_withheld: Optional[str] = None
+    box1_interest_income: Optional[float] = None
+    box2_early_withdrawal_penalty: Optional[float] = None
+    box3_us_savings_bond_interest: Optional[float] = None
+    box4_federal_income_tax_withheld: Optional[float] = None
+    box5_investment_expenses: Optional[float] = None
+    box6_foreign_tax_paid: Optional[float] = None
+    box7_foreign_country: Optional[str] = None
+    box8_tax_exempt_interest: Optional[float] = None
+    box9_private_activity_bond_interest: Optional[float] = None
+    box10_market_discount: Optional[float] = None
+    box11_bond_premium: Optional[float] = None
+    box12_treasury_bond_premium: Optional[float] = None
+    box13_tax_exempt_bond_premium: Optional[float] = None
+    box14_cusip_number: Optional[str] = None
     state: Optional[str] = None
-    state_id_number: Optional[str] = None
+    state_id: Optional[str] = None
+    state_tax_withheld: Optional[float] = None
 
 class SessionContext(BaseModel):
     session_id: uuid.UUID
