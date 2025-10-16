@@ -5,7 +5,15 @@ import tempfile
 from pathlib import Path
 
 from gcs_client import GCSClient
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.environ.get("BUCKET_CREDENTIALS")
+SERVICE_ACCOUNT_KEY = os.getenv(
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    None
+)
 
 def test_gcs():
     """Test all GCS operations"""

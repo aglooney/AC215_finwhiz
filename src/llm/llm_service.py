@@ -24,7 +24,7 @@ CHROMA_PATH = os.getenv("CHROMA_PATH", "/app/src/chroma_storage")
 COLLECTION_DIR = "1a90eda1-e932-4e73-89dd-edb1adf9d126"
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "finwhiz_docs")
 GCS_BUCKET = os.getenv("GCS_BUCKET")
-GCS_PREFIX = os.getenv("GCS_PREFIX", "chroma_storage")
+GCS_PREFIX = os.getenv("GCS_PREFIX", "chroma_storage_backup")
 AGENT_URL = os.getenv("AGENT_URL", "http://agent:8010")
 
 VERTEXAI_CREDENTIALS = os.getenv("VERTEXAI_CREDENTIALS")
