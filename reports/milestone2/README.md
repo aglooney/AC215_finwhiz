@@ -6,9 +6,9 @@ This report summarizes the artifacts delivered for **Milestone 2: MLOps Infrastr
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Dockerized services | ✅ | `postgres`, `llm`, `agent`, `query_client`, `synthetic_data`, `webscraping`, `gcp_storage`, `embedder`. |
-| End-to-end pipeline | ✅ | `docker-compose up --build postgres llm agent query_client` + `./test_full_pipeline.sh`. |
-| Vertex AI integration | ✅ | LLM container uses `gemini-2.5-pro` via service-account credentials. |
+| Dockerized services | ✅ | `postgres`, `llm`, `agent`, `query_client`, `synthetic_data`, `webscraping`, `embedder`. |
+| End-to-end pipeline | ✅ | `docker-compose up --build` .|
+| Vertex AI integration | ✅ | LLM container uses `gemini-2.5-pro` |
 | Chroma vector store | ✅ | Snapshot synced from GCS (`fw_ws/chroma_storage`). |
 | Agentic user data | ✅ | W‑2 ingestion with auto-flatten, Postgres session store. |
 | UI mock-up | ✅ | Clickable Figma prototype (link shared in stakeholder deck). |
@@ -18,11 +18,12 @@ This report summarizes the artifacts delivered for **Milestone 2: MLOps Infrastr
 
 ```bash
 # from repo root
-docker-compose up --build postgres llm agent query_client
-
+docker-compose up --build
 # in a second terminal
-./test_full_pipeline.sh
+bash test_full_pipeline.sh
 ```
+
+See [`test_full_pipeline.md`](test_full_pipeline.md) for the output of running the test_full_pipeline.sh script
 
 The script will:
 1. Create a session (`POST /sessions/`).
@@ -31,18 +32,43 @@ The script will:
 4. Retrieve the combined agent context.
 5. Query the LLM (`POST /query`).
 
-See [`test_full_pipeline.md`](test_full_pipeline.md) for sample output showing extracted W‑2 fields and the LLM’s personalized summary.
 
-## 3. Additional Tests
 
-- **GCS Connectivity** – `src/gcp_storage/test_gcs.py` verifies upload/list/download/delete against the configured bucket.
-- **Manual CLI QA** – use the query-client console (`docker-compose` terminal) to ask follow-up questions and confirm the agent persists chat history.
+## 3. Interactive Querying Session
+```bash
+docker-compose run --rm query_client
+```
+This creates a session for a user and allows you to input questions. An example output is below:
+
+
+![Interactive Query](images/interactive_query.jpeg)
+
+
+
+I then uploaded a mockup W-2 and asked the question: tell me about the form I provided
+
+
+![W-2 Query](images/w2_query.jpeg)
+
+
+
+
+As you can see, it realized that I had uploaded a W-2 form and proceeds to provide information in that form such as my name and employer's name. Below is a printout of the W-2-specific context provided:
+
+![W-2 Context](images/w2_context.jpeg)
+
+
+
+We can also look what each container is doing:
+
+![Docker Process](images/docker_side_query.jpeg)
+
 
 ## 4. Mock-up / UI Status
 
 - Figma prototype demonstrates the planned chat + upload experience.  
 - Info icons and overlays explain how each UI event maps to backend calls (agent service, RAG retrieval).
-- Link available in the team’s stakeholder presentation (also referenced in the milestone slide deck).
+- Link available here: https://www.loom.com/share/7a6db2fed5954eb58c788c617cd9e4f0?sid=2bc47a6f-3285-4c10-ac43-d63836c29e59.
 
 ## 5. Deliverables Checklist
 
@@ -54,6 +80,6 @@ See [`test_full_pipeline.md`](test_full_pipeline.md) for sample output showing e
 
 ## 6. Next Actions
 
-1. Capture and archive the required Docker/terminal screenshot.
+1. Add support for more document types
 2. Extend automated testing (integration tests for multiple document types).
-3. Continue UI build-out toward a thin working prototype.
+3. Continue front-end build-out toward a thin working prototype.
