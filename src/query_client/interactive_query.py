@@ -49,8 +49,23 @@ def main():
             response = query_llm(user_id, session_id, user_input)
             answer = response.get("answer", "")
             context = response.get("context", "")
-            print(f"\n LLM Answer: \n {answer}")
-            print(f"Context Given: \n {context}")
+            sources = response.get("sources") or []
+
+            print("\nLLM Answer:\n", answer)
+            print("\nContext Provided:\n", context)
+
+            if sources:
+                print("\nSources:")
+                for idx, item in enumerate(sources, start=1):
+                    label = item.get("label") or item.get("url") or item.get("id") or f"Source {idx}"
+                    section = item.get("section")
+                    url = item.get("url")
+                    print(f"  [S{idx}] {label}")
+                    if section:
+                        print(f"     Section: {section}")
+                    if url:
+                        print(f"     URL: {url}")
+
             try:
                 log_message(session_id, "assistant", answer)
             except Exception as exc:
