@@ -91,8 +91,9 @@ class Form1099Fields(BaseModel):
     state_tax_withheld: Optional[float] = None
 
 class SessionContext(BaseModel):
-    session_id: uuid.UUID
-    user_id: uuid.UUID
-    recent_messages: List[ChatTurn]
+    session_id: str
+    user_id: str
+    recent_messages: list[ChatTurn]
     w2_fields: Optional[W2Fields] = None
+    form1099_fields: Optional[Form1099Fields] = None
     summary: Optional[str] = None

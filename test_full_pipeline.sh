@@ -7,7 +7,7 @@ set -e
 AGENT_URL="http://localhost:8010"
 LLM_URL="http://localhost:8001/query"
 W2_FILE="src/synthetic_data/w2/outputs/w2_000.pdf"
-INT1099_FILE="src/synthetic_data/int_1099/outputs/1099int_001.pdf"
+INT1099_FILE="src/synthetic_data/int_1099/outputs/1099int_002_flat.pdf"
 
 # -------------------------------------------------------------------
 # Generate user and session IDs
