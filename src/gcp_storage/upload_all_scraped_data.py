@@ -122,17 +122,24 @@ def upload_all_scraped_data(selected_sources=None):
         ndjson_files = list(source_path.glob('*.ndjson'))
         json_gz_files = list(source_path.glob('*.json.gz'))
         jsonl_gz_files = list(source_path.glob('*.jsonl.gz'))
-        all_files = ndjson_files + json_gz_files + jsonl_gz_files
+        txt_files = list(source_path.glob('*.txt'))
+        all_files = ndjson_files + json_gz_files + jsonl_gz_files + txt_files
 
         if not all_files:
-            print(f"Skipping {source_name}: no .ndjson or .json.gz files found")
+            print(f"Skipping {source_name}: no .ndjson, .json.gz, .jsonl.gz, or .txt files found")
             continue
 
         print(f"Uploading {source_name}...")
         print(f"  Local:  {source_path}")
         print(f"  GCS:    gs://{client.bucket_name}/{gcs_prefix}/")
-        print(f"  Files:  {len(ndjson_files)} .ndjson + {len(json_gz_files)} .json.gz + {len(jsonl_gz_files)} .jsonl.gz file(s)")
-        
+        print(
+            "  Files:  "
+            f"{len(ndjson_files)} .ndjson + "
+            f"{len(json_gz_files)} .json.gz + "
+            f"{len(jsonl_gz_files)} .jsonl.gz + "
+            f"{len(txt_files)} .txt file(s)"
+        )
+
         count = client.upload_folder(
             local_folder=str(source_path),
             gcs_prefix=gcs_prefix

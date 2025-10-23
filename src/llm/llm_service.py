@@ -1,7 +1,6 @@
 import os
 import logging
 import requests
-from typing import Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -56,16 +55,26 @@ class QueryRequest(BaseModel):
 
 #core logic
 
-def retrieve_context(query: str, top_k: int = 5) -> tuple[str, list[dict]]:
-    """Embed the query and retrieve context documents + metadata from Chroma."""
+def encode_query(query: str) -> list[list[float]]:
+    """Encode a query string into the embedding space."""
     query_emb = embedder.encode(query, task="retrieval.query", convert_to_numpy=True)
     if query_emb.ndim == 1:
-        query_emb = [query_emb.tolist()]
+        return [query_emb.tolist()]
+    return query_emb.tolist()
 
-    results = collection.query(query_embeddings=query_emb, n_results=top_k)
+
+def retrieve_context(
+    query: str,
+    top_k: int = 5,
+    query_embeddings: list[list[float]] | None = None,
+    where: dict | None = None,
+) -> tuple[list[str], list[dict], list[str]]:
+    """Embed the query and retrieve documents, citations, and ids from Chroma."""
+    embeddings = query_embeddings or encode_query(query)
+    results = collection.query(query_embeddings=embeddings, n_results=top_k, where=where)
     if not results["documents"] or not results["documents"][0]:
         logger.warning("No context retrieved from Chroma.")
-        return "", []
+        return [], [], []
 
     docs = results["documents"][0]
     metadatas = (results.get("metadatas") or [[]])[0]
@@ -78,11 +87,17 @@ def retrieve_context(query: str, top_k: int = 5) -> tuple[str, list[dict]]:
         metadata = metadatas[idx] if idx < len(metadatas) else {}
         label = (
             metadata.get("title")
+            or (
+                f"{metadata.get('indicator')} — {metadata.get('observation_date')}"
+                if metadata.get("indicator") and metadata.get("observation_date")
+                else None
+            )
+            or metadata.get("indicator")
             or metadata.get("source_title")
             or metadata.get("source")
             or metadata.get("document")
             or metadata.get("url")
-            or ids[idx] if idx < len(ids) else None
+            or (ids[idx] if idx < len(ids) else None)
         )
         url = metadata.get("url") or metadata.get("source_url")
         citation = {
@@ -91,12 +106,69 @@ def retrieve_context(query: str, top_k: int = 5) -> tuple[str, list[dict]]:
             "label": label,
             "section": metadata.get("section"),
             "url": url,
+            "doctype": metadata.get("doctype"),
+            "indicator": metadata.get("indicator"),
+            "observation_date": metadata.get("observation_date"),
+            "value": metadata.get("value"),
+            "units": metadata.get("units"),
+            "category": metadata.get("category"),
         }
         citations.append(citation)
 
-    context = "\n".join(docs)
     logger.info(f"Retrieved {len(docs)} documents from Chroma for Query: {query}")
-    return context, citations
+    return docs, citations, ids
+
+
+def needs_macro_view(query: str) -> bool:
+    """Detect if the user is asking about broad market timing."""
+    macro_terms = (
+        "invest",
+        "market",
+        "economy",
+        "economic",
+        "stocks",
+        "equities",
+        "recession",
+        "interest rate",
+        "inflation",
+        "macro",
+        "growth",
+    )
+    lowered = query.lower()
+    return any(term in lowered for term in macro_terms)
+
+
+def build_macro_signals(citations: list[dict]) -> str:
+    """Summarize macro indicators surfaced in citations for the prompt."""
+    lines = []
+    for citation in citations:
+        if citation.get("doctype") not in {"fred_indicator", "fred_summary"}:
+            continue
+        indicator = citation.get("indicator") or citation.get("label")
+        if not indicator:
+            continue
+        pieces = [indicator]
+        if citation.get("observation_date"):
+            pieces.append(str(citation["observation_date"]))
+        value = citation.get("value")
+        if value is not None:
+            if isinstance(value, (int, float)):
+                value_str = f"{value:.2f}"
+            else:
+                value_str = str(value)
+            units = citation.get("units")
+            if units == "percent":
+                value_str = f"{value_str}%"
+            elif units:
+                value_str = f"{value_str} {units}"
+            pieces.append(value_str)
+        if citation.get("category"):
+            pieces.append(citation["category"].replace("_", " "))
+        lines.append(" – ".join(pieces))
+
+    if not lines:
+        return ""
+    return "Macro Signals:\n" + "\n".join(f"- {line}" for line in lines)
 
 def retrieve_agent_context(session_id: str | None) -> str:
     """Fetch chat and uploaded document context from agent"""
@@ -139,7 +211,33 @@ async def handle_query(req: QueryRequest):
         agent_context = retrieve_agent_context(req.session_id)
 
         # Fetch Chroma context
-        chroma_context, citations = retrieve_context(req.query, top_k=req.top_k)
+        query_embeddings = encode_query(req.query)
+        docs, citations, ids = retrieve_context(
+            req.query, top_k=req.top_k, query_embeddings=query_embeddings
+        )
+
+        if needs_macro_view(req.query):
+            macro_docs, macro_citations, macro_ids = retrieve_context(
+                req.query,
+                top_k=max(req.top_k, 8),
+                query_embeddings=query_embeddings,
+                where={"doctype": {"$in": ["fred_indicator", "fred_summary"]}},
+            )
+            seen_ids = {doc_id for doc_id in ids if doc_id}
+            filtered_docs = []
+            filtered_citations = []
+            for doc, citation, doc_id in zip(macro_docs, macro_citations, macro_ids):
+                if doc_id and doc_id in seen_ids:
+                    continue
+                filtered_docs.append(doc)
+                filtered_citations.append(citation)
+                if doc_id:
+                    seen_ids.add(doc_id)
+            if filtered_docs:
+                docs.extend(filtered_docs)
+                citations.extend(filtered_citations)
+
+        chroma_context = "\n".join(docs)
 
         # Combine contexts
         full_context = ""
@@ -164,11 +262,19 @@ async def handle_query(req: QueryRequest):
                 )
             sources_text = "\n\nSources:\n" + "\n".join(source_lines)
 
+        macro_signals_text = build_macro_signals(citations)
+
         # Build LLM prompt
         prompt = (
             "You are FinWhiz, a financial education assistant. "
-            "Use the context below to answer clearly and accurately.\n\n"
-            f"Context:\n{full_context}{sources_text}\n\n"
+            "Use the context below to answer clearly and accurately."
+        )
+
+        if macro_signals_text:
+            prompt += f"\n\n{macro_signals_text}"
+
+        prompt += (
+            f"\n\nContext:\n{full_context}{sources_text}\n\n"
             f"User query: {req.query}"
         )
 
