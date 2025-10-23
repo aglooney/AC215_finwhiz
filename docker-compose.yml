@@ -11,13 +11,18 @@ services:
       - .env
     environment:
       - PYTHONPATH=/app
+      - GOOGLE_APPLICATION_CREDENTIALS=${BUCKET_CREDENTIALS}
+      - VERTEXAI_CREDENTIALS=${VERTEXAI_CREDENTIALS}
     depends_on:
       - postgres
     volumes:
       - .:/app
+      - ./secrets/service-account-key.json:/app/secrets/service-account-key.json:ro
+      - ./secrets/vertexai-service-account.json:/app/secrets/vertexai-service-account.json:ro
     restart: unless-stopped
     networks:
       - finwhiz_network
+
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8001/health || exit 1"]
       interval: 15s
@@ -32,6 +37,7 @@ services:
     container_name: finwhiz_agent
     volumes:
       - .:/app
+      - ./secrets/service-account-key.json:/app/secrets/service-account-key.json:ro
     ports:
       - "8010:8010"
     env_file:
@@ -40,6 +46,7 @@ services:
       - PYTHONPATH=/app:/app/src
       - DATABASE_URL=${DATABASE_URL}
       - USER_UPLOAD_BUCKET=${USER_UPLOAD_BUCKET}
+      - GOOGLE_APPLICATION_CREDENTIALS=${BUCKET_CREDENTIALS}
     depends_on:
       llm:
         condition: service_healthy
@@ -48,6 +55,7 @@ services:
     restart: unless-stopped
     networks:
       - finwhiz_network
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8010/health"]
       interval: 15s
@@ -71,13 +79,15 @@ services:
       - PYTHONPATH=/app
       - LLM_URL=http://llm:8001
       - AGENT_URL=http://agent:8010
+    command: /bin/bash -c "sleep 8 && python src/query_client/interactive_query.py"
     volumes:
       - .:/app
-    stdin_open: true    # allows interactive input
-    tty: true           # keeps container running interactively
+    stdin_open: true
+    tty: true
     networks:
       - finwhiz_network
-    
+    restart: on-failure
+
   postgres:
     image: postgres:16
     container_name: finwhiz_postgres
@@ -96,6 +106,7 @@ services:
 networks:
   finwhiz_network:
     driver: bridge
+
 volumes:
   chroma_data:
   postgres_data:

@@ -13,6 +13,7 @@ from .db import get_db, init_db
 from .services import context as context_service
 from .services import storage as storage_service
 from .services import extraction as extraction_service
+from .services import extraction_1099 as extraction_1099_service
 from .services import pdf_utils
 
 app = FastAPI(title="Agentic User Data Processing Service")
@@ -82,6 +83,39 @@ async def upload_w2(
         gcs_uri=gcs_uri,
         raw_metadata=extracted.model_dump_json(),
     )
+    return schemas.DocumentResponse.from_orm(document)
+
+@app.post("/sessions/{session_id}/1099", response_model=schemas.DocumentResponse)
+async def upload_1099(
+    session_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    session = models.Session.get(db, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    contents = await file.read()
+    flattened = pdf_utils.flatten_pdf(contents)
+
+    gcs_uri = storage_service.save_document_bytes(
+        session_id=session_id,
+        filename=file.filename,
+        contents=flattened,
+        content_type=file.content_type,
+    )
+
+    # Use the dedicated 1099 extractor
+    extracted = await extraction_1099_service.extract_1099_fields(flattened)
+
+    document = models.Document.create(
+        db,
+        session_id=session_id,
+        document_type="1099",
+        gcs_uri=gcs_uri,
+        raw_metadata=extracted.model_dump_json(),
+    )
+
     return schemas.DocumentResponse.from_orm(document)
 
 

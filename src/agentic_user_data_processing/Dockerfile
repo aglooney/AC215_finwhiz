@@ -9,8 +9,12 @@ ENV UV_PROJECT_ENVIRONMENT=/home/app/.venv
 
 RUN set -ex && \
     apt-get update && \
-    apt-get install -y git build-essential curl && \
-    apt-get install -y build-essential git pdftk-java && \
+    apt-get install -y --no-install-recommends \
+        git \
+        build-essential \
+        curl \
+        pdftk-java \
+        ghostscript && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
