@@ -1,105 +1,103 @@
 # FinWhiz
 
-**FinWhiz** is an AI-powered financial education app designed to make finance accessible and personalized.  
-It leverages **Retrieval-Augmented Generation (RAG)** with a **Large Language Model (LLM)** to provide two complementary experiences:
+FinWhiz is our end-to-end, Retrieval-Augmented Generation-Large Language Model (RAG-LLM) platform that delivers financial education in two modes:
 
-1. **Financial Education Chatbot**  
-   - Ask general finance-related questions (e.g., "What’s the difference between a Roth IRA and a traditional IRA?").  
-   - The chatbot retrieves information from curated financial education resources and explains concepts in clear, simple language.
-<!-- 
-2. **Personal Finance Assistant**  
-   - Securely input your own financial information (e.g., income, expenses, savings goals).  
-   - The chatbot uses a dedicated RAG pipeline over your personal data to answer tailored questions like:  
-     > "Based on my current spending, how much can I safely put into retirement savings each month?" -->
+1. **General Knowledge** – the chatbot retrieves curated public resources (FINRA, IRS, Consumer Finance, etc.) through a vector database to provide additional context and augment LLM responses.
+2. **Personalized Guidance** – users can upload their own documents (currently supporting W‑2s). An agentic service extracts key features, stores them securely, and blends that context with RAG results so answers stay user-specific.
+
+The system is fully containerized and orchestrated with Docker Compose to support repeatable deployments and testing.
+
+Visit the ```reports/milestone2/README.md``` to see logs for milestone 2.
 
 ---
 
-## Features
+## Repository Map
 
-- **RAG-powered chatbot** for accurate, context-aware responses.  
-- **Two data layers**:
-  - **General knowledge base** of financial concepts.  
-  - **User-specific knowledge base** for personalized advice.  
-<!-- - **Privacy-first design** — personal data stays separate from the general model context.  
-- **Interactive UI** for chatting, data entry, and visualizing insights.   -->
-
----
-
-## Project Structure (prototype)
-```
-AC215_finwhiz/
-├── data/ # Educational datasets & knowledge base
-├── user_data/ # Encrypted personal financial data (per user)
-├── src/
-│ ├── agentic_user_data_processing/ # Session + user document microservice
-│ ├── embedder/ # Embedding model and script to create vectordb
-│ ├── llm/ # RAG-LLM interface
-│ └── query_client/ # Chat Feature
-└── README.md # This file
-```
+| Component | Path | Description | Documentation |
+|-----------|------|-------------|----------------|
+| **Agent Service** | `src/agentic_user_data_processing/` | FastAPI service that manages chat sessions, stores uploaded W‑2s, and surfaces structured context for the LLM. | [README](src/agentic_user_data_processing/README.md) |
+| **LLM / RAG Service** | `src/llm/` | Hosts Gemini 2.5 via Vertex AI, retrieves Chroma context, merges agent data, and answers queries. | [README](src/llm/README.md) |
+| **Query Client** | `src/query_client/` | Interactive CLI wrapper used for manual QA and demos. | [README](src/query_client/README.md) |
+| **Embedding Utilities** | `src/embedder/` | Scripts for building and uploading document embeddings to Chroma / GCS. | [README](src/embedder/README.md) |
+| **Webscraping Pipelines** | `src/webscraping/` | Data ingestion + chunking pipelines for public financial sources. | [README](src/webscraping/README.md) |
+| **GCS Utilities** | `src/gcp_storage/` | Shared GCS helper library and upload scripts for scraped data. | [README](src/gcp_storage/README.md) |
+| **Synthetic Data** | `src/synthetic_data/` | W‑2 generator container used for testing the agentic workflow testing. | [README](src/synthetic_data/README.md) |
+| **Milestone Reports** | `reports/` | Documentation and logs for milestones (e.g., pipeline runs). | [Milestone 2](reports/milestone2/README.md) |
 
 ---
 
-## ⚙️ Tech Stack
+## Quick Start
 
-- **Backend**: Python, LangChain for RAG pipelines.  
-- **Embedding Model**: jina-embeddings-v3
-- **LLM**: gemini-pro-v2.5
-- **Educational Database**: Vector database ChromaDB for document retrieval
-- **User Database**: PostgreSQL
-- **Frontend**: React  
+### Prerequisites
+- Docker Desktop (or Docker Engine) + docker-compose plugin  
+- GCP service account with access to Vertex AI and the configured GCS buckets with local copies of JSON keys stored in `secrets/`
 
----
+### Environment Configuration
+Create a `.env` file at the repository root (see `.env.example` for a template). Minimum variables:
 
-## Installation
-
-1. **Clone the repo**
-   ```bash
-   git clone https://github.com/aglooney/AC215_finwhiz.git
-   cd AC215_finwhiz
-2. Set Environment Variables
-    ```bash
-    cp .env.example .env  # create locally, file is gitignored
-    # inside .env (values shown as examples only)
-    GOOGLE_APPLICATION_CREDENTIALS=secrets/reliable-sight-471200-v5.json
-    USER_UPLOAD_BUCKET=fw_user_uploads
-    DATABASE_URL=postgresql+psycopg://finwhiz:finwhiz@postgres:5432/finwhiz
-    GCS_BUCKET=fw_ws
-    ```
-3. Run the services
-    ```bash
-    docker-compose up --build agent postgres retriever llm query_client
-    ```
-4. (Optional) Generate synthetic W-2s for testing
-    ```bash
-    docker run --rm \
-      --entrypoint /bin/bash \
-      -v "$(pwd)":/app \
-      synthetic_w2 \
-      -lc "python -m src.w2.synthetic_w2.cli --count 1 --seed 42 --output-dir synthetic_data/w2/outputs"
-    ```
-
-With the stack running you can sanity-check the agent service:
 ```bash
-SESSION_ID=$(curl -s -X POST http://127.0.0.1:8010/sessions/ \
-  -H "Content-Type: application/json" \
-  -d '{"user_id": "demo-user"}' | jq -r .id)
-
-curl -X POST http://127.0.0.1:8010/sessions/$SESSION_ID/w2 \
-  -F file=@src/synthetic_data/w2/outputs/w2_000.pdf
-
-curl http://127.0.0.1:8010/sessions/$SESSION_ID/context
+GOOGLE_APPLICATION_CREDENTIALS=secrets/<vertexai-service-account>.json
+VERTEXAI_CREDENTIALS=secrets/<vertexai-service-account>.json
+GCS_BUCKET=fw_ws
+GCS_PREFIX=chroma_storage
+DATABASE_URL=postgresql+psycopg://finwhiz:finwhiz@postgres:5432/finwhiz
+USER_UPLOAD_BUCKET=fw_user_uploads
+AGENT_URL=http://agent:8010
+LLM_URL=http://llm:8001
 ```
-Uploads are automatically flattened with `pdftk`, so `w2_fields` should be populated even for fillable forms.
+
+Put matching credentials for any additional buckets into `secrets/`.
+
+### Run the Pipeline
+```bash
+docker-compose up --build
+```
+This composes:
+- **postgres** – session + document metadata  
+- **llm** – RAG/LLM API with Vertex AI + Chroma  
+- **agent** – chat + W‑2 ingestion microservice  
+- **query_client** – interactive user interface
+
+Once the services are healthy you can open a second terminal to validate the stack:
+```bash
+bash test_full_pipeline.sh
+```
+The script creates a session, uploads a synthetic W‑2, posts a user message, and queries the LLM. Sample logs are archived in `reports/milestone2/test_full_pipeline.log`.
+
+Additional utilities:
+```bash
+# Verify GCS connectivity
+cd src/gcp_storage
+python test_gcs.py
+```
+
+---
+
+## Application Mock-up
+
+An interactive Figma prototype illustrates the planned UI flow (chat + document upload + backend context panels). The link and screenshots are documented in `reports/milestone2/README.md`.
+
+---
+
+## Milestone 2 Artifacts
+
+- **Containers** – Each major service has a dedicated Dockerfile and `pyproject.toml`.
+- **Pipeline Proof** – `docker-compose.yaml`, `test_full_pipeline.sh`, and accompanying logs.
+- **Reports** – `reports/milestone2/` consolidates testing evidence, instructions, and outstanding TODOs (e.g., screenshot of running containers).
+- **Mock-up** – Updated Figma prototype demonstrating chat + upload flow.
+
+See the [Milestone 2 report](reports/milestone2/README.md) for details, test output, and remaining tasks.
+
+---
+
+## Security & Privacy
+- User-uploaded documents stay in the `fw_user_uploads` bucket and are referenced by session metadata in Postgres.
+- Secrets (service-account keys, env files) are kept outside version control under `secrets/`.
+- FinWhiz is an educational tool only—it is **not** a registered financial advisor.
+
+---
 
 ## Next Steps
-- Integrate the agent-provided context with the RAG-LLM flow so responses combine Chroma results with user-specific data.
-- Add fallback logic for non-PDF uploads and extend integration tests around the `/sessions` endpoints.
-- Document the end-to-end client workflow once the agent/LLM handshake is finalized.
-
-## Security and Privacy
-- User financial information is stored locally and separately from global knowledge sources.
-- No personal data is shared with external services without explicit consent.
-
-## Disclaimer
-FinWhiz is an educational tool, not a licensed financial advisor.
+- Add support for additional IRS forms and user-uploaded document types.
+- Expand integration tests (full RAG QA with multiple document types).
+- Create web-UI and backend.

@@ -24,6 +24,12 @@ def on_startup() -> None:
     """Ensure database tables exist when the service starts."""
     init_db()
 
+#health check
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
 
 @app.post("/sessions/", response_model=schemas.SessionResponse)
 def create_session(payload: schemas.SessionCreate, db: Session = Depends(get_db)):

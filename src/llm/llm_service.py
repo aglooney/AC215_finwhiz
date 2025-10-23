@@ -24,7 +24,7 @@ CHROMA_PATH = os.getenv("CHROMA_PATH", "/app/src/chroma_storage")
 COLLECTION_DIR = "1a90eda1-e932-4e73-89dd-edb1adf9d126"
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "finwhiz_docs")
 GCS_BUCKET = os.getenv("GCS_BUCKET")
-GCS_PREFIX = os.getenv("GCS_PREFIX", "chroma_storage")
+GCS_PREFIX = os.getenv("GCS_PREFIX", "chroma_storage_backup")
 AGENT_URL = os.getenv("AGENT_URL", "http://agent:8010")
 
 VERTEXAI_CREDENTIALS = os.getenv("VERTEXAI_CREDENTIALS")
@@ -56,21 +56,47 @@ class QueryRequest(BaseModel):
 
 #core logic
 
-def retrieve_context(query: str, top_k: int = 5) -> str:
-    """Embed the query and retrieve context documents from Chroma."""
-    query_emb = embedder.encode(query, task="retrieval.passage", convert_to_numpy=True)
+def retrieve_context(query: str, top_k: int = 5) -> tuple[str, list[dict]]:
+    """Embed the query and retrieve context documents + metadata from Chroma."""
+    query_emb = embedder.encode(query, task="retrieval.query", convert_to_numpy=True)
     if query_emb.ndim == 1:
         query_emb = [query_emb.tolist()]
 
     results = collection.query(query_embeddings=query_emb, n_results=top_k)
     if not results["documents"] or not results["documents"][0]:
         logger.warning("No context retrieved from Chroma.")
-        return ""
+        return "", []
 
     docs = results["documents"][0]
+    metadatas = (results.get("metadatas") or [[]])[0]
+    ids = (results.get("ids") or [[]])[0]
+    distances = results.get("distances") or [[]]
+    distances = distances[0] if distances else []
+
+    citations: list[dict] = []
+    for idx, doc in enumerate(docs):
+        metadata = metadatas[idx] if idx < len(metadatas) else {}
+        label = (
+            metadata.get("title")
+            or metadata.get("source_title")
+            or metadata.get("source")
+            or metadata.get("document")
+            or metadata.get("url")
+            or ids[idx] if idx < len(ids) else None
+        )
+        url = metadata.get("url") or metadata.get("source_url")
+        citation = {
+            "id": ids[idx] if idx < len(ids) else None,
+            "score": distances[idx] if idx < len(distances) else None,
+            "label": label,
+            "section": metadata.get("section"),
+            "url": url,
+        }
+        citations.append(citation)
+
     context = "\n".join(docs)
     logger.info(f"Retrieved {len(docs)} documents from Chroma for Query: {query}")
-    return context
+    return context, citations
 
 def retrieve_agent_context(session_id: str | None) -> str:
     """Fetch chat and uploaded document context from agent"""
@@ -113,7 +139,7 @@ async def handle_query(req: QueryRequest):
         agent_context = retrieve_agent_context(req.session_id)
 
         # Fetch Chroma context
-        chroma_context = retrieve_context(req.query, top_k=req.top_k)
+        chroma_context, citations = retrieve_context(req.query, top_k=req.top_k)
 
         # Combine contexts
         full_context = ""
@@ -126,15 +152,32 @@ async def handle_query(req: QueryRequest):
 
         logger.info(f"Full context for query '{req.query}':\n{full_context}")
 
+        # Build optional sources section for the prompt
+        sources_text = ""
+        if citations:
+            source_lines = []
+            for index, item in enumerate(citations, start=1):
+                label = item.get("label") or f"Source {index}"
+                section = item.get("section")
+                source_lines.append(
+                    f"[S{index}] {label}" + (f" — {section}" if section else "")
+                )
+            sources_text = "\n\nSources:\n" + "\n".join(source_lines)
+
         # Build LLM prompt
         prompt = (
             "You are FinWhiz, a financial education assistant. "
             "Use the context below to answer clearly and accurately.\n\n"
-            f"Context:\n{full_context}\n\n"
+            f"Context:\n{full_context}{sources_text}\n\n"
             f"User query: {req.query}"
         )
 
         answer = generate_answer(prompt)
-        return {"answer": answer, "context": full_context}
+        return {"answer": answer, "context": full_context, "sources": citations}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+#health check
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
