@@ -79,7 +79,7 @@ services:
       - PYTHONPATH=/app
       - LLM_URL=http://llm:8001
       - AGENT_URL=http://agent:8010
-    command: /bin/bash -c "sleep 8 && python src/query_client/interactive_query.py"
+    command: /bin/bash -c "sleep 8 && source /home/app/.venv/bin/activate && python src/query_client/interactive_query.py"
     volumes:
       - .:/app
     stdin_open: true
