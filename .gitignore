@@ -230,3 +230,6 @@ service-account-key.json
 
 #local uploads
 **/local_uploads/
+
+# local dev notes
+local_notes/
