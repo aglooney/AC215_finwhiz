@@ -22,7 +22,7 @@ Visit the ```reports/milestone2/README.md``` to see logs for milestone 2.
 | **Webscraping Pipelines** | `src/webscraping/` | Data ingestion + chunking pipelines for public financial sources. | [README](src/webscraping/README.md) |
 | **GCS Utilities** | `src/gcp_storage/` | Shared GCS helper library and upload scripts for scraped data. | [README](src/gcp_storage/README.md) |
 | **Synthetic Data** | `src/synthetic_data/` | W‑2 generator container used for testing the agentic workflow testing. | [README](src/synthetic_data/README.md) |
-| **Milestone Reports** | `reports/` | Documentation and logs for milestones (e.g., pipeline runs). | [Milestone 2](reports/milestone2/README.md) |
+| **Milestone Reports** | `reports/` | Documentation and logs for milestones (e.g., pipeline runs). | [Milestone 3](reports/milestone3/README.md) |
 
 ---
 
