@@ -115,24 +115,15 @@ def retrieve_context(query: str, top_k: int = 5, method:str = "rrf") -> tuple[st
                 logging.error("No Documents")
             doc_embs = np.array(chroma_data['embeddings'])
             doc_ids = np.array(chroma_data['ids'])
-            logging.info(f"Document IDS Shape: {doc_ids.shape}")
 
             cos_scores = cosine_similarity(query_emb, doc_embs)[0]
             cosine_rank = [doc_ids[i] for i in np.argsort(cos_scores)[::-1][:top_k * 2]]
-            logging.info(f"Cosine Rank: {np.array(cosine_rank).shape}\t {type(cosine_rank[0])}")
 
             tokenized_corpus = [tokenize(d) for d in docs]
             bm25 = BM25Okapi(tokenized_corpus)
-            if bm25:
-                logging.info("Have bm25")
             bm25_scores = bm25.get_scores(tokenize(query))
-            logging.info(f"BM25 Scores:{bm25_scores.shape}")
-            logging.info(f"type(bm25_scores) = {type(bm25_scores)}")
-            logging.info(f"bm25_scores sample = {bm25_scores[:5]}")
-            logging.info(f"type(bm25_scores[0]) = {type(bm25_scores[0])}")
 
             bm25_rank = [doc_ids[i] for i in np.argsort(bm25_scores)[::-1][:top_k * 2]]
-            logging.info("Error not here!")
             fused = reciprocal_rank_fusion([cosine_rank, bm25_rank])
             fused_doc_ids = [doc_id for doc_id, _ in fused[:top_k]]
 
@@ -189,12 +180,17 @@ def retrieve_agent_context(session_id: str | None) -> str:
         )
 
         # W-2 fields
-        w2 = data.get("w2_fields")
-        w2_text = ""
-        if w2:
-            w2_text = "\n".join([f"{k}: {v}" for k, v in w2.items()])
-
-        return messages_text + ("\n\nW-2 Data:\n" + w2_text if w2_text else "")
+        w2 = data.get("w2_fields", {})
+        f1099=data.get("form1099_fields", {})
+        
+        def format_fields(fields: dict, title:str):
+            return (
+                f"\n\n{title}:\n" +
+                "\n".join([f"{k}: {v}" for k, v in fields.items()])
+                if fields else ""
+            )
+        return (messages_text + format_fields(w2, "W-2 Data") + format_fields(f1099, "1099 Data"))
+    
     except Exception as e:
         logger.warning(f"Failed to fetch agent context: {e}")
         return ""

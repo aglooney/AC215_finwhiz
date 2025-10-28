@@ -8,6 +8,7 @@ context for downstream LLM prompts.
 """
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+import logging
 from . import models, schemas
 from .db import get_db, init_db
 from .services import context as context_service
@@ -17,7 +18,7 @@ from .services import extraction_1099 as extraction_1099_service
 from .services import pdf_utils
 
 app = FastAPI(title="Agentic User Data Processing Service")
-
+logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 def on_startup() -> None:
@@ -124,7 +125,7 @@ def get_session_context(session_id: str, db: Session = Depends(get_db)):
     session = models.Session.get(db, session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-
+    
     messages = models.Message.latest_for_session(db, session_id=session_id, limit=20)
-    document = models.Document.latest_for_session(db, session_id=session_id)
-    return context_service.build_context(session=session, messages=messages, document=document)
+    documents = db.query(models.Document).filter(models.Document.session_id == session_id).all()
+    return context_service.build_context(session=session, messages=messages, documents=documents)
