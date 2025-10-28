@@ -8,5 +8,6 @@ dependencies = [
     "einops>=0.8.1",
     "google-cloud-storage>=3.4.0",
     "sentence-transformers>=5.1.1",
+    "torch>=2.8.0",
     "tqdm>=4.67.1",
 ]

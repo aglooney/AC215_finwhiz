@@ -39,7 +39,6 @@ services:
     environment:
       - PYTHONPATH=/app:/app/src
       - DATABASE_URL=${DATABASE_URL}
-      - USER_UPLOAD_BUCKET=${USER_UPLOAD_BUCKET}
     depends_on:
       llm:
         condition: service_healthy
@@ -67,10 +66,6 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    environment:
-      - PYTHONPATH=/app
-      - LLM_URL=http://llm:8001
-      - AGENT_URL=http://agent:8010
     volumes:
       - .:/app
     stdin_open: true    # allows interactive input

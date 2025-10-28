@@ -50,4 +50,4 @@ LLM_RESPONSE=$(curl -s -X POST \
     "$LLM_URL/query")
 
 echo "LLM Response:"
-echo "$LLM_RESPONSE" | jq
+echo "$LLM_RESPONSE"

@@ -29,4 +29,4 @@ COPY --chown=app:app . .
 
 EXPOSE 8010
 
-CMD ["bash", "-c", "source /home/app/.venv/bin/activate && uvicorn agentic_user_data_processing.app:app --host 0.0.0.0 --port 8010"]
+CMD ["bash", "-c", "source /home/app/.venv/bin/activate && uvicorn agentic_user_data_processing.app:app --host 0.0.0.0 --port 8010 --reload"]

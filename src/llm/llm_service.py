@@ -1,16 +1,19 @@
 import os
 import logging
 import requests
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from rank_bm25 import BM25Okapi
+import re
 from typing import Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
-import chromadb
 from chromadb import PersistentClient
 from langchain_google_vertexai import VertexAI
-import httpx
 import uuid
+
 
 from .chroma_utils import ensure_chroma_local
 
@@ -54,24 +57,97 @@ class QueryRequest(BaseModel):
     user_id: uuid.UUID | None = None
     top_k: int = 5
 
-#core logic
 
-def retrieve_context(query: str, top_k: int = 5) -> tuple[str, list[dict]]:
+def reciprocal_rank_fusion(rank_lists, k=60):
+    """Combine multiple ranked lists via RRF."""
+    fused_scores = {}
+    for rank_list in rank_lists:
+        for rank, doc_id in enumerate(rank_list):
+            fused_scores[doc_id] = fused_scores.get(doc_id, 0) + 1.0/(k+rank+1)
+    return sorted(fused_scores.items(), key=lambda x:x[1], reverse=True)
+
+def tokenize(text):
+    return re.findall(r"\w+", text.lower())
+
+def normalize_chroma_results(results):
+    """Normalize Chroma query/get results to a consistent structure."""
+    if not results:
+        return [], [], [], []
+
+    # Handle nested (from query)
+    if isinstance(results.get("documents", [None])[0], list):
+        docs = results.get("documents", [[]])[0]
+        metadatas = (results.get("metadatas") or [[]])[0]
+        ids = (results.get("ids") or [[]])[0]
+        distances = (results.get("distances") or [[]])[0]
+    else:
+        # Flat structure (from get)
+        docs = results.get("documents", [])
+        metadatas = results.get("metadatas", [])
+        ids = results.get("ids", [])
+        distances = results.get("distances", [])
+
+    # Convert metadatas dict to list if necessary
+    if isinstance(metadatas, dict) and isinstance(ids, list):
+        metadatas = [metadatas.get(i, {}) for i in ids]
+
+    # If any are None, replace with empty lists
+    return docs or [], metadatas or [], ids or [], distances or []
+
+
+
+#core logic
+def retrieve_context(query: str, top_k: int = 5, method:str = "rrf") -> tuple[str, list[dict]]:
     """Embed the query and retrieve context documents + metadata from Chroma."""
     query_emb = embedder.encode(query, task="retrieval.query", convert_to_numpy=True)
     if query_emb.ndim == 1:
         query_emb = [query_emb.tolist()]
 
-    results = collection.query(query_embeddings=query_emb, n_results=top_k)
+    if method == 'cosine':
+        results = collection.query(query_embeddings=query_emb, n_results=top_k)
+    elif method == 'rrf':
+        try:
+            chroma_data = collection.get(include=['embeddings', 'documents','metadatas'])
+            if chroma_data:
+                logging.info("Have Chroma Data")
+            docs = chroma_data.get('documents') or []
+            if not docs:
+                logging.error("No Documents")
+            doc_embs = np.array(chroma_data['embeddings'])
+            doc_ids = np.array(chroma_data['ids'])
+            logging.info(f"Document IDS Shape: {doc_ids.shape}")
+
+            cos_scores = cosine_similarity(query_emb, doc_embs)[0]
+            cosine_rank = [doc_ids[i] for i in np.argsort(cos_scores)[::-1][:top_k * 2]]
+            logging.info(f"Cosine Rank: {np.array(cosine_rank).shape}\t {type(cosine_rank[0])}")
+
+            tokenized_corpus = [tokenize(d) for d in docs]
+            bm25 = BM25Okapi(tokenized_corpus)
+            if bm25:
+                logging.info("Have bm25")
+            bm25_scores = bm25.get_scores(tokenize(query))
+            logging.info(f"BM25 Scores:{bm25_scores.shape}")
+            logging.info(f"type(bm25_scores) = {type(bm25_scores)}")
+            logging.info(f"bm25_scores sample = {bm25_scores[:5]}")
+            logging.info(f"type(bm25_scores[0]) = {type(bm25_scores[0])}")
+
+            bm25_rank = [doc_ids[i] for i in np.argsort(bm25_scores)[::-1][:top_k * 2]]
+            logging.info("Error not here!")
+            fused = reciprocal_rank_fusion([cosine_rank, bm25_rank])
+            fused_doc_ids = [doc_id for doc_id, _ in fused[:top_k]]
+
+            results = collection.get(ids=fused_doc_ids)
+        except Exception as e:
+            logging.error(f"Issue with RRF: {e}")
+
+    else:
+        raise ValueError(f"Unkown retrieval method: {method}")
+    
     if not results["documents"] or not results["documents"][0]:
         logger.warning("No context retrieved from Chroma.")
         return "", []
-
-    docs = results["documents"][0]
-    metadatas = (results.get("metadatas") or [[]])[0]
-    ids = (results.get("ids") or [[]])[0]
-    distances = results.get("distances") or [[]]
-    distances = distances[0] if distances else []
+    
+    docs, metadatas, ids, distances = normalize_chroma_results(results)
 
     citations: list[dict] = []
     for idx, doc in enumerate(docs):
@@ -134,48 +210,45 @@ def generate_answer(prompt: str) -> str:
 #API endpoint
 @app.post("/query")
 async def handle_query(req: QueryRequest):
-    try:
-        # Fetch agentic context (chat messages + W-2 fields)
-        agent_context = retrieve_agent_context(req.session_id)
+    # Fetch agentic context (chat messages + W-2 fields)
+    agent_context = retrieve_agent_context(req.session_id)
 
-        # Fetch Chroma context
-        chroma_context, citations = retrieve_context(req.query, top_k=req.top_k)
+    # Fetch Chroma context
+    chroma_context, citations = retrieve_context(req.query, top_k=req.top_k, method='rrf')
 
-        # Combine contexts
-        full_context = ""
-        if agent_context:
-            full_context += agent_context
-        if chroma_context:
-            if full_context:
-                full_context += "\n\n"  # separate agent & Chroma
-            full_context += chroma_context
+    # Combine contexts
+    full_context = ""
+    if agent_context:
+        full_context += agent_context
+    if chroma_context:
+        if full_context:
+            full_context += "\n\n"  # separate agent & Chroma
+        full_context += chroma_context
 
-        logger.info(f"Full context for query '{req.query}':\n{full_context}")
+    logger.info(f"Full context for query '{req.query}':\n{full_context}")
 
-        # Build optional sources section for the prompt
-        sources_text = ""
-        if citations:
-            source_lines = []
-            for index, item in enumerate(citations, start=1):
-                label = item.get("label") or f"Source {index}"
-                section = item.get("section")
-                source_lines.append(
-                    f"[S{index}] {label}" + (f" — {section}" if section else "")
-                )
-            sources_text = "\n\nSources:\n" + "\n".join(source_lines)
+    # Build optional sources section for the prompt
+    sources_text = ""
+    if citations:
+        source_lines = []
+        for index, item in enumerate(citations, start=1):
+            label = item.get("label") or f"Source {index}"
+            section = item.get("section")
+            source_lines.append(
+                f"[S{index}] {label}" + (f" — {section}" if section else "")
+            )
+        sources_text = "\n\nSources:\n" + "\n".join(source_lines)
 
-        # Build LLM prompt
-        prompt = (
-            "You are FinWhiz, a financial education assistant. "
-            "Use the context below to answer clearly and accurately.\n\n"
-            f"Context:\n{full_context}{sources_text}\n\n"
-            f"User query: {req.query}"
-        )
+    # Build LLM prompt
+    prompt = (
+        "You are FinWhiz, a financial education assistant. "
+        "Use the context below to answer clearly and accurately.\n\n"
+        f"Context:\n{full_context}{sources_text}\n\n"
+        f"User query: {req.query}"
+    )
 
-        answer = generate_answer(prompt)
-        return {"answer": answer, "context": full_context, "sources": citations}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    answer = generate_answer(prompt)
+    return {"answer": answer, "context": full_context, "sources": citations}
     
 #health check
 @app.get("/health")
