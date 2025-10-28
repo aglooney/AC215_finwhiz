@@ -17,7 +17,7 @@ RUN set -ex && \
 
 RUN pip install --no-cache-dir --upgrade pip uv && \
     useradd -ms /bin/bash app -d /home/app -u 1000 && \
-    mkdir -p /app /home/app/.venv /app/src && \
+    mkdir -p /app /home/app/.venv /app/src /app/data && \
     chown -R app:app /app /home/app
 
 USER app
