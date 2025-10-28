@@ -9,8 +9,12 @@ ENV UV_PROJECT_ENVIRONMENT=/home/app/.venv
 
 RUN set -ex && \
     apt-get update && \
-    apt-get install -y git build-essential curl && \
-    apt-get install -y build-essential git pdftk-java && \
+    apt-get install -y --no-install-recommends \
+        git \
+        build-essential \
+        curl \
+        pdftk-java \
+        ghostscript && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -29,4 +33,4 @@ COPY --chown=app:app . .
 
 EXPOSE 8010
 
-CMD ["bash", "-c", "source /home/app/.venv/bin/activate && uvicorn agentic_user_data_processing.app:app --host 0.0.0.0 --port 8010 --reload"]
+CMD ["bash", "-c", "source /home/app/.venv/bin/activate && uvicorn agentic_user_data_processing.app:app --host 0.0.0.0 --port 8010"]
