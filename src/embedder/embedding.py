@@ -2,6 +2,10 @@ import os
 import json
 import gzip
 import logging
+import gc
+import subprocess
+import torch
+from datetime import datetime
 from tqdm import tqdm
 from google.cloud import storage
 from sentence_transformers import SentenceTransformer
@@ -20,6 +24,8 @@ KEY_PATH = os.environ.get("BUCKET_CREDENTIALS")
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = KEY_PATH
 CHROMA_PATH = "/app/src/chroma_storage"
 COLLECTION_NAME = "finwhiz_docs"
+EMBEDDING_MODEL = "jinaai/jina-embeddings-v3"
+BATCH_SIZE = 8  # batch size for embedding
 
 if not BUCKET_NAME or not KEY_PATH:
     raise ValueError("GCS_BUCKET and BUCKET_CREDENTIALS must be set in .env")
@@ -31,8 +37,19 @@ collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
 
 # Load embedding model
 logging.info("Loading SentenceTransformer embedding model")
-embedder = SentenceTransformer("jinaai/jina-embeddings-v3", trust_remote_code=True)
-BATCH_SIZE = 64  # batch size for embedding
+embedder = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True)
+embedder = embedder.half()
+
+def get_git_commit():
+    git_commit = os.getenv("GIT_COMMIT")
+    if git_commit:
+        return git_commit
+    
+    try:
+        git_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
+        return git_commit
+    except Exception:
+        return "unknown"
 
 # Utility functions
 def chunk_text(text, max_chars=500):
@@ -48,7 +65,7 @@ def clean_metadata(meta: dict) -> dict:
     }
 
 def embed_texts(texts):
-    return embedder.encode(texts, batch_size=32, task="retrieval.passage", convert_to_numpy=True).tolist()
+    return embedder.encode(texts, batch_size=BATCH_SIZE, task="retrieval.passage", convert_to_numpy=True).tolist()
 
 def store_records(records, collection):
     if not records:
@@ -99,6 +116,7 @@ def stream_jsonl_gz_from_blob(bucket, blob_name):
 def upload_chroma_to_gcs(local_dir, bucket_name, dest_prefix):
     client = storage.Client.from_service_account_json(KEY_PATH)
     bucket = client.bucket(bucket_name)
+    uploaded_files = []
     for root, _, files in os.walk(local_dir):
         for file in files:
             local_path = os.path.join(root, file)
@@ -106,7 +124,22 @@ def upload_chroma_to_gcs(local_dir, bucket_name, dest_prefix):
             blob_path = f"{dest_prefix}/{rel_path}"
             blob = bucket.blob(blob_path)
             blob.upload_from_filename(local_path)
+            uploaded_files.append(blob_path)
             logging.info(f"Uploaded {local_path} to gs://{bucket_name}/{blob_path}")
+    return uploaded_files
+
+def upload_metadata_to_gcs(metadata:dict, bucket_name:str, dest_prefix:str ):
+    client = storage.Client.from_service_account_json(KEY_PATH)
+    bucket = client.bucket(bucket_name)
+
+    timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    metadata_name = f"{dest_prefix}/metadata_{timestamp}.json"
+    blob = bucket.blob(metadata_name)
+
+    blob.upload_from_string(json.dumps(metadata, indent=2), content_type="application/json")
+    logging.info(f"Uploaded metadata file to gs://{bucket_name}/{metadata_name}")
+    return metadata_name
+
 
 # Main ingestion function
 def ingest_from_gcs():
@@ -117,35 +150,55 @@ def ingest_from_gcs():
     logging.info(f"Found {len(all_blobs)} blobs in bucket.")
 
     total_ingested = 0
+    files_processed = []
     for blob in tqdm(all_blobs):
+        logging.info(f"Processing blob: {blob.name}")
         if blob.name.endswith(".ndjson"):
             stream_func = stream_ndjson_from_blob
         elif blob.name.endswith(".jsonl.gz"):
             stream_func = stream_jsonl_gz_from_blob
         else:
             continue
-
-        logging.info(f"Processing blob: {blob.name}")
+        
+        files_processed.append(blob.name)
         batch = []
         for record in stream_func(bucket, blob.name):
             batch.append(record)
             if len(batch) >= BATCH_SIZE:
                 total_ingested += store_records(batch, collection)
-                batch.clear()
+                gc.collect()
 
         if batch:
             total_ingested += store_records(batch, collection)
 
     logging.info(f"Finished ingesting {total_ingested} records into ChromaDB collection '{COLLECTION_NAME}'")
-    return collection  # return in-memory collection
+    return total_ingested, files_processed  # return in-memory collection
 
 # Example usage
 if __name__ == "__main__":
-    ingest_from_gcs()
+    total_records, files_processed = ingest_from_gcs()
     logging.info("Finished Making Database")
 
     logging.info("Pushing Database to GCS")
+    uploaded_files = upload_metadata_to_gcs(local_dir=CHROMA_PATH, bucket_name=BUCKET_NAME, dest_prefix="chroma_storage_backup")
+    
 
-    upload_chroma_to_gcs(local_dir=CHROMA_PATH, bucket_name=BUCKET_NAME, dest_prefix="chroma_storage_backup")
+
+    git_commit = get_git_commit()
+    metadata = {
+        "timestampt": datetime.utcnow().isoformat() + "Z",
+        "collection": COLLECTION_NAME,
+        "embedding_model": EMBEDDING_MODEL,
+        "batch_size": BATCH_SIZE,
+        "records_ingested": total_records,
+        "source_files": files_processed,
+        "uploaded_files": uploaded_files,
+        "bucket": BUCKET_NAME,
+        "chroma_path": CHROMA_PATH,
+        "git_commit": git_commit
+    }
+
+    logging.info("Pushing Metadata to GCS")
+    upload_metadata_to_gcs(metadata, BUCKET_NAME, dest_prefix="metadata_logs")
 
     logging.info("GCS Upload Complete")

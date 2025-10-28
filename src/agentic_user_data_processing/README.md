@@ -20,7 +20,6 @@ Environment variables are loaded via `.env` (see repository root):
 
 - `DATABASE_URL` — SQLAlchemy-compatible Postgres URL.
 - `GOOGLE_APPLICATION_CREDENTIALS` — Path to service account JSON (e.g., `secrets/finwhiz-sa.json`).
-- `USER_UPLOAD_BUCKET` — GCS bucket for user documents (e.g., `fw_user_uploads`).
 
 Secrets belong in the local `secrets/` folder (gitignored) and are mounted into the container at runtime.
 
