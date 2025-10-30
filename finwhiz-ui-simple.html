@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinWhiz - AI Financial Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-600 to-blue-800 min-h-screen">
+    <div id="app"></div>
+
+    <script>
+        const API_BASE = {
+            agent: 'http://localhost:8010',
+            llm: 'http://localhost:8001'
+        };
+
+        let currentSession = null;
+        let userProfile = null;
+        let messages = [];
+
+        // Onboarding Screen
+        function renderOnboarding() {
+            return `
+                <div class="min-h-screen flex items-center justify-center p-4">
+                    <div class="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full">
+                        <div class="text-center mb-8">
+                            <h1 class="text-4xl font-bold text-gray-900 mb-2">FinWhiz</h1>
+                            <p class="text-xl text-gray-600">Your AI-Powered Financial Education Assistant</p>
+                        </div>
+                        <form id="onboarding-form" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Current Age</label>
+                                <input type="number" id="age" min="18" max="100" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                    placeholder="e.g., 30">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Target Retirement Age</label>
+                                <input type="number" id="retirement-age" min="50" max="100" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                    placeholder="e.g., 65">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Investment Goal</label>
+                                <textarea id="goal" rows="3" required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                    placeholder="e.g., Save for retirement and achieve financial independence"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Risk Tolerance</label>
+                                <div class="space-y-3">
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="radio" name="risk" value="conservative" class="mt-1 mr-3" required>
+                                        <div>
+                                            <span class="font-semibold">Conservative</span>
+                                            <p class="text-sm text-gray-600">Minimize risk and protect capital</p>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="radio" name="risk" value="moderate" class="mt-1 mr-3" checked>
+                                        <div>
+                                            <span class="font-semibold">Moderate</span>
+                                            <p class="text-sm text-gray-600">Balance between growth and stability</p>
+                                        </div>
+                                    </label>
+                                    <label class="flex items-start cursor-pointer">
+                                        <input type="radio" name="risk" value="aggressive" class="mt-1 mr-3">
+                                        <div>
+                                            <span class="font-semibold">Aggressive</span>
+                                            <p class="text-sm text-gray-600">Higher risk for greater returns</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                                Get Started
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Dashboard Screen
+        function renderDashboard() {
+            const portfolio = calculatePortfolio();
+            return `
+                <div class="min-h-screen bg-gray-50">
+                    <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+                        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                            <h1 class="text-2xl font-bold text-gray-900">FinWhiz</h1>
+                            <div class="flex items-center gap-4">
+                                <div class="text-sm">
+                                    <span class="font-semibold">Age ${userProfile.age}</span> |
+                                    <span>Retires at ${userProfile.retirementAge}</span>
+                                </div>
+                                <button onclick="logout()" class="text-sm text-gray-600 hover:text-gray-900">Logout</button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="max-w-7xl mx-auto px-4 py-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Portfolio -->
+                            <div class="bg-white rounded-xl shadow p-6">
+                                <h3 class="text-xl font-bold mb-4">Your Portfolio</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-sm font-medium">Stocks</span>
+                                            <span class="text-sm font-bold">${portfolio.stocks}%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-3">
+                                            <div class="bg-green-500 h-3 rounded-full" style="width: ${portfolio.stocks}%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-sm font-medium">Bonds</span>
+                                            <span class="text-sm font-bold">${portfolio.bonds}%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-3">
+                                            <div class="bg-blue-500 h-3 rounded-full" style="width: ${portfolio.bonds}%"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between mb-1">
+                                            <span class="text-sm font-medium">Cash</span>
+                                            <span class="text-sm font-bold">${portfolio.cash}%</span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-3">
+                                            <div class="bg-yellow-500 h-3 rounded-full" style="width: ${portfolio.cash}%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-sm text-gray-700">${portfolio.description}</p>
+                                </div>
+                            </div>
+
+                            <!-- Chat -->
+                            <div class="lg:col-span-2 bg-white rounded-xl shadow flex flex-col" style="height: calc(100vh - 200px)">
+                                <div id="messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                                    ${renderMessages()}
+                                </div>
+                                <form id="chat-form" class="border-t p-4">
+                                    <div class="flex gap-2">
+                                        <input type="text" id="chat-input" required
+                                            class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Ask me anything about finance...">
+                                        <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700">
+                                            Send
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMessages() {
+            if (messages.length === 0) {
+                messages.push({
+                    role: 'assistant',
+                    content: "Hello! I'm FinWhiz, your financial education assistant. I can help you understand financial concepts, answer questions about investing, taxes, and retirement planning. How can I help you today?"
+                });
+            }
+            return messages.map(msg => `
+                <div class="flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-[80%] rounded-2xl px-4 py-3 ${
+                        msg.role === 'user'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-900'
+                    }">
+                        <p class="text-sm whitespace-pre-wrap">${msg.content}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function calculatePortfolio() {
+            const years = userProfile.retirementAge - userProfile.age;
+            let stocks, bonds, cash, description;
+
+            if (userProfile.riskTolerance === 'conservative') {
+                stocks = Math.max(30, 100 - userProfile.age);
+                bonds = Math.min(60, 80 - stocks);
+                cash = 100 - stocks - bonds;
+                description = 'A conservative portfolio focused on capital preservation with steady, reliable income.';
+            } else if (userProfile.riskTolerance === 'moderate') {
+                stocks = Math.max(40, 110 - userProfile.age);
+                bonds = Math.min(50, 70 - stocks);
+                cash = 100 - stocks - bonds;
+                description = 'A balanced portfolio that seeks growth while managing risk through diversification.';
+            } else {
+                stocks = Math.max(60, 120 - userProfile.age);
+                bonds = Math.min(35, 50 - stocks);
+                cash = 100 - stocks - bonds;
+                description = 'An aggressive portfolio focused on long-term growth with higher potential returns.';
+            }
+
+            return { stocks, bonds, cash, description };
+        }
+
+        async function createSession() {
+            try {
+                const response = await fetch(`${API_BASE.agent}/sessions/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: crypto.randomUUID() })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error creating session:', error);
+                alert('Could not connect to backend. Make sure services are running on localhost:8010 and localhost:8001');
+                return null;
+            }
+        }
+
+        async function sendMessage(content) {
+            messages.push({ role: 'user', content });
+            render();
+
+            // Add message to agent
+            await fetch(`${API_BASE.agent}/sessions/${currentSession.session_id}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: 'user', content })
+            });
+
+            // Query LLM
+            try {
+                const response = await fetch(`${API_BASE.llm}/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: content,
+                        session_id: currentSession.session_id,
+                        top_k: 5
+                    })
+                });
+                const data = await response.json();
+                messages.push({ role: 'assistant', content: data.answer });
+
+                // Log assistant response
+                await fetch(`${API_BASE.agent}/sessions/${currentSession.session_id}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: 'assistant', content: data.answer })
+                });
+            } catch (error) {
+                messages.push({ role: 'assistant', content: 'Sorry, I encountered an error. Please make sure the backend services are running.' });
+            }
+
+            render();
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const messagesDiv = document.getElementById('messages');
+            if (messagesDiv) {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+        }
+
+        window.logout = function() {
+            currentSession = null;
+            userProfile = null;
+            messages = [];
+            localStorage.clear();
+            render();
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            if (!userProfile) {
+                app.innerHTML = renderOnboarding();
+                document.getElementById('onboarding-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    userProfile = {
+                        age: parseInt(document.getElementById('age').value),
+                        retirementAge: parseInt(document.getElementById('retirement-age').value),
+                        investmentGoal: document.getElementById('goal').value,
+                        riskTolerance: document.querySelector('input[name="risk"]:checked').value
+                    };
+                    currentSession = await createSession();
+                    if (currentSession) {
+                        localStorage.setItem('finwhiz_profile', JSON.stringify(userProfile));
+                        localStorage.setItem('finwhiz_session', JSON.stringify(currentSession));
+                        render();
+                    }
+                });
+            } else {
+                app.innerHTML = renderDashboard();
+                document.getElementById('chat-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const input = document.getElementById('chat-input');
+                    const message = input.value.trim();
+                    if (message) {
+                        input.value = '';
+                        await sendMessage(message);
+                    }
+                });
+            }
+        }
+
+        // Load saved session
+        const savedProfile = localStorage.getItem('finwhiz_profile');
+        const savedSession = localStorage.getItem('finwhiz_session');
+        if (savedProfile && savedSession) {
+            try {
+                userProfile = JSON.parse(savedProfile);
+                currentSession = JSON.parse(savedSession);
+            } catch (e) {
+                localStorage.clear();
+            }
+        }
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>
