@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import { api } from './services/api';

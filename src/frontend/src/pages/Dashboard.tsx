@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { LogOut, User, MessageSquare, Upload, PieChart as PieChartIcon } from 'lucide-react';
 import ChatInterface from '../components/ChatInterface';
 import DocumentUpload from '../components/DocumentUpload';

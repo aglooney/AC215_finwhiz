@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TrendingUp, Target, Shield } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, Shield } from 'lucide-react';
 import type { UserProfile } from '../types';
 
 interface OnboardingProps {
@@ -105,7 +105,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     name="riskTolerance"
                     value="conservative"
                     checked={profile.riskTolerance === 'conservative'}
-                    onChange={(e) => setProfile({ ...profile, riskTolerance: 'conservative' })}
+                    onChange={() => setProfile({ ...profile, riskTolerance: 'conservative' })}
                     className="mr-3"
                   />
                   <span className="font-semibold">Conservative</span>
@@ -120,7 +120,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     name="riskTolerance"
                     value="moderate"
                     checked={profile.riskTolerance === 'moderate'}
-                    onChange={(e) => setProfile({ ...profile, riskTolerance: 'moderate' })}
+                    onChange={() => setProfile({ ...profile, riskTolerance: 'moderate' })}
                     className="mr-3"
                   />
                   <span className="font-semibold">Moderate</span>
@@ -135,7 +135,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                     name="riskTolerance"
                     value="aggressive"
                     checked={profile.riskTolerance === 'aggressive'}
-                    onChange={(e) => setProfile({ ...profile, riskTolerance: 'aggressive' })}
+                    onChange={() => setProfile({ ...profile, riskTolerance: 'aggressive' })}
                     className="mr-3"
                   />
                   <span className="font-semibold">Aggressive</span>

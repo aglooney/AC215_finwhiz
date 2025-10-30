@@ -1,4 +1,3 @@
-import React from 'react';
 import { PieChart, TrendingUp } from 'lucide-react';
 import type { UserProfile } from '../types';
 import { calculatePortfolio } from '../services/api';

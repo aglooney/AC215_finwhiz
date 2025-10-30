@@ -72,8 +72,6 @@ export const api = {
 
 // Portfolio calculation helper
 export function calculatePortfolio(profile: UserProfile) {
-  const yearsToRetirement = profile.retirementAge - profile.age;
-
   let stocks = 0;
   let bonds = 0;
   let cash = 0;
