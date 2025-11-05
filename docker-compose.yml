@@ -13,8 +13,8 @@ services:
       - PYTHONPATH=/app
       - GOOGLE_APPLICATION_CREDENTIALS=${BUCKET_CREDENTIALS}
       - VERTEXAI_CREDENTIALS=${VERTEXAI_CREDENTIALS}
-    depends_on:
-      - postgres
+    # depends_on:
+    #   - postgres
     volumes:
       - .:/app
       - ./secrets/service-account-key.json:/app/secrets/service-account-key.json:ro
@@ -33,6 +33,7 @@ services:
     build:
       context: ./src/agentic_user_data_processing
       dockerfile: Dockerfile
+      
     image: finwhiz_agent
     container_name: finwhiz_agent
     volumes:
@@ -47,11 +48,15 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - USER_UPLOAD_BUCKET=${USER_UPLOAD_BUCKET}
       - GOOGLE_APPLICATION_CREDENTIALS=${BUCKET_CREDENTIALS}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+      - DB_HOST=${DB_HOST}
     depends_on:
       llm:
         condition: service_healthy
-      postgres:
-        condition: service_started
+      # postgres:
+      #   condition: service_started
     restart: unless-stopped
     networks:
       - finwhiz_network
@@ -88,25 +93,35 @@ services:
       - finwhiz_network
     restart: on-failure
 
-  postgres:
-    image: postgres:16
-    container_name: finwhiz_postgres
+  cloudsql-proxy:
+    image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.3
+    command:
+      - "--address=0.0.0.0"
+      - "--port=5432"
+      - "finwhiz-ac215:us-central1:finwhiz-cloud-sql"
     environment:
-      POSTGRES_USER: finwhiz
-      POSTGRES_PASSWORD: finwhiz
-      POSTGRES_DB: finwhiz
-    ports:
-      - "5432:5432"
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/proxy-key.json
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
+      - ./secrets/proxy-key.json:/app/secrets/proxy-key.json:ro
+      - ./secrets/sql_password.txt:/app/secrets/sql_password.txt:ro
+    networks: 
       - finwhiz_network
     restart: unless-stopped
+  # postgres:
+  #   image: postgres:16
+  #   container_name: finwhiz_postgres
+  #   environment:
+  #     POSTGRES_USER: finwhiz
+  #     POSTGRES_PASSWORD: finwhiz
+  #     POSTGRES_DB: finwhiz
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   networks:
+  #     - finwhiz_network
+  #   restart: unless-stopped
 
 networks:
   finwhiz_network:
     driver: bridge
-
-volumes:
-  chroma_data:
-  postgres_data:

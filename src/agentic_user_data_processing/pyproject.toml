@@ -16,6 +16,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "pdfminer-six>=20231228",
     "pypdf2>=3.0.1",
+    "psycopg2-binary>=2.9.11",
 ]
 
 [tool.uv]
