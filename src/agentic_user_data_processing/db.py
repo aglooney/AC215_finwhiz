@@ -21,12 +21,16 @@ if missing:
     raise RuntimeError(f"Missing required database env vars: {', '.join(missing)}")
 
 DB_USER = os.environ["DB_USER"]
-DB_PASS = os.environ["DB_PASS"]
 DB_NAME = os.environ["DB_NAME"]
 DB_HOST = os.environ["DB_HOST"]
 
+# Support both direct password or file-based secret
+if "DB_PASS" in os.environ:
+    with open(os.environ["DB_PASS"], "r") as f:
+        DB_PASS = f.read().strip()
+
 # Cloud SQL connection string via Unix socket path
-DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+DATABASE_URL =  f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 
 # --- SQLAlchemy engine and session setup ---
 engine = create_engine(
