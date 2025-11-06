@@ -37,11 +37,17 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
     setIsLoading(true);
 
     try {
+      console.log('Sending message to session:', sessionId);
+      console.log('Message content:', input);
+
       // Log message to agent
       await api.addMessage(sessionId, 'user', input);
+      console.log('Message logged to agent');
 
       // Query LLM
+      console.log('Querying LLM with session:', sessionId);
       const response = await api.query(input, sessionId);
+      console.log('LLM Response:', response);
 
       const assistantMessage: Message = {
         role: 'assistant',
@@ -52,11 +58,23 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
 
       // Log assistant response
       await api.addMessage(sessionId, 'assistant', response.answer);
-    } catch (error) {
+      console.log('Assistant response logged');
+    } catch (error: any) {
       console.error('Error querying LLM:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      let errorMsg = 'Sorry, I encountered an error processing your request. Please try again.';
+      if (error.response?.data?.detail) {
+        errorMsg += ` (${error.response.data.detail})`;
+      }
+
       const errorMessage: Message = {
         role: 'assistant',
-        content: 'Sorry, I encountered an error processing your request. Please try again.',
+        content: errorMsg,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {

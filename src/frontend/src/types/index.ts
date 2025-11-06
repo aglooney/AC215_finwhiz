@@ -6,8 +6,9 @@ export interface UserProfile {
 }
 
 export interface Session {
-  session_id: string;
+  id: string;
   user_id: string;
+  created_at?: string;
 }
 
 export interface Message {
@@ -31,9 +32,11 @@ export interface QueryResponse {
 }
 
 export interface Document {
-  document_id: string;
+  id: string;
+  session_id: string;
   document_type: 'w2' | '1099';
   gcs_uri: string;
+  raw_metadata?: string;
   created_at: string;
 }
 

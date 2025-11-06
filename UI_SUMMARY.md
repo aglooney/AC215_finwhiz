@@ -360,3 +360,19 @@ All requirements from the mockup video have been implemented:
 - ✅ Production-ready deployment
 
 The FinWhiz UI is now fully operational and ready for use! 🎉
+
+  For future reference, your FinWhiz application has these services running:
+
+  - Frontend (UI): http://localhost:3000
+  - LLM Service: http://localhost:8001
+  - Agent Service: http://localhost:8010
+  - PostgreSQL Database: localhost:5432
+
+  The frontend proxies API requests to the backend services through nginx, so you should be able to interact with the full
+  application now. If you need to restart or rebuild any services in the future, you can use:
+
+  - docker-compose restart <service-name> - to restart a specific service
+  - docker-compose up --build <service-name> - to rebuild and restart
+  - docker-compose logs <service-name> - to check logs
+
+  Enjoy using FinWhiz!

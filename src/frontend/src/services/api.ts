@@ -1,19 +1,48 @@
 import axios from 'axios';
 import type { Session, Message, QueryResponse, Document, UserProfile } from '../types';
 
+// Get base URL from environment or default to relative paths
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+console.log('BASE_URL:', BASE_URL);
+
 const agentAPI = axios.create({
-  baseURL: '/api/agent',
+  baseURL: `${BASE_URL}/api/agent`,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 const llmAPI = axios.create({
-  baseURL: '/api/llm',
+  baseURL: `${BASE_URL}/api/llm`,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 60000, // 60 second timeout
 });
+
+// Add response interceptor for better error handling
+const handleApiError = (error: any) => {
+  if (error.response) {
+    console.error('API Error Response:', error.response.data);
+    console.error('Status:', error.response.status);
+  } else if (error.request) {
+    console.error('API No Response:', error.request);
+  } else {
+    console.error('API Error:', error.message);
+  }
+  return Promise.reject(error);
+};
+
+agentAPI.interceptors.response.use(
+  (response) => response,
+  handleApiError
+);
+
+llmAPI.interceptors.response.use(
+  (response) => response,
+  handleApiError
+);
 
 export const api = {
   // Session Management
@@ -77,22 +106,35 @@ export function calculatePortfolio(profile: UserProfile) {
   let cash = 0;
   let description = '';
 
+  // Calculate based on age and risk tolerance
+  // Conservative: Lower stock allocation
+  // Moderate: Balanced approach
+  // Aggressive: Higher stock allocation
+
   if (profile.riskTolerance === 'conservative') {
-    stocks = Math.max(30, 100 - profile.age);
-    bonds = Math.min(60, 80 - stocks);
+    // Conservative: 30-50% stocks depending on age
+    stocks = Math.max(20, Math.min(50, 100 - profile.age));
+    bonds = Math.max(30, Math.min(60, 100 - stocks - 10));
     cash = 100 - stocks - bonds;
     description = 'A conservative portfolio focused on capital preservation with steady, reliable income.';
   } else if (profile.riskTolerance === 'moderate') {
-    stocks = Math.max(40, 110 - profile.age);
-    bonds = Math.min(50, 70 - stocks);
+    // Moderate: 40-70% stocks depending on age
+    stocks = Math.max(40, Math.min(70, 110 - profile.age));
+    bonds = Math.max(20, Math.min(50, 100 - stocks - 10));
     cash = 100 - stocks - bonds;
     description = 'A balanced portfolio that seeks growth while managing risk through diversification.';
   } else {
-    stocks = Math.max(60, 120 - profile.age);
-    bonds = Math.min(35, 50 - stocks);
+    // Aggressive: 60-90% stocks depending on age
+    stocks = Math.max(60, Math.min(90, 120 - profile.age));
+    bonds = Math.max(5, Math.min(30, 100 - stocks - 5));
     cash = 100 - stocks - bonds;
     description = 'An aggressive portfolio focused on long-term growth with higher potential returns.';
   }
+
+  // Ensure no negative values and totals to 100%
+  stocks = Math.max(0, Math.min(100, stocks));
+  bonds = Math.max(0, Math.min(100 - stocks, bonds));
+  cash = 100 - stocks - bonds;
 
   return { stocks, bonds, cash, description };
 }

@@ -16,12 +16,24 @@ export default function DocumentUpload({ sessionId, onUploadComplete }: Document
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    console.log('File selected:', file);
+
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
+
+    console.log('File type:', file.type);
+    console.log('File size:', file.size);
 
     if (file.type !== 'application/pdf') {
       setError('Please upload a PDF file');
+      console.error('Invalid file type:', file.type);
       return;
     }
+
+    console.log('Starting upload for session:', sessionId);
+    console.log('Document type:', selectedType);
 
     setUploading(true);
     setError(null);
@@ -29,16 +41,24 @@ export default function DocumentUpload({ sessionId, onUploadComplete }: Document
     try {
       let document: Document;
       if (selectedType === 'w2') {
+        console.log('Uploading W-2...');
         document = await api.uploadW2(sessionId, file);
       } else {
+        console.log('Uploading 1099...');
         document = await api.upload1099(sessionId, file);
       }
 
+      console.log('Upload successful:', document);
       setUploadedDocs((prev) => [...prev, document]);
       onUploadComplete(document);
       e.target.value = ''; // Reset file input
     } catch (err: any) {
       console.error('Upload error:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+      });
       setError(err.response?.data?.detail || 'Failed to upload document. Please try again.');
     } finally {
       setUploading(false);
@@ -133,7 +153,7 @@ export default function DocumentUpload({ sessionId, onUploadComplete }: Document
           <div className="space-y-2">
             {uploadedDocs.map((doc) => (
               <div
-                key={doc.document_id}
+                key={doc.id}
                 className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg"
               >
                 <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
