@@ -3,7 +3,7 @@
 FinWhiz is our end-to-end, Retrieval-Augmented Generation-Large Language Model (RAG-LLM) platform that delivers financial education in two modes:
 
 1. **General Knowledge** – the chatbot retrieves curated public resources (FINRA, IRS, Consumer Finance, etc.) through a vector database to provide additional context and augment LLM responses.
-2. **Personalized Guidance** – users can upload their own documents (currently supporting W‑2s). An agentic service extracts key features, stores them securely, and blends that context with RAG results so answers stay user-specific.
+2. **Personalized Guidance** – users can upload their own documents (currently supporting W‑2s, 1099 forms, and Fidelity portfolio summaries). An agentic service extracts key features, stores them securely, and blends that context with RAG results so answers stay user-specific.
 
 The system is fully containerized and orchestrated with Docker Compose to support repeatable deployments and testing.
 
@@ -15,13 +15,13 @@ Visit the ```reports/milestone2/README.md``` to see logs for milestone 2.
 
 | Component | Path | Description | Documentation |
 |-----------|------|-------------|----------------|
-| **Agent Service** | `src/agentic_user_data_processing/` | FastAPI service that manages chat sessions, stores uploaded W‑2s, and surfaces structured context for the LLM. | [README](src/agentic_user_data_processing/README.md) |
+| **Agent Service** | `src/agentic_user_data_processing/` | FastAPI service that manages chat sessions, stores uploaded W‑2s/1099s/portfolios, and surfaces structured context for the LLM. | [README](src/agentic_user_data_processing/README.md) |
 | **LLM / RAG Service** | `src/llm/` | Hosts Gemini 2.5 via Vertex AI, retrieves Chroma context, merges agent data, and answers queries. | [README](src/llm/README.md) |
 | **Query Client** | `src/query_client/` | Interactive CLI wrapper used for manual QA and demos. | [README](src/query_client/README.md) |
 | **Embedding Utilities** | `src/embedder/` | Scripts for building and uploading document embeddings to Chroma / GCS. | [README](src/embedder/README.md) |
 | **Webscraping Pipelines** | `src/webscraping/` | Data ingestion + chunking pipelines for public financial sources. | [README](src/webscraping/README.md) |
 | **GCS Utilities** | `src/gcp_storage/` | Shared GCS helper library and upload scripts for scraped data. | [README](src/gcp_storage/README.md) |
-| **Synthetic Data** | `src/synthetic_data/` | W‑2 generator container used for testing the agentic workflow testing. | [README](src/synthetic_data/README.md) |
+| **Synthetic Data** | `src/synthetic_data/` | W‑2 and 1099 generator containers used for testing the agentic workflow. | [README](src/synthetic_data/README.md) |
 | **Milestone Reports** | `reports/` | Documentation and logs for milestones (e.g., pipeline runs). | [Milestone 2](reports/milestone2/README.md) |
 
 ---
@@ -63,6 +63,12 @@ bash test_full_pipeline.sh
 ```
 The script creates a session, uploads a synthetic W‑2, posts a user message, and queries the LLM. Sample logs are archived in `reports/milestone2/test_full_pipeline.log`.
 
+To test the new portfolio upload feature:
+```bash
+bash test_portfolio_upload.sh
+```
+This test uploads a Fidelity portfolio summary, verifies field extraction, and queries the LLM about portfolio details.
+
 Additional utilities:
 ```bash
 # Verify GCS connectivity
@@ -97,6 +103,7 @@ See the [Milestone 2 report](reports/milestone2/README.md) for details, test out
 ---
 
 ## Next Steps
-- Add support for additional IRS forms and user-uploaded document types.
 - Expand integration tests (full RAG QA with multiple document types).
+- Generate synthetic portfolio data for comprehensive testing.
 - Create web-UI and backend.
+- Build user-specific dashboard displaying portfolio visualizations.
