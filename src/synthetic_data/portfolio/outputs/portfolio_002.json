@@ -1,0 +1,150 @@
+{
+  "account": {
+    "account_name": "Fidelity Individual Brokerage",
+    "account_number": "Z6475-25534",
+    "account_type": "Individual Brokerage",
+    "account_owner": "Noah Rhodes",
+    "statement_date": "October 17, 2025"
+  },
+  "total_portfolio_value": 471494.56,
+  "holdings": [
+    {
+      "ticker": "JPM",
+      "name": "JPMorgan Chase & Co.",
+      "shares": 2169.3,
+      "price_per_share": 37.38,
+      "total_value": 81098.33,
+      "asset_class": "Stock",
+      "sector": "Financial Services"
+    },
+    {
+      "ticker": "META",
+      "name": "Meta Platforms Inc.",
+      "shares": 350.777,
+      "price_per_share": 219.86,
+      "total_value": 77120.63,
+      "asset_class": "Stock",
+      "sector": "Technology"
+    },
+    {
+      "ticker": "DIS",
+      "name": "Walt Disney Company",
+      "shares": 165.602,
+      "price_per_share": 318.69,
+      "total_value": 52775.7,
+      "asset_class": "Stock",
+      "sector": "Communication Services"
+    },
+    {
+      "ticker": "HD",
+      "name": "Home Depot Inc.",
+      "shares": 253.101,
+      "price_per_share": 86.99,
+      "total_value": 22018.27,
+      "asset_class": "Stock",
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "ticker": "V",
+      "name": "Visa Inc.",
+      "shares": 843.536,
+      "price_per_share": 27.14,
+      "total_value": 22891.33,
+      "asset_class": "Stock",
+      "sector": "Financial Services"
+    },
+    {
+      "ticker": "QQQ",
+      "name": "Invesco QQQ Trust",
+      "shares": 51.83,
+      "price_per_share": 232.89,
+      "total_value": 12070.99,
+      "asset_class": "Stock",
+      "sector": null
+    },
+    {
+      "ticker": "UNH",
+      "name": "UnitedHealth Group",
+      "shares": 16.734,
+      "price_per_share": 315.43,
+      "total_value": 5278.56,
+      "asset_class": "Stock",
+      "sector": "Healthcare"
+    },
+    {
+      "ticker": "PG",
+      "name": "Procter & Gamble",
+      "shares": 609.665,
+      "price_per_share": 49.84,
+      "total_value": 30388.68,
+      "asset_class": "Stock",
+      "sector": "Consumer Defensive"
+    },
+    {
+      "ticker": "BND",
+      "name": "Vanguard Total Bond Market ETF",
+      "shares": 421.03,
+      "price_per_share": 61.07,
+      "total_value": 25712.73,
+      "asset_class": "Bond",
+      "sector": null
+    },
+    {
+      "ticker": "BNDX",
+      "name": "Vanguard Total International Bond ETF",
+      "shares": 111.492,
+      "price_per_share": 100.55,
+      "total_value": 11210.16,
+      "asset_class": "Bond",
+      "sector": null
+    },
+    {
+      "ticker": "TLT",
+      "name": "iShares 20+ Year Treasury Bond ETF",
+      "shares": 267.135,
+      "price_per_share": 118.03,
+      "total_value": 31530.57,
+      "asset_class": "Bond",
+      "sector": null
+    },
+    {
+      "ticker": "AGG",
+      "name": "iShares Core U.S. Aggregate Bond ETF",
+      "shares": 262.294,
+      "price_per_share": 85.54,
+      "total_value": 22436.02,
+      "asset_class": "Bond",
+      "sector": null
+    },
+    {
+      "ticker": "LQD",
+      "name": "iShares iBoxx Investment Grade Corporate Bond ETF",
+      "shares": 797.997,
+      "price_per_share": 57.45,
+      "total_value": 45843.95,
+      "asset_class": "Bond",
+      "sector": null
+    },
+    {
+      "ticker": "SPAXX",
+      "name": "Fidelity Government Money Market Fund",
+      "shares": 31590.14,
+      "price_per_share": 1.0,
+      "total_value": 31590.14,
+      "asset_class": "Cash",
+      "sector": null
+    }
+  ],
+  "asset_allocation": {
+    "stocks_percentage": 64.4,
+    "bonds_percentage": 29.0,
+    "cash_percentage": 6.7,
+    "other_percentage": 0.0
+  },
+  "performance": {
+    "ytd_return_percentage": 17.52,
+    "one_year_return_percentage": 27.08,
+    "total_gain_loss": null
+  },
+  "notes": null
+}

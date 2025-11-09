@@ -233,3 +233,6 @@ service-account-key.json
 
 # local dev notes
 local_notes/
+# Synthetic portfolio outputs
+src/synthetic_data/portfolio/outputs/*.pdf
+src/synthetic_data/portfolio/outputs/*.json
