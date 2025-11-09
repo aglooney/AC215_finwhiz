@@ -25,9 +25,14 @@ DB_NAME = os.environ["DB_NAME"]
 DB_HOST = os.environ["DB_HOST"]
 
 # Support both direct password or file-based secret
-if "DB_PASS" in os.environ:
-    with open(os.environ["DB_PASS"], "r") as f:
+db_pass_value = os.environ["DB_PASS"]
+# Check if DB_PASS is a file path or the actual password
+if os.path.isfile(db_pass_value):
+    with open(db_pass_value, "r") as f:
         DB_PASS = f.read().strip()
+else:
+    # Assume it's the password directly
+    DB_PASS = db_pass_value
 
 # Cloud SQL connection string via Unix socket path
 DATABASE_URL =  f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
