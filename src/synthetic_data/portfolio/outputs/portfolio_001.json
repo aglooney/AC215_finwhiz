@@ -1,0 +1,105 @@
+{
+  "account": {
+    "account_name": "Fidelity Rollover IRA",
+    "account_number": "Z1043-32181",
+    "account_type": "Rollover IRA",
+    "account_owner": "Allison Hill",
+    "statement_date": "October 21, 2025"
+  },
+  "total_portfolio_value": 239864.82,
+  "holdings": [
+    {
+      "ticker": "QQQ",
+      "name": "Invesco QQQ Trust",
+      "shares": 1210.629,
+      "price_per_share": 27.97,
+      "total_value": 33859.31,
+      "asset_class": "Stock",
+      "sector": null
+    },
+    {
+      "ticker": "TSLA",
+      "name": "Tesla Inc.",
+      "shares": 489.794,
+      "price_per_share": 73.32,
+      "total_value": 35912.64,
+      "asset_class": "Stock",
+      "sector": "Consumer Cyclical"
+    },
+    {
+      "ticker": "VWO",
+      "name": "Vanguard FTSE Emerging Markets ETF",
+      "shares": 749.082,
+      "price_per_share": 106.99,
+      "total_value": 80143.56,
+      "asset_class": "Stock",
+      "sector": null
+    },
+    {
+      "ticker": "BNDX",
+      "name": "Vanguard Total International Bond ETF",
+      "shares": 321.984,
+      "price_per_share": 76.5,
+      "total_value": 24630.97,
+      "asset_class": "Bond",
+      "sector": null
+    },
+    {
+      "ticker": "BND",
+      "name": "Vanguard Total Bond Market ETF",
+      "shares": 93.931,
+      "price_per_share": 108.06,
+      "total_value": 10150.0,
+      "asset_class": "Bond",
+      "sector": null
+    },
+    {
+      "ticker": "LQD",
+      "name": "iShares iBoxx Investment Grade Corporate Bond ETF",
+      "shares": 72.641,
+      "price_per_share": 110.32,
+      "total_value": 8013.73,
+      "asset_class": "Bond",
+      "sector": null
+    },
+    {
+      "ticker": "AGG",
+      "name": "iShares Core U.S. Aggregate Bond ETF",
+      "shares": 55.152,
+      "price_per_share": 99.32,
+      "total_value": 5477.74,
+      "asset_class": "Bond",
+      "sector": null
+    },
+    {
+      "ticker": "TLT",
+      "name": "iShares 20+ Year Treasury Bond ETF",
+      "shares": 273.873,
+      "price_per_share": 53.21,
+      "total_value": 14572.14,
+      "asset_class": "Bond",
+      "sector": null
+    },
+    {
+      "ticker": "SPAXX",
+      "name": "Fidelity Government Money Market Fund",
+      "shares": 27104.72,
+      "price_per_share": 1.0,
+      "total_value": 27104.72,
+      "asset_class": "Cash",
+      "sector": null
+    }
+  ],
+  "asset_allocation": {
+    "stocks_percentage": 62.5,
+    "bonds_percentage": 26.2,
+    "cash_percentage": 11.3,
+    "other_percentage": 0.0
+  },
+  "performance": {
+    "ytd_return_percentage": -6.33,
+    "one_year_return_percentage": -0.53,
+    "total_gain_loss": null
+  },
+  "notes": "Dividend reinvestment active for all eligible securities."
+}

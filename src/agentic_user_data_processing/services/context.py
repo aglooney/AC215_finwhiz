@@ -23,6 +23,7 @@ def build_context(*, session, messages, documents):
     # build doc files
     w2_fields = None
     form1099_fields = None
+    portfolio_fields = None
     try:
         for doc in documents or []:
             if not doc.raw_metadata:
@@ -34,6 +35,8 @@ def build_context(*, session, messages, documents):
                 w2_fields = schemas.W2Fields.model_validate_json(doc.raw_metadata)
             elif doc_type in {"1099", "1099-int"}:
                 form1099_fields = schemas.Form1099Fields.model_validate_json(doc.raw_metadata)
+            elif doc_type in {"portfolio", "fidelity"}:
+                portfolio_fields = schemas.PortfolioFields.model_validate_json(doc.raw_metadata)
     except Exception as e:
         logger.exception(f"Failed parsing documents: {e}")
         raise
@@ -46,6 +49,7 @@ def build_context(*, session, messages, documents):
             recent_messages=recent_messages or [],
             w2_fields=w2_fields,
             form1099_fields=form1099_fields,
+            portfolio_fields=portfolio_fields,
             summary=None,
         )
         logger.info("Successfully built SessionContext")
