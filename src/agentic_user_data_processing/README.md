@@ -3,7 +3,7 @@
 This package houses the agent microservice that:
 
 - Tracks active chat sessions and message history.
-- Accepts W-2, 1099, and Fidelity portfolio PDF uploads, stores the raw (flattened) files in GCS, and extracts structured fields via Gemini.
+ocker hub- Accepts W-2, 1099, and Fidelity portfolio PDF uploads, stores the raw (flattened) files in GCS, and extracts structured fields via Gemini.
 - Serves a compact context object (recent chat summary + document data) so downstream services can personalize responses.
 
 ## High-Level Components
