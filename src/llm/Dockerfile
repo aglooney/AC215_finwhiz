@@ -17,7 +17,7 @@ RUN set -ex && \
 
 RUN pip install --no-cache-dir --upgrade pip uv && \
     useradd -ms /bin/bash app -d /home/app -u 1000 && \
-    mkdir -p /app /home/app/.venv /app/src && \
+    mkdir -p /app /home/app/.venv /app/src /app/data && \
     chown -R app:app /app /home/app
 
 USER app
@@ -30,5 +30,5 @@ COPY --chown=app:app . .
 
 EXPOSE 8001
 
-CMD ["bash", "-c", "source /home/app/.venv/bin/activate && uvicorn src.llm.llm_service:app --host 0.0.0.0 --port 8001"]
+CMD ["bash", "-c", "source /home/app/.venv/bin/activate && uvicorn src.llm.llm_service:app --host 0.0.0.0 --port 8001 --reload"]
 

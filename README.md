@@ -41,7 +41,6 @@ VERTEXAI_CREDENTIALS=secrets/<vertexai-service-account>.json
 GCS_BUCKET=fw_ws
 GCS_PREFIX=chroma_storage
 DATABASE_URL=postgresql+psycopg://finwhiz:finwhiz@postgres:5432/finwhiz
-USER_UPLOAD_BUCKET=fw_user_uploads
 AGENT_URL=http://agent:8010
 LLM_URL=http://llm:8001
 ```

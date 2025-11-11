@@ -3,9 +3,9 @@ Pydantic schemas for request/response payloads.
 """
 import uuid
 from datetime import datetime
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class SessionCreate(BaseModel):
@@ -71,10 +71,29 @@ class W2Fields(BaseModel):
     state_wages: Optional[str] = None
     state_income_tax: Optional[str] = None
 
+class Form1099Fields(BaseModel):
+    box1_interest_income: Optional[Union[float,str]] = None
+    box2_early_withdrawal_penalty: Optional[Union[float,str]] = None
+    box3_us_savings_bond_interest: Optional[Union[float,str]] = None
+    box4_federal_income_tax_withheld: Optional[Union[float,str]] = None
+    box5_investment_expenses: Optional[Union[float,str]] = None
+    box6_foreign_tax_paid: Optional[Union[float,str]] = None
+    box7_foreign_country: Optional[Union[float,str]] = None
+    box8_tax_exempt_interest: Optional[Union[float,str]] = None
+    box9_private_activity_bond_interest: Optional[Union[float,str]] = None
+    box10_market_discount: Optional[Union[float,str]] = None
+    box11_bond_premium: Optional[Union[float,str]] = None
+    box12_treasury_bond_premium: Optional[Union[float,str]] = None
+    box13_tax_exempt_bond_premium: Optional[Union[float,str]] = None
+    box14_cusip_number: Optional[Union[float,str]] = None
+    state: Optional[Union[float,str]] = None
+    state_id: Optional[Union[float,str]] = None
+    state_tax_withheld: Optional[Union[float,str]] = None
 
 class SessionContext(BaseModel):
-    session_id: uuid.UUID
-    user_id: uuid.UUID
-    recent_messages: List[ChatTurn]
+    session_id: str
+    user_id: str
+    recent_messages: Optional[list[ChatTurn]] = None
     w2_fields: Optional[W2Fields] = None
+    form1099_fields: Optional[Form1099Fields] = None
     summary: Optional[str] = None
