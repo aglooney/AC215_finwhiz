@@ -7,6 +7,7 @@ from rank_bm25 import BM25Okapi
 import re
 from typing import Optional
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
@@ -50,6 +51,15 @@ llm = VertexAI(model_name="gemini-2.5-pro")
 
 
 app = FastAPI(title="FinWhiz LLM Service")
+
+# CORS middleware for frontend communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, restrict to specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class QueryRequest(BaseModel):
     query: str

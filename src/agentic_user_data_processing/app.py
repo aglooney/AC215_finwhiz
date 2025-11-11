@@ -7,6 +7,7 @@ other microservices can call to record interactions and fetch enriched
 context for downstream LLM prompts.
 """
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import logging
 from . import models, schemas
@@ -20,6 +21,15 @@ from .services import pdf_utils
 
 app = FastAPI(title="Agentic User Data Processing Service")
 logger = logging.getLogger(__name__)
+
+# CORS middleware for frontend communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, restrict to specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 def on_startup() -> None:
