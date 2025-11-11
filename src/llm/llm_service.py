@@ -189,17 +189,24 @@ def retrieve_agent_context(session_id: str | None) -> str:
             f"{m['role']}: {m['content']}" for m in data.get("recent_messages", [])
         )
 
-        # W-2 fields
+        # Document fields
         w2 = data.get("w2_fields", {})
-        f1099=data.get("form1099_fields", {})
+        f1099 = data.get("form1099_fields", {})
+        portfolio = data.get("portfolio_fields", {})
         
-        def format_fields(fields: dict, title:str):
+        def format_fields(fields: dict, title: str):
             return (
                 f"\n\n{title}:\n" +
-                "\n".join([f"{k}: {v}" for k, v in fields.items()])
+                "\n".join([f"{k}: {v}" for k, v in fields.items() if v is not None])
                 if fields else ""
             )
-        return (messages_text + format_fields(w2, "W-2 Data") + format_fields(f1099, "1099 Data"))
+        
+        return (
+            messages_text + 
+            format_fields(w2, "W-2 Data") + 
+            format_fields(f1099, "1099 Data") +
+            format_fields(portfolio, "Portfolio Summary")
+        )
     
     except Exception as e:
         logger.warning(f"Failed to fetch agent context: {e}")
