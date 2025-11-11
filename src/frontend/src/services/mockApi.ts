@@ -74,7 +74,7 @@ export const mockApi = {
   },
 
   // LLM Query
-  async query(query: string, sessionId?: string, topK: number = 5): Promise<QueryResponse> {
+  async query(query: string, _sessionId?: string, _topK: number = 5): Promise<QueryResponse> {
     await delay(800); // Simulate LLM processing
     console.log('✓ Mock: Querying LLM with:', query);
 

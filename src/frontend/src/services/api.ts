@@ -1,6 +1,19 @@
-import axios from 'axios';
-import type { Session, Message, QueryResponse, Document, UserProfile } from '../types';
+import type { UserProfile } from '../types';
+import { mockApi } from './mockApi';
 
+// ============================================================================
+// STANDALONE MODE: Using Mock API
+// ============================================================================
+// The frontend is currently using mock data and does not require backend services.
+// To switch back to real backend, comment out the line below and uncomment the
+// "Real Backend API" section at the bottom of this file.
+
+export const api = mockApi;
+
+// ============================================================================
+// Real Backend API (commented out for standalone mode)
+// ============================================================================
+/*
 // Get base URL from environment or default to relative paths
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
@@ -98,6 +111,7 @@ export const api = {
     return response.data;
   },
 };
+*/
 
 // Portfolio calculation helper
 export function calculatePortfolio(profile: UserProfile) {
