@@ -80,7 +80,7 @@ def generate_1099_records(n: int = 1, seed: int = 42, output_dir: Path = DEFAULT
             "recipient_name_address": f"{recipient_address}, {recipient_city}, {recipient_state} {recipient_zip}, USA",
             "account_number": str(random.randint(10000000, 99999999)),
             "foreign_country": "USA",
-            
+
             # Financial boxes 1–14
             "box1_interest_income": box1,
             "box2_early_withdrawal_penalty": box2,

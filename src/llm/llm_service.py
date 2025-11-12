@@ -5,8 +5,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from rank_bm25 import BM25Okapi
 import re
-from typing import Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -18,12 +17,12 @@ import uuid
 
 from .chroma_utils import ensure_chroma_local
 
-#load environment
+# load environment
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("llm_service")
 
-#configuration
+# configuration
 CHROMA_PATH = os.getenv("CHROMA_PATH", "/app/src/chroma_storage")
 COLLECTION_DIR = "1a90eda1-e932-4e73-89dd-edb1adf9d126"
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "finwhiz_docs")
@@ -37,7 +36,7 @@ if not VERTEXAI_CREDENTIALS:
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = VERTEXAI_CREDENTIALS
 
-#initialize chroma
+# initialize chroma
 ensure_chroma_local(GCS_BUCKET, GCS_PREFIX, COLLECTION_DIR, CHROMA_PATH)
 logger.info("Initializing ChromaDB client")
 client = PersistentClient(path=CHROMA_PATH)
@@ -61,6 +60,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class QueryRequest(BaseModel):
     query: str
     session_id: uuid.UUID | None = None
@@ -73,11 +73,13 @@ def reciprocal_rank_fusion(rank_lists, k=60):
     fused_scores = {}
     for rank_list in rank_lists:
         for rank, doc_id in enumerate(rank_list):
-            fused_scores[doc_id] = fused_scores.get(doc_id, 0) + 1.0/(k+rank+1)
-    return sorted(fused_scores.items(), key=lambda x:x[1], reverse=True)
+            fused_scores[doc_id] = fused_scores.get(doc_id, 0) + 1.0 / (k + rank + 1)
+    return sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
+
 
 def tokenize(text):
     return re.findall(r"\w+", text.lower())
+
 
 def normalize_chroma_results(results):
     """Normalize Chroma query/get results to a consistent structure."""
@@ -105,35 +107,34 @@ def normalize_chroma_results(results):
     return docs or [], metadatas or [], ids or [], distances or []
 
 
-
-#core logic
-def retrieve_context(query: str, top_k: int = 5, method:str = "rrf") -> tuple[str, list[dict]]:
+# core logic
+def retrieve_context(query: str, top_k: int = 5, method: str = "rrf") -> tuple[str, list[dict]]:
     """Embed the query and retrieve context documents + metadata from Chroma."""
     query_emb = embedder.encode(query, task="retrieval.query", convert_to_numpy=True)
     if query_emb.ndim == 1:
         query_emb = [query_emb.tolist()]
 
-    if method == 'cosine':
+    if method == "cosine":
         results = collection.query(query_embeddings=query_emb, n_results=top_k)
-    elif method == 'rrf':
+    elif method == "rrf":
         try:
-            chroma_data = collection.get(include=['embeddings', 'documents','metadatas'])
+            chroma_data = collection.get(include=["embeddings", "documents", "metadatas"])
             if chroma_data:
                 logging.info("Have Chroma Data")
-            docs = chroma_data.get('documents') or []
+            docs = chroma_data.get("documents") or []
             if not docs:
                 logging.error("No Documents")
-            doc_embs = np.array(chroma_data['embeddings'])
-            doc_ids = np.array(chroma_data['ids'])
+            doc_embs = np.array(chroma_data["embeddings"])
+            doc_ids = np.array(chroma_data["ids"])
 
             cos_scores = cosine_similarity(query_emb, doc_embs)[0]
-            cosine_rank = [doc_ids[i] for i in np.argsort(cos_scores)[::-1][:top_k * 2]]
+            cosine_rank = [doc_ids[i] for i in np.argsort(cos_scores)[::-1][: top_k * 2]]
 
             tokenized_corpus = [tokenize(d) for d in docs]
             bm25 = BM25Okapi(tokenized_corpus)
             bm25_scores = bm25.get_scores(tokenize(query))
 
-            bm25_rank = [doc_ids[i] for i in np.argsort(bm25_scores)[::-1][:top_k * 2]]
+            bm25_rank = [doc_ids[i] for i in np.argsort(bm25_scores)[::-1][: top_k * 2]]
             fused = reciprocal_rank_fusion([cosine_rank, bm25_rank])
             fused_doc_ids = [doc_id for doc_id, _ in fused[:top_k]]
 
@@ -143,23 +144,20 @@ def retrieve_context(query: str, top_k: int = 5, method:str = "rrf") -> tuple[st
 
     else:
         raise ValueError(f"Unkown retrieval method: {method}")
-    
+
     if not results["documents"] or not results["documents"][0]:
         logger.warning("No context retrieved from Chroma.")
         return "", []
-    
+
     docs, metadatas, ids, distances = normalize_chroma_results(results)
 
     citations: list[dict] = []
     for idx, doc in enumerate(docs):
         metadata = metadatas[idx] if idx < len(metadatas) else {}
         label = (
-            metadata.get("title")
-            or metadata.get("source_title")
-            or metadata.get("source")
-            or metadata.get("document")
-            or metadata.get("url")
-            or ids[idx] if idx < len(ids) else None
+            metadata.get("title") or metadata.get("source_title") or metadata.get("source") or metadata.get("document") or metadata.get("url") or ids[idx]
+            if idx < len(ids)
+            else None
         )
         url = metadata.get("url") or metadata.get("source_url")
         citation = {
@@ -175,6 +173,7 @@ def retrieve_context(query: str, top_k: int = 5, method:str = "rrf") -> tuple[st
     logger.info(f"Retrieved {len(docs)} documents from Chroma for Query: {query}")
     return context, citations
 
+
 def retrieve_agent_context(session_id: str | None) -> str:
     """Fetch chat and uploaded document context from agent"""
     if not session_id:
@@ -185,32 +184,22 @@ def retrieve_agent_context(session_id: str | None) -> str:
         data = response.json()
 
         # Recent messages
-        messages_text = "\n".join(
-            f"{m['role']}: {m['content']}" for m in data.get("recent_messages", [])
-        )
+        messages_text = "\n".join(f"{m['role']}: {m['content']}" for m in data.get("recent_messages", []))
 
         # Document fields
         w2 = data.get("w2_fields", {})
         f1099 = data.get("form1099_fields", {})
         portfolio = data.get("portfolio_fields", {})
-        
+
         def format_fields(fields: dict, title: str):
-            return (
-                f"\n\n{title}:\n" +
-                "\n".join([f"{k}: {v}" for k, v in fields.items() if v is not None])
-                if fields else ""
-            )
-        
-        return (
-            messages_text + 
-            format_fields(w2, "W-2 Data") + 
-            format_fields(f1099, "1099 Data") +
-            format_fields(portfolio, "Portfolio Summary")
-        )
-    
+            return f"\n\n{title}:\n" + "\n".join([f"{k}: {v}" for k, v in fields.items() if v is not None]) if fields else ""
+
+        return messages_text + format_fields(w2, "W-2 Data") + format_fields(f1099, "1099 Data") + format_fields(portfolio, "Portfolio Summary")
+
     except Exception as e:
         logger.warning(f"Failed to fetch agent context: {e}")
         return ""
+
 
 def generate_answer(prompt: str) -> str:
     """Query the VertexAI LLM."""
@@ -220,14 +209,15 @@ def generate_answer(prompt: str) -> str:
         logger.error(f"LLM query failed: {e}")
         return f"Error: {e}"
 
-#API endpoint
+
+# API endpoint
 @app.post("/query")
 async def handle_query(req: QueryRequest):
     # Fetch agentic context (chat messages + W-2 fields)
     agent_context = retrieve_agent_context(req.session_id)
 
     # Fetch Chroma context
-    chroma_context, citations = retrieve_context(req.query, top_k=req.top_k, method='rrf')
+    chroma_context, citations = retrieve_context(req.query, top_k=req.top_k, method="rrf")
 
     # Combine contexts
     full_context = ""
@@ -247,9 +237,7 @@ async def handle_query(req: QueryRequest):
         for index, item in enumerate(citations, start=1):
             label = item.get("label") or f"Source {index}"
             section = item.get("section")
-            source_lines.append(
-                f"[S{index}] {label}" + (f" — {section}" if section else "")
-            )
+            source_lines.append(f"[S{index}] {label}" + (f" — {section}" if section else ""))
         sources_text = "\n\nSources:\n" + "\n".join(source_lines)
 
     # Build LLM prompt
@@ -262,8 +250,9 @@ async def handle_query(req: QueryRequest):
 
     answer = generate_answer(prompt)
     return {"answer": answer, "context": full_context, "sources": citations}
-    
-#health check
+
+
+# health check
 @app.get("/health")
 def health_check():
     return {"status": "ok"}

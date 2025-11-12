@@ -1,4 +1,5 @@
 """Driver for IRS document ingestion and normalization."""
+
 from __future__ import annotations
 
 import argparse
@@ -186,22 +187,20 @@ def ingest_from_config(
             LOGGER.info("Uploading %s to gs://%s/%s", slug, bucket, gcs_path)
             write_ndjson_gcs(bucket, gcs_path, (record.to_dict() for record in records))
 
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Normalize IRS documents for FinWhiz ingest")
-    parser.add_argument("--config", type=Path, default=str(Path(__file__).parent/"crawl_config.yaml"), help="Path to crawl_config.yaml")
     parser.add_argument(
-        "--output-dir", type=Path, default=Path("data/tmp"), help="Directory to store NDJSON output"
+        "--config",
+        type=Path,
+        default=str(Path(__file__).parent / "crawl_config.yaml"),
+        help="Path to crawl_config.yaml",
     )
+    parser.add_argument("--output-dir", type=Path, default=Path("data/tmp"), help="Directory to store NDJSON output")
     parser.add_argument("--bucket", type=str, default=None, help="Optional GCS bucket name")
-    parser.add_argument(
-        "--gcs-prefix", type=str, default=None, help="Path prefix inside the GCS bucket"
-    )
-    parser.add_argument(
-        "--max-pages", type=int, default=None, help="Override maximum pages from config"
-    )
-    parser.add_argument(
-        "--log-level", type=str, default="INFO", help="Logging verbosity"
-    )
+    parser.add_argument("--gcs-prefix", type=str, default=None, help="Path prefix inside the GCS bucket")
+    parser.add_argument("--max-pages", type=int, default=None, help="Override maximum pages from config")
+    parser.add_argument("--log-level", type=str, default="INFO", help="Logging verbosity")
     return parser.parse_args()
 
 

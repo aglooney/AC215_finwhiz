@@ -8,7 +8,7 @@ cd ../../..
 if [ "$1" == "train" ]; then
     echo "Building and running training..."
     docker build -t finwhiz_llm -f src/llm/Dockerfile .
-    
+
     docker run --rm \
       --env-file .env \
       -v $(pwd)/secrets:/secrets:ro \
@@ -18,7 +18,7 @@ if [ "$1" == "train" ]; then
 elif [ "$1" == "eval" ]; then
     echo "Building and running evaluation..."
     docker build -t finwhiz_llm -f src/llm/Dockerfile .
-    
+
     docker run --rm \
       --env-file .env \
       -v $(pwd)/secrets:/secrets:ro \

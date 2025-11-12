@@ -30,8 +30,7 @@ WORKDIR /app
 COPY --chown=app:app . ./
 
 # Install Python dependencies via uv (or requirements.txt)
-RUN uv sync 
+RUN uv sync
 
 # Default command: interactive bash
 CMD ["bash", "-c", "source /home/app/.venv/bin/activate && exec bash"]
-

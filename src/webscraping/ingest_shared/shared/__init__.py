@@ -1,4 +1,5 @@
 """Shared utilities for web scraping and document ingestion."""
+
 from .fetch import fetch_url, resolve_url, FetchResult
 from .write_gcs import (
     write_ndjson_local,

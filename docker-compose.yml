@@ -33,7 +33,7 @@ services:
     build:
       context: ./src/agentic_user_data_processing
       dockerfile: Dockerfile
-      
+
     image: finwhiz_agent
     container_name: finwhiz_agent
     volumes:
@@ -129,7 +129,7 @@ services:
     volumes:
       - ./secrets/proxy-key.json:/app/secrets/proxy-key.json:ro
       - ./secrets/sql_password.txt:/app/secrets/sql_password.txt:ro
-    networks: 
+    networks:
       - finwhiz_network
     restart: unless-stopped
   # postgres:

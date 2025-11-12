@@ -1,4 +1,5 @@
 """Defines the ingest record schema for document ingestion."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
@@ -8,7 +9,7 @@ from typing import Any, Optional
 @dataclass
 class IngestRecord:
     """Standard record format for ingested documents."""
-    
+
     id: str
     source_url: str
     title: str
@@ -40,7 +41,7 @@ def make_record(
     page: Optional[int] = None,
 ) -> IngestRecord:
     """Factory function to create an IngestRecord.
-    
+
     Args:
         doc_id: Document identifier (slug)
         url: Source URL
@@ -53,7 +54,7 @@ def make_record(
         doctype: Document type (e.g., 'publication', 'webpage')
         language: Language code (default 'en')
         page: Page number (for PDFs)
-        
+
     Returns:
         IngestRecord instance
     """

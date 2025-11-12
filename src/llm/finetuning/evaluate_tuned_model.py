@@ -12,17 +12,12 @@ Or set the model endpoint in data/tuning_job_info.json
 import argparse
 import json
 import logging
-from pathlib import Path
-from typing import List, Dict
+import os
 import time
+from pathlib import Path
+from typing import Dict, List
 
-import vertexai
-from vertexai.generative_models import GenerativeModel
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -57,11 +52,10 @@ def get_model_endpoint() -> str:
         Model endpoint name
     """
     job_info_path = Path("data/tuning_job_info.json")
-    
+
     if not job_info_path.exists():
         raise FileNotFoundError(
-            "Tuning job info not found. Please provide --model-endpoint argument "
-            "or ensure train_gemini_full.py has completed successfully."
+            "Tuning job info not found. Please provide --model-endpoint argument " "or ensure train_gemini_full.py has completed successfully."
         )
 
     with open(job_info_path, "r") as f:
@@ -69,7 +63,7 @@ def get_model_endpoint() -> str:
 
     model_name = job_info.get("model_display_name", "gemini-flash-fiqa-full")
     logger.info(f"Using model: {model_name}")
-    
+
     return model_name
 
 
@@ -78,16 +72,16 @@ def evaluate_model(
     test_data: List[Dict],
     project_id: str,
     location: str = "us-central1",
-    num_samples: int = 50
+    num_samples: int = 50,
 ) -> Dict:
     """
     Evaluate the tuned model on test data.
     """
     logger.info(f"Initializing Vertex AI for project {project_id}")
-    
+
     from google.cloud import aiplatform
     from vertexai.generative_models import GenerativeModel, Content, Part
-    
+
     aiplatform.init(project=project_id, location=location)
 
     try:
@@ -98,12 +92,7 @@ def evaluate_model(
         logger.error(f"Failed to load model: {e}")
         raise
 
-    results = {
-        "total_tested": 0,
-        "successful": 0,
-        "failed": 0,
-        "examples": []
-    }
+    results = {"total_tested": 0, "successful": 0, "failed": 0, "examples": []}
 
     num_to_test = min(num_samples, len(test_data))
     logger.info(f"Evaluating on {num_to_test} test examples...")
@@ -118,11 +107,8 @@ def evaluate_model(
         try:
             # Create properly formatted content for tuned model
             # Use the same format as training data
-            user_content = Content(
-                role="user",
-                parts=[Part.from_text(question)]
-            )
-            
+            user_content = Content(role="user", parts=[Part.from_text(question)])
+
             # Generate prediction using generate_content with proper format
             response = model.generate_content(
                 contents=[user_content],
@@ -131,17 +117,13 @@ def evaluate_model(
                     "top_p": 0.8,
                     "top_k": 40,
                     "max_output_tokens": 1024,
-                }
+                },
             )
-            
+
             predicted_answer = response.text.strip()
 
             results["successful"] += 1
-            results["examples"].append({
-                "question": question,
-                "ground_truth": ground_truth,
-                "prediction": predicted_answer
-            })
+            results["examples"].append({"question": question, "ground_truth": ground_truth, "prediction": predicted_answer})
 
             if (i + 1) % 10 == 0:
                 logger.info(f"Processed {i + 1}/{num_to_test} examples")
@@ -160,15 +142,15 @@ def evaluate_model(
     with open(results_path, "w") as f:
         json.dump(results, f, indent=2)
 
-    logger.info(f"\nEvaluation complete!")
+    logger.info("\nEvaluation complete!")
     logger.info(f"Results saved to: {results_path}")
     logger.info(f"Successfully evaluated: {results['successful']}/{results['total_tested']}")
     logger.info(f"Failed: {results['failed']}/{results['total_tested']}")
 
     # Print sample results
-    logger.info("\n" + "="*70)
+    logger.info("\n" + "=" * 70)
     logger.info("SAMPLE PREDICTIONS")
-    logger.info("="*70)
+    logger.info("=" * 70)
     for i, ex in enumerate(results["examples"][:3]):
         logger.info(f"\nExample {i+1}:")
         logger.info(f"Q: {ex['question'][:100]}...")
@@ -184,19 +166,15 @@ def main():
     parser.add_argument(
         "--model-endpoint",
         type=str,
-        help="Tuned model endpoint name (e.g., 'projects/123/locations/us-central1/endpoints/456')"
+        help="Tuned model endpoint name (e.g., 'projects/123/locations/us-central1/endpoints/456')",
     )
     parser.add_argument(
         "--num-samples",
         type=int,
         default=50,
-        help="Number of test samples to evaluate (default: 50)"
+        help="Number of test samples to evaluate (default: 50)",
     )
-    parser.add_argument(
-        "--project-id",
-        type=str,
-        help="GCP project ID (defaults to GCP_PROJECT_ID env var)"
-    )
+    parser.add_argument("--project-id", type=str, help="GCP project ID (defaults to GCP_PROJECT_ID env var)")
 
     args = parser.parse_args()
 
@@ -215,12 +193,11 @@ def main():
         model_endpoint=model_endpoint,
         test_data=test_data,
         project_id=project_id,
-        num_samples=args.num_samples
+        num_samples=args.num_samples,
     )
 
-    logger.info("\nEvaluation completed successfully!")
+    logger.info("\nEvaluation completed successfully! " f"{results['successful']}/{results['total_tested']} succeeded.")
 
 
 if __name__ == "__main__":
-    import os
     main()

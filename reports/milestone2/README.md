@@ -66,7 +66,7 @@ We can also look what each container is doing:
 
 ## 4. Mock-up / UI Status
 
-- Figma prototype demonstrates the planned chat + upload experience.  
+- Figma prototype demonstrates the planned chat + upload experience.
 - Info icons and overlays explain how each UI event maps to backend calls (agent service, RAG retrieval).
 - Link available here: https://www.loom.com/share/7a6db2fed5954eb58c788c617cd9e4f0?sid=2bc47a6f-3285-4c10-ac43-d63836c29e59.
 

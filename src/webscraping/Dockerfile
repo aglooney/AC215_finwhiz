@@ -39,7 +39,7 @@ WORKDIR /app
 COPY --chown=app:app . ./
 
 # Install dependencies
-RUN uv sync 
+RUN uv sync
 
 # Set PYTHONPATH so imports work correctly
 ENV PYTHONPATH=/app

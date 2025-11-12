@@ -50,7 +50,7 @@ Each portfolio includes:
 
 ### Conservative Portfolio (Low Risk)
 - 35-45% stocks
-- 40-55% bonds  
+- 40-55% bonds
 - 10-20% cash
 - Lower volatility holdings
 
@@ -83,4 +83,3 @@ curl -X POST http://localhost:8010/sessions/$SESSION_ID/portfolio \
 - reportlab: PDF generation
 - typer: CLI interface
 - rich: Terminal formatting
-

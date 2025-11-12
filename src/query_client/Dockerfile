@@ -38,5 +38,3 @@ COPY --chown=app:app interactive_query.py ./
 
 # Expose nothing since this is just interactive
 CMD ["bash", "-c", "source /home/app/.venv/bin/activate && python /app/src/query_client/interactive_query.py"]
-
-

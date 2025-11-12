@@ -1,6 +1,7 @@
 """
 Utilities for persisting user documents in Google Cloud Storage.
 """
+
 import os
 import json
 from datetime import datetime
@@ -26,7 +27,8 @@ def _get_gcs_client():
         raise RuntimeError("GCS credentials or bucket not configured properly")
     return storage.Client.from_service_account_json(KEY_PATH)
 
-def _load_session_metadata(bucket, session_id:str) -> list:
+
+def _load_session_metadata(bucket, session_id: str) -> list:
     """Load metadata.json for a session from GCS if it exists, else return empty list."""
     metadata_blob = bucket.blob(f"user_uploads/{session_id}/metadata.json")
     try:
@@ -39,14 +41,13 @@ def _load_session_metadata(bucket, session_id:str) -> list:
         logging.warning(f"Failed to load metadata.json for {session_id}: {e}")
         return []
 
+
 def _save_session_metadata(bucket, session_id: str, metadata_list: list):
     """Upload the updated metadata list as JSON to GCS"""
     metadata_blob = bucket.blob(f"user_uploads/{session_id}/metadata.json")
-    metadata_blob.upload_from_string(
-        json.dumps(metadata_list, indent=2),
-        content_type='application/json'
-    )
+    metadata_blob.upload_from_string(json.dumps(metadata_list, indent=2), content_type="application/json")
     logging.info(f"Updated metadata.json for session: {session_id}")
+
 
 def save_document_bytes(
     session_id: str,
@@ -62,29 +63,31 @@ def save_document_bytes(
     rest of the flow can continue.
     """
     if not filename:
-        filename="document.pdf"
+        filename = "document.pdf"
     timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%S")
     object_name = f"sessions/{session_id}/{timestamp}_{filename}"
 
     try:
-        client=_get_gcs_client()
+        client = _get_gcs_client()
         bucket = client.bucket(BUCKET_NAME)
         blob = bucket.blob(object_name)
     except Exception as e:
         logging.error(f"Could not get GCS Client: {e}")
     try:
         blob.upload_from_string(contents, content_type=content_type)
-        gcs_uri=f"gs://{BUCKET_NAME}/{object_name}"
+        gcs_uri = f"gs://{BUCKET_NAME}/{object_name}"
         logging.info(f"Uploaded {filename} to {gcs_uri}")
 
         metadata = _load_session_metadata(bucket, session_id)
-        metadata.append({
-            "filename": filename,
-            "gcs_path": gcs_uri,
-            "timestamp": timestamp,
-            "content_type": content_type or "application/octet-stream",
-            "size_bytes": len(contents),
-        })
+        metadata.append(
+            {
+                "filename": filename,
+                "gcs_path": gcs_uri,
+                "timestamp": timestamp,
+                "content_type": content_type or "application/octet-stream",
+                "size_bytes": len(contents),
+            }
+        )
 
         _save_session_metadata(bucket, session_id, metadata)
 

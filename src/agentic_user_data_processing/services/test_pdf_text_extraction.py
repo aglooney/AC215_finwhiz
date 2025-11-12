@@ -25,7 +25,8 @@ def flatten_pdf(input_path: Path, output_path: Path):
     print(f"[INFO] Flattening PDF with Ghostscript: {input_path.name}")
     cmd = [
         "gs",
-        "-o", str(output_path),
+        "-o",
+        str(output_path),
         "-sDEVICE=pdfwrite",
         "-dPDFSETTINGS=/prepress",
         "-dNOPAUSE",
@@ -50,9 +51,7 @@ def extract_text_from_pdf(path: Path) -> str:
     try:
         buffer = io.BytesIO(path.read_bytes())
         reader = PdfReader(buffer)
-        pypdf_text = "\n".join(
-            (page.extract_text() or "").strip() for page in reader.pages
-        )
+        pypdf_text = "\n".join((page.extract_text() or "").strip() for page in reader.pages)
         print(f"[INFO] PyPDF text length: {len(pypdf_text)}")
     except Exception as e:
         print(f"[WARN] PyPDF extraction failed: {e}")

@@ -1,0 +1,40 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+      - id: check-added-large-files
+        name: Check for large files
+        args: ["--maxkb=1000"]
+      - id: check-json
+        name: Check JSON syntax
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: detect-private-key
+        name: Detect private keys
+
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        name: Format Python code with Black
+        language_version: python3.12
+        args: ["--line-length", "160"]
+        files: ^src/(agentic_user_data_processing|llm|embedder|query_client|webscraping)/.*\.py$
+        exclude: ^src/webscraping/ingest_shared_v1/
+        stages: [pre-commit, pre-push]
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        name: Check Python code with Flake8
+        args: ["--max-line-length=160", "--extend-ignore=E203,W503"]
+        files: ^src/(agentic_user_data_processing|llm|embedder|query_client|webscraping)/.*\.py$
+        exclude: ^src/webscraping/ingest_shared_v1/
+        stages: [pre-commit, pre-push]

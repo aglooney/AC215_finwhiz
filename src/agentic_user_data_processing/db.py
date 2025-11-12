@@ -1,6 +1,7 @@
 """
 SQLAlchemy database utilities for the FinWhiz agent service (Cloud-only version).
 """
+
 import os
 from contextlib import contextmanager
 from typing import Iterator
@@ -35,7 +36,7 @@ else:
     DB_PASS = db_pass_value
 
 # Cloud SQL connection string via Unix socket path
-DATABASE_URL =  f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
+DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}"
 
 # --- SQLAlchemy engine and session setup ---
 engine = create_engine(
@@ -53,6 +54,7 @@ Base = declarative_base()
 def init_db() -> None:
     """Create tables if they do not already exist."""
     from . import models  # noqa: F401 (ensures model metadata is loaded)
+
     Base.metadata.create_all(bind=engine)
 
 
@@ -77,4 +79,3 @@ def get_db() -> Iterator[Session]:
         yield db
     finally:
         db.close()
-

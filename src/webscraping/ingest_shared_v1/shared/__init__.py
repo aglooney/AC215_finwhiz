@@ -1,4 +1,5 @@
 """Shared utilities for FinWhiz web scraping."""
+
 from __future__ import annotations
 
 from .fetch import FetchResult, fetch_url, resolve_url

@@ -1,7 +1,9 @@
 from __future__ import annotations
-import gzip, json
-from pathlib import Path
 import argparse
+import gzip
+import json
+from pathlib import Path
+
 
 def build_jsonl(in_dir: str, out_dir: str, schema: str):
     in_path = Path(in_dir)
@@ -18,6 +20,7 @@ def build_jsonl(in_dir: str, out_dir: str, schema: str):
 
     print(f"Wrote {outfile}")
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--in", dest="in_dir", required=True)
@@ -25,6 +28,7 @@ def main():
     parser.add_argument("--schema", required=True)  # not used yet
     args = parser.parse_args()
     build_jsonl(args.in_dir, args.out_dir, args.schema)
+
 
 if __name__ == "__main__":
     main()

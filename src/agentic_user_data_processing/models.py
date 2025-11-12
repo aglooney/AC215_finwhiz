@@ -1,11 +1,12 @@
 """
 Database models and helper methods for the agent service.
 """
+
 import uuid
 from datetime import datetime
 from typing import Iterable, Optional, List
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
@@ -91,13 +92,7 @@ class Message(Base):
 
     @classmethod
     def latest_for_session(cls, db: Session, *, session_id: str, limit: int = 20) -> Iterable["Message"]:
-        return (
-            db.query(cls)
-            .filter(cls.session_id == uuid.UUID(str(session_id)))
-            .order_by(cls.created_at.desc())
-            .limit(limit)
-            .all()
-        )
+        return db.query(cls).filter(cls.session_id == uuid.UUID(str(session_id))).order_by(cls.created_at.desc()).limit(limit).all()
 
 
 class Document(Base):
@@ -135,9 +130,4 @@ class Document(Base):
 
     @classmethod
     def latest_for_session(cls, db: Session, *, session_id: str) -> Optional["Document"]:
-        return (
-            db.query(cls)
-            .filter(cls.session_id == uuid.UUID(session_id))
-            .order_by(cls.created_at.desc())
-            .first()
-        )
+        return db.query(cls).filter(cls.session_id == uuid.UUID(session_id)).order_by(cls.created_at.desc()).first()

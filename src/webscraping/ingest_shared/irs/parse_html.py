@@ -1,4 +1,5 @@
 """HTML parsing helpers tailored to IRS.gov layouts."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

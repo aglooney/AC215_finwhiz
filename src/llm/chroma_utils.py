@@ -5,6 +5,7 @@ from google.cloud import storage
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+
 def ensure_chroma_local(bucket_name: str, prefix: str, collection_dir: str, local_path: str):
     """Ensure Chroma data exists locally. Download from GCS if missing."""
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ.get("BUCKET_CREDENTIALS")

@@ -1,6 +1,7 @@
 """
 Utilities for extracting structured data from uploaded 1099-INT documents.
 """
+
 import asyncio
 import json
 import os
@@ -62,6 +63,7 @@ def _get_llm() -> VertexAI:
         _llm = VertexAI(model_name="gemini-2.5-pro")
         print("[_get_llm] Initialized VertexAI model (gemini-2.5-pro)")
     return _llm
+
 
 async def extract_1099_fields(pdf_bytes: bytes) -> schemas.Form1099Fields:
     """

@@ -6,38 +6,38 @@ seeds:
   # ============================================================================
   # Introduction to Investing
   # ============================================================================
-  
+
   - "https://www.investor.gov/introduction-investing"
   - "https://www.investor.gov/introduction-investing/investing-basics/investment-products"
   - "https://www.investor.gov/introduction-investing/investing-basics/how-stock-markets-work"
   - "https://www.investor.gov/introduction-investing/investing-basics/glossary"
-  
+
   # ============================================================================
   # Save and Invest
   # ============================================================================
-  
+
   - "https://www.investor.gov/introduction-investing/investing-basics/save-and-invest"
   - "https://www.investor.gov/introduction-investing/investing-basics/save-and-invest/understand-what-it-means-invest"
   - "https://www.investor.gov/introduction-investing/investing-basics/save-and-invest/learn-about-investment-options"
-  
+
   # ============================================================================
   # Investment Products
   # ============================================================================
-  
+
   - "https://www.investor.gov/introduction-investing/investing-basics/investment-products/stocks"
   - "https://www.investor.gov/introduction-investing/investing-basics/investment-products/mutual-funds-and-exchange-traded-funds-etfs/mutual-funds"
-  
+
   # ============================================================================
   # Fraud Protection
   # ============================================================================
-  
+
   - "https://www.investor.gov/protect-your-investments/fraud/types-fraud/pyramid-schemes"
   - "https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins/leveraged-investing-strategies-know-risks-using-these-advanced-investment-tools"
-  
+
   # ============================================================================
   # Financial Tools and Calculators
   # ============================================================================
-  
+
   - "https://www.investor.gov/free-financial-planning-tools"
   - "https://www.investor.gov/financial-tools-calculators/calculators/compound-interest-calculator"
   - "https://www.investor.gov/financial-tools-calculators/calculators/required-minimum-distribution-calculator"

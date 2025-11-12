@@ -1,4 +1,5 @@
 """Chunking logic to produce retrieval-friendly segments."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -33,11 +34,13 @@ def chunk_blocks(blocks: Iterable[dict], max_chars: int = 1200) -> list[Chunk]:
             buffer = []
             buffer_len = 0
 
-        buffer.append({
-            "text": text,
-            "section": block.get("section") or current_section,
-            "page": block.get("page"),
-        })
+        buffer.append(
+            {
+                "text": text,
+                "section": block.get("section") or current_section,
+                "page": block.get("page"),
+            }
+        )
         buffer_len += len(text) + 1
 
     if buffer:

@@ -3,6 +3,7 @@ from typing import Dict, Any, List
 from bs4 import BeautifulSoup
 from ..common.html_utils import clean_text
 
+
 def html_to_blocks(html: str) -> List[Dict[str, Any]]:
     """Create a sequence of blocks preserving H2/H3 structure and paragraphs/lists."""
     soup = BeautifulSoup(html, "lxml")

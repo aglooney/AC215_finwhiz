@@ -28,7 +28,7 @@ Secrets belong in the local `secrets/` folder (gitignored) and are mounted into 
 The service supports multiple document types per session:
 
 - **W-2 Forms** (`/sessions/{session_id}/w2`) — Employee wage and tax statements
-- **1099 Forms** (`/sessions/{session_id}/1099`) — Interest income reports  
+- **1099 Forms** (`/sessions/{session_id}/1099`) — Interest income reports
 - **Portfolio Summaries** (`/sessions/{session_id}/portfolio`) — Fidelity portfolio statements
 
 Each document type is processed independently and made available in the session context.
@@ -50,11 +50,11 @@ Each document type is processed independently and made available in the session 
    # Upload W-2
    curl -X POST http://127.0.0.1:8010/sessions/$SESSION_ID/w2 \
      -F file=@synthetic_data/w2/outputs/w2_000.pdf
-   
+
    # Upload 1099
    curl -X POST http://127.0.0.1:8010/sessions/$SESSION_ID/1099 \
      -F file=@synthetic_data/int_1099/outputs/1099int_001.pdf
-   
+
    # Upload portfolio
    curl -X POST http://127.0.0.1:8010/sessions/$SESSION_ID/portfolio \
      -F file=@Fidelity_statement.pdf

@@ -8,6 +8,7 @@ from .chunkers import h2_chunker
 
 app = typer.Typer(add_completion=False)
 
+
 @app.command()
 def main(
     _in: str = typer.Option("data/raw_html", "--in", help="Dir of raw_html (unused; we read parsed_json)"),
@@ -30,6 +31,7 @@ def main(
         write_json_gz(out_path, chunks)
         count += 1
     print(f"Transformed {count} pages → {chunks_dir}")
+
 
 if __name__ == "__main__":
     app()

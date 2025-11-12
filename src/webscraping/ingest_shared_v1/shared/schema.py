@@ -1,4 +1,5 @@
 """Defines the ingest record schema for FinWhiz documents."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict, field
@@ -9,7 +10,7 @@ from datetime import datetime
 @dataclass
 class IngestRecord:
     """Normalized record for ingested financial documents.
-    
+
     Attributes:
         id: Unique identifier for this record (format: {doc_id} or {doc_id}#p{page})
         source_url: Original URL of the document
@@ -24,6 +25,7 @@ class IngestRecord:
         ingested_at: Timestamp of when record was created
         metadata: Additional flexible metadata
     """
+
     id: str
     source_url: str
     title: str
@@ -60,10 +62,10 @@ def make_record(
     section: Optional[str] = None,
     page: Optional[int] = None,
     language: str = "en",
-    **metadata_kwargs
+    **metadata_kwargs,
 ) -> IngestRecord:
     """Create an IngestRecord with proper ID formatting.
-    
+
     Args:
         doc_id: Base document identifier (slugified)
         url: Source URL
@@ -76,13 +78,13 @@ def make_record(
         page: Page number (for PDFs)
         language: Language code
         **metadata_kwargs: Additional metadata fields
-    
+
     Returns:
         IngestRecord instance
     """
     # Format ID: use page number if available (for PDFs), otherwise just doc_id
     record_id = f"{doc_id}#p{page}" if page else doc_id
-    
+
     return IngestRecord(
         id=record_id,
         source_url=url,
@@ -94,5 +96,5 @@ def make_record(
         language=language,
         text=text,
         page=page,
-        metadata=metadata_kwargs if metadata_kwargs else {}
+        metadata=metadata_kwargs if metadata_kwargs else {},
     )

@@ -1,4 +1,5 @@
 """PDF parsing helpers using PyMuPDF."""
+
 from __future__ import annotations
 
 import logging
@@ -23,7 +24,7 @@ def pdf_to_blocks(pdf_bytes: bytes) -> list[PdfBlock]:
     except Exception as exc:
         LOGGER.error("Failed to open PDF: %s", exc)
         return []
-    
+
     try:
         blocks: list[PdfBlock] = []
         for page in doc:
@@ -36,10 +37,10 @@ def pdf_to_blocks(pdf_bytes: bytes) -> list[PdfBlock]:
             except Exception as exc:
                 LOGGER.warning("Failed to extract text from page %d: %s", page.number + 1, exc)
                 continue
-        
+
         if not blocks:
             LOGGER.warning("No text blocks extracted from PDF")
-        
+
         return blocks
     finally:
         try:

@@ -36,12 +36,12 @@ def verify_config():
         "GCP_PROJECT_ID": GCP_PROJECT_ID,
         "GCS_BUCKET_NAME": GCS_BUCKET_NAME,
     }
-    
+
     missing = [k for k, v in required.items() if not v]
-    
+
     if missing:
         raise ValueError(f"Missing required config: {', '.join(missing)}")
-    
+
     return True
 
 
