@@ -20,23 +20,29 @@ logging.getLogger("sentence-transformers").setLevel(logging.WARNING)
 # Load environment variables
 BUCKET_NAME = os.environ.get("GCS_BUCKET")
 KEY_PATH = os.environ.get("BUCKET_CREDENTIALS")
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = KEY_PATH
 CHROMA_PATH = "/app/src/chroma_storage"
 COLLECTION_NAME = "finwhiz_docs"
 EMBEDDING_MODEL = "jinaai/jina-embeddings-v3"
 BATCH_SIZE = 8  # batch size for embedding
+TEST_MODE = os.getenv("FINWHIZ_TEST_MODE") == "1"
 
 if not BUCKET_NAME or not KEY_PATH:
-    raise ValueError("GCS_BUCKET and BUCKET_CREDENTIALS must be set in .env")
+    if not TEST_MODE:
+        raise ValueError("GCS_BUCKET and BUCKET_CREDENTIALS must be set in .env")
+else:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = KEY_PATH
 
 # Chroma in-memory client
-chroma_client = chromadb.Client(Settings(persist_directory=CHROMA_PATH))
-
-collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
+if not TEST_MODE:
+    chroma_client = chromadb.Client(Settings(persist_directory=CHROMA_PATH))
+    collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
+else:
+    chroma_client = None
+    collection = None
 
 # Load embedding model
 logging.info("Loading SentenceTransformer embedding model")
-embedder = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True)
+embedder = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True) if not TEST_MODE else None
 
 
 def get_git_commit():
@@ -67,6 +73,8 @@ def clean_metadata(meta: dict) -> dict:
 
 
 def embed_texts(texts):
+    if embedder is None:
+        raise RuntimeError("Embedding model is not initialized")
     return embedder.encode(texts, batch_size=BATCH_SIZE, task="retrieval.passage", convert_to_numpy=True).tolist()
 
 

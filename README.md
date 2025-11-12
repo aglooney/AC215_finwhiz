@@ -76,6 +76,13 @@ cd src/gcp_storage
 python test_gcs.py
 ```
 
+### Run Tests
+```bash
+# From repository root
+pytest          # runs unit tests with coverage
+pytest -m system  # run heavier system tests (requires docker-compose stack)
+```
+
 ### Linting & Formatting (Black + Flake8 via pre-commit)
 We pin formatter/linter versions with [pre-commit](https://pre-commit.com), which keeps local runs in sync with CI.
 
