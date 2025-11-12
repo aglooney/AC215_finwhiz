@@ -30,23 +30,31 @@ GCS_BUCKET = os.getenv("GCS_BUCKET")
 GCS_PREFIX = os.getenv("GCS_PREFIX", "chroma_storage_backup")
 AGENT_URL = os.getenv("AGENT_URL", "http://agent:8010")
 
+TEST_MODE = os.getenv("FINWHIZ_TEST_MODE") == "1"
+
 VERTEXAI_CREDENTIALS = os.getenv("VERTEXAI_CREDENTIALS")
-if not VERTEXAI_CREDENTIALS:
+if not VERTEXAI_CREDENTIALS and not TEST_MODE:
     raise ValueError("VERTEXAI_CREDENTIALS must be set")
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = VERTEXAI_CREDENTIALS
+if VERTEXAI_CREDENTIALS:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = VERTEXAI_CREDENTIALS
 
-# initialize chroma
-ensure_chroma_local(GCS_BUCKET, GCS_PREFIX, COLLECTION_DIR, CHROMA_PATH)
-logger.info("Initializing ChromaDB client")
-client = PersistentClient(path=CHROMA_PATH)
-collection = client.get_or_create_collection(COLLECTION_NAME)
+if not TEST_MODE:
+    ensure_chroma_local(GCS_BUCKET, GCS_PREFIX, COLLECTION_DIR, CHROMA_PATH)
+    logger.info("Initializing ChromaDB client")
+    client = PersistentClient(path=CHROMA_PATH)
+    collection = client.get_or_create_collection(COLLECTION_NAME)
 
-logger.info("Loading embedding model")
-embedder = SentenceTransformer("jinaai/jina-embeddings-v3", device="cpu", trust_remote_code=True)
+    logger.info("Loading embedding model")
+    embedder = SentenceTransformer("jinaai/jina-embeddings-v3", device="cpu", trust_remote_code=True)
 
-logger.info("Initializing Vertex AI model")
-llm = VertexAI(model_name="gemini-2.5-pro")
+    logger.info("Initializing Vertex AI model")
+    llm = VertexAI(model_name="gemini-2.5-pro")
+else:
+    client = None
+    collection = None
+    embedder = None
+    llm = None
 
 
 app = FastAPI(title="FinWhiz LLM Service")
@@ -110,6 +118,8 @@ def normalize_chroma_results(results):
 # core logic
 def retrieve_context(query: str, top_k: int = 5, method: str = "rrf") -> tuple[str, list[dict]]:
     """Embed the query and retrieve context documents + metadata from Chroma."""
+    if embedder is None or collection is None:
+        raise RuntimeError("Chroma collection or embedder is not initialized")
     query_emb = embedder.encode(query, task="retrieval.query", convert_to_numpy=True)
     if query_emb.ndim == 1:
         query_emb = [query_emb.tolist()]
@@ -203,6 +213,8 @@ def retrieve_agent_context(session_id: str | None) -> str:
 
 def generate_answer(prompt: str) -> str:
     """Query the VertexAI LLM."""
+    if llm is None:
+        raise RuntimeError("LLM client is not initialized")
     try:
         return llm.invoke(prompt)
     except Exception as e:

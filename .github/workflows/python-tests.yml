@@ -1,0 +1,44 @@
+name: Python Tests
+
+on:
+  push:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "pytest.ini"
+      - ".github/workflows/python-tests.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "pytest.ini"
+      - ".github/workflows/python-tests.yml"
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    env:
+      FINWHIZ_TEST_MODE: "1"
+      GCS_BUCKET: dummy-bucket
+      BUCKET_CREDENTIALS: /tmp/fake-creds.json
+      VERTEXAI_CREDENTIALS: /tmp/fake-creds.json
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Create fake credentials
+        run: echo '{}' > /tmp/fake-creds.json
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov pytest-asyncio
+          pip install -e src/llm -e src/embedder
+
+      - name: Run unit tests
+        run: pytest tests/unit
