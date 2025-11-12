@@ -1,18 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useId } from 'react';
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from '../services/api';
-import type { Document } from '../types';
+import type { Document, DocumentType } from '../types';
 
 interface DocumentUploadProps {
   sessionId: string;
-  onUploadComplete: (document: Document) => void;
+  onUploadComplete?: (document: Document) => void;
+  onDocumentsChange?: (documents: Document[]) => void;
 }
 
-export default function DocumentUpload({ sessionId, onUploadComplete }: DocumentUploadProps) {
+const DOCUMENT_OPTIONS: { value: DocumentType; label: string }[] = [
+  { value: 'w2', label: 'W-2 Form' },
+  { value: '1099', label: '1099 Form' },
+  { value: 'portfolio', label: 'Portfolio PDF' },
+];
+
+export default function DocumentUpload({
+  sessionId,
+  onUploadComplete,
+  onDocumentsChange,
+}: DocumentUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [uploadedDocs, setUploadedDocs] = useState<Document[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<'w2' | '1099'>('w2');
+  const [documentsError, setDocumentsError] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<DocumentType>('w2');
+  const fileInputId = useId();
+
+  const refreshDocuments = useCallback(async () => {
+    setLoadingDocs(true);
+    try {
+      const context = await api.getSessionContext(sessionId);
+      const docs = context.documents || [];
+      setDocumentsError(null);
+      setUploadedDocs(docs);
+    } catch (err: any) {
+      console.error('Failed to load documents:', err);
+      setDocumentsError('Unable to load uploaded documents. Please try again.');
+    } finally {
+      setLoadingDocs(false);
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
+    refreshDocuments();
+  }, [refreshDocuments]);
+
+  useEffect(() => {
+    onDocumentsChange?.(uploadedDocs);
+  }, [uploadedDocs, onDocumentsChange]);
+
+  const uploadDocument = async (type: DocumentType, file: File) => {
+    switch (type) {
+      case 'w2':
+        return api.uploadW2(sessionId, file);
+      case '1099':
+        return api.upload1099(sessionId, file);
+      case 'portfolio':
+        return api.uploadPortfolio(sessionId, file);
+      default:
+        throw new Error(`Unsupported document type: ${type}`);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,18 +89,11 @@ export default function DocumentUpload({ sessionId, onUploadComplete }: Document
     setError(null);
 
     try {
-      let document: Document;
-      if (selectedType === 'w2') {
-        console.log('Uploading W-2...');
-        document = await api.uploadW2(sessionId, file);
-      } else {
-        console.log('Uploading 1099...');
-        document = await api.upload1099(sessionId, file);
-      }
+      const document = await uploadDocument(selectedType, file);
 
       console.log('Upload successful:', document);
-      setUploadedDocs((prev) => [...prev, document]);
-      onUploadComplete(document);
+      await refreshDocuments();
+      onUploadComplete?.(document);
       e.target.value = ''; // Reset file input
     } catch (err: any) {
       console.error('Upload error:', err);
@@ -73,47 +116,37 @@ export default function DocumentUpload({ sessionId, onUploadComplete }: Document
       </div>
 
       <p className="text-sm text-gray-600 mb-4">
-        Upload your W-2 or 1099 forms to get personalized financial insights and answers.
+        Upload your W-2, 1099, or portfolio PDFs to get personalized financial insights and answers.
       </p>
 
       <div className="mb-4">
         <label className="block text-sm font-semibold text-gray-700 mb-2">Document Type</label>
-        <div className="flex gap-4">
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="docType"
-              value="w2"
-              checked={selectedType === 'w2'}
-              onChange={() => setSelectedType('w2')}
-              className="mr-2"
-              disabled={uploading}
-            />
-            <span className="text-sm">W-2 Form</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="docType"
-              value="1099"
-              checked={selectedType === '1099'}
-              onChange={() => setSelectedType('1099')}
-              className="mr-2"
-              disabled={uploading}
-            />
-            <span className="text-sm">1099 Form</span>
-          </label>
+        <div className="flex flex-wrap gap-4">
+          {DOCUMENT_OPTIONS.map((option) => (
+            <label key={option.value} className="flex items-center">
+              <input
+                type="radio"
+                name="docType"
+                value={option.value}
+                checked={selectedType === option.value}
+                onChange={() => setSelectedType(option.value)}
+                className="mr-2"
+                disabled={uploading}
+              />
+              <span className="text-sm">{option.label}</span>
+            </label>
+          ))}
         </div>
       </div>
 
-      <label className="block">
+      <label className="block" htmlFor={fileInputId}>
         <input
           type="file"
           accept=".pdf"
           onChange={handleFileUpload}
           disabled={uploading}
           className="hidden"
-          id="file-upload"
+          id={fileInputId}
         />
         <div
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
@@ -121,7 +154,6 @@ export default function DocumentUpload({ sessionId, onUploadComplete }: Document
               ? 'border-gray-300 bg-gray-50 cursor-not-allowed'
               : 'border-primary-300 hover:border-primary-500 hover:bg-primary-50'
           }`}
-          onClick={() => !uploading && document.getElementById('file-upload')?.click()}
         >
           {uploading ? (
             <div className="flex flex-col items-center">
@@ -147,9 +179,18 @@ export default function DocumentUpload({ sessionId, onUploadComplete }: Document
         </div>
       )}
 
-      {uploadedDocs.length > 0 && (
-        <div className="mt-4">
-          <p className="text-sm font-semibold text-gray-700 mb-2">Uploaded Documents:</p>
+      <div className="mt-4">
+        <p className="text-sm font-semibold text-gray-700 mb-2">Uploaded Documents:</p>
+        {loadingDocs ? (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading documents...
+          </div>
+        ) : documentsError ? (
+          <div className="text-sm text-red-600">{documentsError}</div>
+        ) : uploadedDocs.length === 0 ? (
+          <p className="text-sm text-gray-500">No documents uploaded yet.</p>
+        ) : (
           <div className="space-y-2">
             {uploadedDocs.map((doc) => (
               <div
@@ -159,17 +200,17 @@ export default function DocumentUpload({ sessionId, onUploadComplete }: Document
                 <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">
-                    {doc.document_type.toUpperCase()} Form
+                    {doc.document_type?.toString().toUpperCase()}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Uploaded {new Date(doc.created_at).toLocaleDateString()}
+                    Uploaded {new Date(doc.created_at).toLocaleString()}
                   </p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

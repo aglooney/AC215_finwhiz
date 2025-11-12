@@ -1,23 +1,18 @@
-import type { UserProfile } from '../types';
+import axios from 'axios';
+import type {
+  Document,
+  QueryResponse,
+  Session,
+  SessionContext,
+  UserProfile,
+  Message,
+} from '../types';
 import { mockApi } from './mockApi';
 
-// ============================================================================
-// STANDALONE MODE: Using Mock API
-// ============================================================================
-// The frontend is currently using mock data and does not require backend services.
-// To switch back to real backend, comment out the line below and uncomment the
-// "Real Backend API" section at the bottom of this file.
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'false';
 
-export const api = mockApi;
-
-// ============================================================================
-// Real Backend API (commented out for standalone mode)
-// ============================================================================
-/*
 // Get base URL from environment or default to relative paths
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-
-console.log('BASE_URL:', BASE_URL);
 
 const agentAPI = axios.create({
   baseURL: `${BASE_URL}/api/agent`,
@@ -57,7 +52,7 @@ llmAPI.interceptors.response.use(
   handleApiError
 );
 
-export const api = {
+const realApi = {
   // Session Management
   async createSession(userId: string): Promise<Session> {
     const response = await agentAPI.post<Session>('/sessions/', { user_id: userId });
@@ -95,6 +90,17 @@ export const api = {
     return response.data;
   },
 
+  async uploadPortfolio(sessionId: string, file: File): Promise<Document> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await agentAPI.post<Document>(`/sessions/${sessionId}/portfolio`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   // LLM Query
   async query(query: string, sessionId?: string, topK: number = 5): Promise<QueryResponse> {
     const response = await llmAPI.post<QueryResponse>('/query', {
@@ -106,12 +112,13 @@ export const api = {
   },
 
   // Get Session Context
-  async getSessionContext(sessionId: string): Promise<any> {
-    const response = await agentAPI.get(`/sessions/${sessionId}/context`);
+  async getSessionContext(sessionId: string): Promise<SessionContext> {
+    const response = await agentAPI.get<SessionContext>(`/sessions/${sessionId}/context`);
     return response.data;
   },
 };
-*/
+
+export const api = USE_MOCK_API ? mockApi : realApi;
 
 // Portfolio calculation helper
 export function calculatePortfolio(profile: UserProfile) {

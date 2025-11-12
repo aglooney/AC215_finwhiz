@@ -17,10 +17,8 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [uploadedDocuments, setUploadedDocuments] = useState<Document[]>([]);
 
-  const handleDocumentUpload = (document: Document) => {
-    setUploadedDocuments((prev) => [...prev, document]);
-    // Switch to chat tab after successful upload
-    setActiveTab('chat');
+  const handleDocumentsChange = (documents: Document[]) => {
+    setUploadedDocuments(documents);
   };
 
   return (
@@ -135,7 +133,10 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
               {activeTab === 'chat' && <ChatInterface sessionId={sessionId} />}
               {activeTab === 'upload' && (
                 <div className="overflow-y-auto h-full">
-                  <DocumentUpload sessionId={sessionId} onUploadComplete={handleDocumentUpload} />
+                  <DocumentUpload
+                    sessionId={sessionId}
+                    onDocumentsChange={handleDocumentsChange}
+                  />
                 </div>
               )}
               {activeTab === 'portfolio' && (

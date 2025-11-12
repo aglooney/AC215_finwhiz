@@ -43,6 +43,10 @@ def build_context(*, session, messages, documents):
 
     # build session context
     try:
+        documents_payload = [
+            schemas.DocumentResponse.from_orm(doc)
+            for doc in documents or []
+        ]
         ctx = schemas.SessionContext(
             session_id=str(session.id),
             user_id=str(session.user_id),
@@ -50,6 +54,7 @@ def build_context(*, session, messages, documents):
             w2_fields=w2_fields,
             form1099_fields=form1099_fields,
             portfolio_fields=portfolio_fields,
+            documents=documents_payload,
             summary=None,
         )
         logger.info("Successfully built SessionContext")

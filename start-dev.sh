@@ -5,6 +5,77 @@
 
 set -e
 
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+FRONTEND_DIR="$PROJECT_ROOT/src/frontend"
+LOG_DIR="$PROJECT_ROOT/logs"
+FRONTEND_LOG="$LOG_DIR/frontend-dev.log"
+FRONTEND_PID_FILE="$PROJECT_ROOT/.frontend-dev.pid"
+
+require_command() {
+    local cmd=$1
+    local help_msg=$2
+    if ! command -v "$cmd" > /dev/null 2>&1; then
+        echo "❌ Required command '$cmd' not found. $help_msg"
+        exit 1
+    fi
+}
+
+wait_for_cloudsql_proxy() {
+    echo -n "Waiting for Cloud SQL proxy (cloudsql-proxy:5432)..."
+
+    local cloudsql_container=""
+    for _ in {1..10}; do
+        cloudsql_container=$(docker-compose ps -q cloudsql-proxy || true)
+        if [ -n "$cloudsql_container" ]; then
+            break
+        fi
+        sleep 1
+    done
+
+    if [ -z "$cloudsql_container" ]; then
+        echo " ❌"
+        echo ""
+        echo "⚠️  Could not find the Cloud SQL proxy container. Check docker-compose output."
+        exit 1
+    fi
+
+    local cloudsql_network
+    cloudsql_network=$(docker inspect -f '{{range $name,$conf := .NetworkSettings.Networks}}{{println $name}}{{end}}' "$cloudsql_container" | head -n 1 | tr -d '\r')
+
+    if [ -z "$cloudsql_network" ]; then
+        echo " ❌"
+        echo ""
+        echo "⚠️  Failed to determine the Docker network for cloudsql-proxy."
+        exit 1
+    fi
+
+    if ! docker image inspect busybox:1.36 > /dev/null 2>&1; then
+        echo ""
+        echo "   📦 Pulling helper image busybox:1.36 (first run only)..."
+        docker pull busybox:1.36 > /dev/null
+    fi
+
+    local cloudsql_ready=0
+    for _ in {1..60}; do
+        if docker run --rm --network "$cloudsql_network" busybox:1.36 sh -c "nc -z -w1 cloudsql-proxy 5432" > /dev/null 2>&1; then
+            cloudsql_ready=1
+            break
+        fi
+        echo -n "."
+        sleep 2
+    done
+
+    if [ $cloudsql_ready -eq 1 ]; then
+        echo " ✅"
+    else
+        echo " ❌"
+        echo ""
+        echo "⚠️  Cloud SQL proxy failed to become reachable on port 5432."
+        echo "   docker-compose logs cloudsql-proxy"
+        exit 1
+    fi
+}
+
 echo "🚀 Starting FinWhiz Backend Services"
 echo "===================================="
 echo ""
@@ -15,23 +86,18 @@ docker-compose down
 echo ""
 
 # Start the backend services
-echo "🔧 Starting backend services (postgres, agent, llm)..."
+echo "🔧 Starting backend services (cloudsql-proxy, agent, llm)..."
 echo "This will take 1-2 minutes for the LLM service to load models..."
 echo ""
 
-docker-compose up -d postgres agent llm
+docker-compose up -d cloudsql-proxy agent llm
 
 echo ""
 echo "⏳ Waiting for services to become healthy..."
 echo ""
 
-# Wait for postgres
-echo -n "Waiting for PostgreSQL..."
-until docker exec finwhiz_postgres pg_isready -U finwhiz > /dev/null 2>&1; do
-    echo -n "."
-    sleep 1
-done
-echo " ✅"
+# Wait for Cloud SQL proxy
+wait_for_cloudsql_proxy
 
 # Wait for agent service
 echo -n "Waiting for Agent service..."
@@ -77,21 +143,32 @@ else
     exit 1
 fi
 
+start_frontend_dev_server() {
+    echo ""
+    echo "🖥️  Starting frontend development server (Vite)..."
+    echo "🧱 Building frontend image..."
+    docker-compose build frontend
+    echo "🚀 Launching frontend container..."
+    docker-compose up -d frontend
+    echo "✅ Frontend container running (http://localhost:3000)"
+}
+
+start_frontend_dev_server
+
 echo ""
-echo "🎉 All backend services are running!"
+echo "🎉 All services are running!"
 echo ""
 echo "Service Status:"
-echo "  ✅ PostgreSQL: http://localhost:5432"
+echo "  ✅ Cloud SQL Proxy: cloudsql-proxy:5432 (inside Docker network)"
 echo "  ✅ Agent API:  http://localhost:8010"
 echo "  ✅ LLM API:    http://localhost:8001"
-echo ""
-echo "📝 To start the frontend, run in another terminal:"
-echo "   cd src/frontend"
-echo "   ./dev-setup.sh"
+echo "  ✅ Frontend Dev: http://localhost:3000 (Vite)"
 echo ""
 echo "📊 To view logs:"
-echo "   docker-compose logs -f agent llm"
+echo "   docker-compose logs -f cloudsql-proxy agent llm"
+echo "   tail -f $FRONTEND_LOG"
 echo ""
 echo "🛑 To stop services:"
 echo "   docker-compose down"
+echo "   if [ -f .frontend-dev.pid ]; then kill \$(cat .frontend-dev.pid); fi"
 echo ""
