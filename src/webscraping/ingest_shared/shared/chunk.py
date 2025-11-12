@@ -1,4 +1,5 @@
 """Chunking logic to produce retrieval-friendly segments."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -8,7 +9,7 @@ from typing import Iterable, Optional
 @dataclass
 class Chunk:
     """Represents a chunk of text for retrieval."""
-    
+
     text: str
     section: Optional[str]
     start_page: Optional[int] = None
@@ -20,12 +21,12 @@ def chunk_blocks(
     header_tags: tuple[str, ...] = ("h1", "h2", "h3", "h4", "h5", "h6"),
 ) -> list[Chunk]:
     """Aggregate sequential blocks into approximately max_chars chunks.
-    
+
     Args:
         blocks: Iterable of block dictionaries with 'text' and optionally 'tag', 'page', 'section'
         max_chars: Target maximum characters per chunk (default 1200)
         header_tags: Tag names that indicate section headers (default h1-h6)
-        
+
     Returns:
         List of Chunk objects
     """
@@ -50,11 +51,13 @@ def chunk_blocks(
             buffer = []
             buffer_len = 0
 
-        buffer.append({
-            "text": text,
-            "section": block.get("section") or current_section,
-            "page": block.get("page"),
-        })
+        buffer.append(
+            {
+                "text": text,
+                "section": block.get("section") or current_section,
+                "page": block.get("page"),
+            }
+        )
         buffer_len += len(text) + 1  # +1 for newline
 
     # Flush remaining buffer

@@ -4,15 +4,18 @@ from typing import Dict, List
 from bs4 import BeautifulSoup
 from ..common.html_utils import clean_text, extract_links
 
+
 def within_allow(url: str, allow_patterns: List[str]) -> bool:
     return any(re.compile(p).search(url) for p in allow_patterns)
+
 
 def matches_deny(url: str, deny_patterns: List[str]) -> bool:
     return any(re.compile(p).search(url) for p in deny_patterns)
 
+
 def extract_page_fields(html: str, url: str, selectors: Dict[str, str]) -> Dict:
     soup = BeautifulSoup(html, "lxml")
-    title = (soup.select_one(selectors.get("title", "h1")) or soup.select_one("h1"))
+    title = soup.select_one(selectors.get("title", "h1")) or soup.select_one("h1")
     title_text = clean_text(title.get_text(" ", strip=True)) if title else ""
 
     pub_el = soup.select_one(selectors.get("publish_date", "time[datetime]"))

@@ -1,6 +1,7 @@
 """
 Utilities for extracting structured data from uploaded documents.
 """
+
 import asyncio
 import json
 import os
@@ -70,7 +71,7 @@ async def extract_w2_fields(pdf_bytes: bytes) -> schemas.W2Fields:
 
     if not document_text:
         return schemas.W2Fields()
-        
+
     prompt = EXTRACTION_PROMPT.format(document_text=document_text[:4000])
 
     try:

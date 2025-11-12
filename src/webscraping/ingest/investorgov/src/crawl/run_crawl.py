@@ -5,9 +5,11 @@ import requests
 from bs4 import BeautifulSoup
 import re
 
+
 def load_allowlist(path):
     with open(path) as f:
         return yaml.safe_load(f)
+
 
 def should_follow(url, allow_regexes, deny_regexes):
     for dr in deny_regexes:
@@ -18,18 +20,15 @@ def should_follow(url, allow_regexes, deny_regexes):
             return True
     return False
 
+
 def crawl_seed(seed_url, allow, deny, visited, out_dir):
     try:
         headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/122.0.0.0 Safari/537.36"
-            ),
+            "User-Agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " "AppleWebKit/537.36 (KHTML, like Gecko) " "Chrome/122.0.0.0 Safari/537.36"),
             "Accept-Language": "en-US,en;q=0.9",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Referer": "https://www.google.com/"
-            }
+            "Referer": "https://www.google.com/",
+        }
         r = requests.get(seed_url, timeout=10, headers=headers)
         r.raise_for_status()
     except Exception as e:
@@ -69,6 +68,7 @@ def main():
     visited = set()
     for s in seeds:
         crawl_seed(s, allow, deny, visited, out_dir)
+
 
 if __name__ == "__main__":
     main()

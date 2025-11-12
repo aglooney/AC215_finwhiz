@@ -9,6 +9,8 @@ dependencies = [
     "requests>=2.31",
     "google-cloud-storage>=2.14",
     "pyyaml>=6.0",
+    "black>=24.10.0",
+    "flake8>=7.1.1",
 ]
 
 [build-system]
@@ -17,4 +19,12 @@ build-backend = "hatchling.build"
 
 # ADD THIS SECTION:
 [tool.hatch.build.targets.wheel]
-packages = ["ingest_shared"] 
+packages = ["ingest_shared"]
+
+[tool.black]
+line-length = 160
+target-version = ["py312"]
+
+[tool.flake8]
+max-line-length = 160
+extend-ignore = ["E203", "W503"]

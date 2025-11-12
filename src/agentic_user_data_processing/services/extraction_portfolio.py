@@ -1,6 +1,7 @@
 """
 Utilities for extracting structured data from uploaded Fidelity portfolio summaries.
 """
+
 import asyncio
 import json
 import os
@@ -79,10 +80,10 @@ def _get_llm() -> VertexAI:
 async def extract_portfolio_fields(pdf_bytes: bytes) -> schemas.PortfolioFields:
     """
     Parse raw PDF bytes and use Gemini to extract Fidelity portfolio summary key fields.
-    
+
     This function prioritizes high-level metrics (total value, account info, asset allocation)
     and only extracts holdings when they are clearly structured in the document.
-    
+
     If credentials are missing or parsing fails, return an empty schema
     so the application can continue operating.
     """
@@ -114,7 +115,7 @@ async def extract_portfolio_fields(pdf_bytes: bytes) -> schemas.PortfolioFields:
         print(f"[extract_portfolio_fields] Raw Gemini response: {response}")
 
         raw = str(response).strip()
-        
+
         # Clean markdown code fences if present
         if raw.startswith("```"):
             raw = raw.strip("`")
@@ -140,4 +141,3 @@ async def extract_portfolio_fields(pdf_bytes: bytes) -> schemas.PortfolioFields:
     except (json.JSONDecodeError, RuntimeError, Exception) as e:
         print(f"[extract_portfolio_fields] Extraction failed with error: {e}")
         return schemas.PortfolioFields()
-

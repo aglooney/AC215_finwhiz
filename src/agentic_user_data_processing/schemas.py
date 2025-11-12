@@ -1,11 +1,12 @@
 """
 Pydantic schemas for request/response payloads.
 """
+
 import uuid
 from datetime import datetime
 from typing import List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 class SessionCreate(BaseModel):
@@ -71,35 +72,40 @@ class W2Fields(BaseModel):
     state_wages: Optional[str] = None
     state_income_tax: Optional[str] = None
 
+
 class Form1099Fields(BaseModel):
-    box1_interest_income: Optional[Union[float,str]] = None
-    box2_early_withdrawal_penalty: Optional[Union[float,str]] = None
-    box3_us_savings_bond_interest: Optional[Union[float,str]] = None
-    box4_federal_income_tax_withheld: Optional[Union[float,str]] = None
-    box5_investment_expenses: Optional[Union[float,str]] = None
-    box6_foreign_tax_paid: Optional[Union[float,str]] = None
-    box7_foreign_country: Optional[Union[float,str]] = None
-    box8_tax_exempt_interest: Optional[Union[float,str]] = None
-    box9_private_activity_bond_interest: Optional[Union[float,str]] = None
-    box10_market_discount: Optional[Union[float,str]] = None
-    box11_bond_premium: Optional[Union[float,str]] = None
-    box12_treasury_bond_premium: Optional[Union[float,str]] = None
-    box13_tax_exempt_bond_premium: Optional[Union[float,str]] = None
-    box14_cusip_number: Optional[Union[float,str]] = None
-    state: Optional[Union[float,str]] = None
-    state_id: Optional[Union[float,str]] = None
-    state_tax_withheld: Optional[Union[float,str]] = None
+    box1_interest_income: Optional[Union[float, str]] = None
+    box2_early_withdrawal_penalty: Optional[Union[float, str]] = None
+    box3_us_savings_bond_interest: Optional[Union[float, str]] = None
+    box4_federal_income_tax_withheld: Optional[Union[float, str]] = None
+    box5_investment_expenses: Optional[Union[float, str]] = None
+    box6_foreign_tax_paid: Optional[Union[float, str]] = None
+    box7_foreign_country: Optional[Union[float, str]] = None
+    box8_tax_exempt_interest: Optional[Union[float, str]] = None
+    box9_private_activity_bond_interest: Optional[Union[float, str]] = None
+    box10_market_discount: Optional[Union[float, str]] = None
+    box11_bond_premium: Optional[Union[float, str]] = None
+    box12_treasury_bond_premium: Optional[Union[float, str]] = None
+    box13_tax_exempt_bond_premium: Optional[Union[float, str]] = None
+    box14_cusip_number: Optional[Union[float, str]] = None
+    state: Optional[Union[float, str]] = None
+    state_id: Optional[Union[float, str]] = None
+    state_tax_withheld: Optional[Union[float, str]] = None
+
 
 class HoldingDetail(BaseModel):
     """Individual holding/position within a portfolio."""
+
     ticker: Optional[str] = None
     name: Optional[str] = None
     shares: Optional[Union[float, str]] = None
     value: Optional[Union[float, str]] = None
     asset_class: Optional[str] = None
 
+
 class PortfolioFields(BaseModel):
     """Fidelity portfolio summary extracted fields."""
+
     # High-level metrics (priority)
     total_portfolio_value: Optional[Union[float, str]] = None
     account_name: Optional[str] = None
@@ -107,18 +113,19 @@ class PortfolioFields(BaseModel):
     account_type: Optional[str] = None
     statement_date: Optional[str] = None
     account_owner: Optional[str] = None
-    
+
     # Asset allocation
     stocks_percentage: Optional[Union[float, str]] = None
     bonds_percentage: Optional[Union[float, str]] = None
     cash_percentage: Optional[Union[float, str]] = None
     other_percentage: Optional[Union[float, str]] = None
-    
+
     # Holdings (list of positions)
     holdings: Optional[List[HoldingDetail]] = None
-    
+
     # Additional metadata
     notes: Optional[str] = None
+
 
 class SessionContext(BaseModel):
     session_id: str

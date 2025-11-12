@@ -2,7 +2,7 @@
 PDF parsing helpers.
 Now supports flattening with Ghostscript, pdfminer fallback, and CID cleanup.
 """
-import io
+
 import re
 import subprocess
 from pathlib import Path
@@ -27,10 +27,11 @@ def extract_text_from_pdf(data: bytes) -> str:
     flattened_path = temp_path.with_name("extract_input_flat.pdf")
 
     # --- Flatten with Ghostscript ---
-    print(f"[parser.extract_text_from_pdf] Flattening PDF with Ghostscript...")
+    print("[parser.extract_text_from_pdf] Flattening PDF with Ghostscript...")
     gs_cmd = [
         "gs",
-        "-o", str(flattened_path),
+        "-o",
+        str(flattened_path),
         "-sDEVICE=pdfwrite",
         "-dPDFSETTINGS=/prepress",
         "-dNOPAUSE",
@@ -41,7 +42,7 @@ def extract_text_from_pdf(data: bytes) -> str:
         subprocess.run(gs_cmd, check=True, capture_output=True)
         print(f"[parser.extract_text_from_pdf] Flattened PDF saved to {flattened_path}")
     except FileNotFoundError:
-        print("[parser.extract_text_from_pdf][WARN] Ghostscript not found — continuing without flattening.")
+        print("[parser.extract_text_from_pdf][WARN] Ghostscript not found — continuing " "without flattening.")
         flattened_path = temp_path
     except subprocess.CalledProcessError as e:
         print(f"[parser.extract_text_from_pdf][ERROR] Ghostscript flatten failed: {e}")

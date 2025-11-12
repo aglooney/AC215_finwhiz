@@ -1,11 +1,11 @@
-import json
 import logging
-from .. import schemas, models  # adjust import as needed
+from .. import schemas
 
 logger = logging.getLogger(__name__)
 
+
 def build_context(*, session, messages, documents):
-    #build messages
+    # build messages
     try:
         message_list = list(messages)[::-1] if messages else []
         recent_messages = [
@@ -43,10 +43,7 @@ def build_context(*, session, messages, documents):
 
     # build session context
     try:
-        documents_payload = [
-            schemas.DocumentResponse.from_orm(doc)
-            for doc in documents or []
-        ]
+        documents_payload = [schemas.DocumentResponse.from_orm(doc) for doc in documents or []]
         ctx = schemas.SessionContext(
             session_id=str(session.id),
             user_id=str(session.user_id),

@@ -21,4 +21,14 @@ dependencies = [
     "pyarrow>=15.0.0",
     "google-cloud-storage>=2.10.0",
     "google-cloud-aiplatform>=1.70.0",
+    "black>=24.10.0",
+    "flake8>=7.1.1",
 ]
+
+[tool.black]
+line-length = 160
+target-version = ["py312"]
+
+[tool.flake8]
+max-line-length = 160
+extend-ignore = ["E203", "W503"]

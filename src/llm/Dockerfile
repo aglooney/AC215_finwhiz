@@ -31,4 +31,3 @@ COPY --chown=app:app . .
 EXPOSE 8001
 
 CMD ["bash", "-c", "source /home/app/.venv/bin/activate && uvicorn src.llm.llm_service:app --host 0.0.0.0 --port 8001 --reload"]
-

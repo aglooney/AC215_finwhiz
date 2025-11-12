@@ -2,8 +2,10 @@ from __future__ import annotations
 from typing import Iterable, Set, Deque
 from collections import deque
 
+
 class Frontier:
     """FIFO URL frontier with a seen set."""
+
     def __init__(self, seeds: Iterable[str]):
         self.queue: Deque[str] = deque(seeds)
         self.seen: Set[str] = set(seeds)

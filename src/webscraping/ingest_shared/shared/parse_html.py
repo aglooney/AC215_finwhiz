@@ -1,4 +1,5 @@
 """HTML parsing helpers for extracting structured content."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -24,7 +25,7 @@ DEFAULT_TARGET_TAGS = ("h1", "h2", "h3", "p", "li", "table")
 @dataclass
 class HtmlBlock:
     """Represents a block of content extracted from HTML."""
-    
+
     tag: str
     text: str
 
@@ -42,18 +43,18 @@ def extract_main_html(
     main_selector: str | None = None,
 ) -> tuple[str, list[HtmlBlock]]:
     """Extracts relevant content blocks from raw HTML.
-    
+
     Args:
         html: Raw HTML string
         removals: CSS selectors for elements to remove (uses DEFAULT_REMOVALS if None)
         target_tags: Tuple of tag names to extract (uses DEFAULT_TARGET_TAGS if None)
         main_selector: CSS selector for main content area (tries 'main', '.region-content', or full doc)
-        
+
     Returns:
         Tuple of (title, list of HtmlBlock objects)
     """
     soup = BeautifulSoup(html, "html.parser")
-    
+
     # Find main content area
     if main_selector:
         main = soup.select_one(main_selector) or soup
@@ -67,7 +68,7 @@ def extract_main_html(
 
     # Extract title
     title = (soup.title.string or "").strip() if soup.title else ""
-    
+
     # Extract content blocks
     blocks: list[HtmlBlock] = []
     for node in main.find_all(target_tags or DEFAULT_TARGET_TAGS):
@@ -81,10 +82,10 @@ def extract_main_html(
 
 def iter_text(blocks: Iterable[HtmlBlock]) -> Iterable[str]:
     """Yield text from HtmlBlock objects.
-    
+
     Args:
         blocks: Iterable of HtmlBlock objects
-        
+
     Yields:
         Text content from each block
     """

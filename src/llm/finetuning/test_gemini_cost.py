@@ -25,10 +25,7 @@ from typing import Any, Dict
 from datasets import load_dataset
 from google.cloud import aiplatform, storage
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -69,7 +66,7 @@ def download_fiqa_dataset(output_dir: str = "data") -> Dict[str, Any]:
 def prepare_gemini_format(
     dataset: Dict[str, Any],
     output_file: str = "data/gemini_train_100.jsonl",
-    num_examples: int = 100
+    num_examples: int = 100,
 ) -> Path:
     """
     Convert FIQA dataset to Gemini finetuning format.
@@ -117,14 +114,8 @@ def prepare_gemini_format(
             # Google's GenerateContent format
             gemini_format = {
                 "contents": [
-                    {
-                        "role": "user",
-                        "parts": [{"text": question}]
-                    },
-                    {
-                        "role": "model",
-                        "parts": [{"text": answer}]
-                    }
+                    {"role": "user", "parts": [{"text": question}]},
+                    {"role": "model", "parts": [{"text": answer}]},
                 ]
             }
 
@@ -135,11 +126,7 @@ def prepare_gemini_format(
     return output_path
 
 
-def upload_to_gcs(
-    local_file: Path,
-    bucket_name: str,
-    blob_name: str = "finetuning/gemini_train_100.jsonl"
-) -> str:
+def upload_to_gcs(local_file: Path, bucket_name: str, blob_name: str = "finetuning/gemini_train_100.jsonl") -> str:
     """
     Upload training data to Google Cloud Storage.
 
@@ -169,7 +156,7 @@ def run_gemini_tuning(
     project_id: str,
     location: str,
     training_data_uri: str,
-    model_display_name: str = "gemini-flash-fiqa-test"
+    model_display_name: str = "gemini-flash-fiqa-test",
 ) -> str:
     """
     Submit a Gemini 1.5 Flash finetuning job to Vertex AI using Python SDK.
@@ -186,7 +173,7 @@ def run_gemini_tuning(
     logger.info("Initializing Vertex AI")
     aiplatform.init(project=project_id, location=location)
 
-    logger.info(f"Submitting finetuning job for Gemini 1.5 Flash")
+    logger.info("Submitting finetuning job for Gemini 1.5 Flash")
     logger.info(f"Training data: {training_data_uri}")
 
     try:
@@ -197,9 +184,7 @@ def run_gemini_tuning(
             SupervisedTuningSpec,
         )
 
-        client = GenAiTuningServiceClient(
-            client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"}
-        )
+        client = GenAiTuningServiceClient(client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"})
 
         parent = f"projects/{project_id}/locations/{location}"
 
@@ -212,7 +197,7 @@ def run_gemini_tuning(
         tuning_job = TuningJob(
             base_model="gemini-2.5-flash-lite",
             supervised_tuning_spec=supervised_tuning_spec,
-            tuned_model_display_name=model_display_name
+            tuned_model_display_name=model_display_name,
         )
 
         logger.info("Submitting tuning job...")
@@ -240,15 +225,15 @@ def check_billing_cost(project_id: str) -> None:
     Args:
         project_id: GCP project ID
     """
-    logger.info("\n" + "="*70)
+    logger.info("\n" + "=" * 70)
     logger.info("COST VERIFICATION INSTRUCTIONS")
-    logger.info("="*70)
-    logger.info(f"1. Visit: https://console.cloud.google.com/billing")
+    logger.info("=" * 70)
+    logger.info("1. Visit: https://console.cloud.google.com/billing")
     logger.info(f"2. Select project: {project_id}")
-    logger.info(f"3. Navigate to 'Reports' tab")
-    logger.info(f"4. Filter by service: 'Vertex AI'")
-    logger.info(f"5. Look for charges related to 'Model Tuning'")
-    logger.info("="*70 + "\n")
+    logger.info("3. Navigate to 'Reports' tab")
+    logger.info("4. Filter by service: 'Vertex AI'")
+    logger.info("5. Look for charges related to 'Model Tuning'")
+    logger.info("=" * 70 + "\n")
 
 
 def main():
@@ -263,9 +248,7 @@ def main():
     location = os.getenv("GCP_REGION", "us-central1")
 
     if not project_id or not bucket_name:
-        raise ValueError(
-            "Missing required environment variables: GCP_PROJECT_ID, GCS_BUCKET_NAME"
-        )
+        raise ValueError("Missing required environment variables: GCP_PROJECT_ID, GCS_BUCKET_NAME")
 
     logger.info(f"Project ID: {project_id}")
     logger.info(f"Bucket: {bucket_name}")

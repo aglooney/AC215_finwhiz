@@ -4,6 +4,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from typing import Optional, Tuple
 import time
 
+
 class Fetcher:
     def __init__(self, user_agent: str = "finra-rag-bot/0.1", rps: float = 1.0, timeout: float = 20.0):
         self.headers = {"User-Agent": user_agent, "Accept": "text/html,application/xhtml+xml"}

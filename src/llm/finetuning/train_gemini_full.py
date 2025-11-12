@@ -21,10 +21,7 @@ from typing import Any, Dict
 from datasets import load_dataset
 from google.cloud import aiplatform, storage
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -66,7 +63,7 @@ def prepare_gemini_format(
     dataset: Dict[str, Any],
     split: str = "train",
     output_file: str = "data/gemini_train_full.jsonl",
-    num_examples: int = None
+    num_examples: int = None,
 ) -> Path:
     """
     Convert FIQA dataset to Gemini finetuning format.
@@ -97,7 +94,7 @@ def prepare_gemini_format(
     data_split = dataset[split]
     total_examples = len(data_split)
     num_to_process = num_examples if num_examples else total_examples
-    
+
     logger.info(f"Converting {num_to_process} {split} examples to Gemini GenerateContent format")
 
     output_path = Path(output_file)
@@ -119,14 +116,8 @@ def prepare_gemini_format(
             # Google's GenerateContent format
             gemini_format = {
                 "contents": [
-                    {
-                        "role": "user",
-                        "parts": [{"text": question}]
-                    },
-                    {
-                        "role": "model",
-                        "parts": [{"text": answer}]
-                    }
+                    {"role": "user", "parts": [{"text": question}]},
+                    {"role": "model", "parts": [{"text": answer}]},
                 ]
             }
 
@@ -137,11 +128,7 @@ def prepare_gemini_format(
     return output_path
 
 
-def upload_to_gcs(
-    local_file: Path,
-    bucket_name: str,
-    blob_name: str
-) -> str:
+def upload_to_gcs(local_file: Path, bucket_name: str, blob_name: str) -> str:
     """
     Upload training data to Google Cloud Storage.
 
@@ -174,7 +161,7 @@ def run_gemini_tuning(
     validation_data_uri: str,
     model_display_name: str = "gemini-flash-lite-fiqa-full",
     epochs: int = 3,
-    adapter_size: str = "ADAPTER_SIZE_FOUR"
+    adapter_size: str = "ADAPTER_SIZE_FOUR",
 ) -> str:
     """
     Submit a Gemini 2.5 Flash Lite finetuning job to Vertex AI using Python SDK.
@@ -197,7 +184,7 @@ def run_gemini_tuning(
     logger.info("Initializing Vertex AI")
     aiplatform.init(project=project_id, location=location)
 
-    logger.info(f"Submitting finetuning job for Gemini 2.5 Flash Lite")
+    logger.info("Submitting finetuning job for Gemini 2.5 Flash Lite")
     logger.info(f"Training data: {training_data_uri}")
     logger.info(f"Validation data: {validation_data_uri}")
     logger.info(f"Epochs: {epochs}")
@@ -210,9 +197,7 @@ def run_gemini_tuning(
             SupervisedTuningSpec,
         )
 
-        client = GenAiTuningServiceClient(
-            client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"}
-        )
+        client = GenAiTuningServiceClient(client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"})
 
         parent = f"projects/{project_id}/locations/{location}"
 
@@ -220,28 +205,28 @@ def run_gemini_tuning(
         hyper_params = {
             "epoch_count": epochs,
             "adapter_size": adapter_size,
-            "learning_rate_multiplier": 1.0
+            "learning_rate_multiplier": 1.0,
         }
 
         # Create supervised tuning spec with validation dataset
         supervised_tuning_spec = SupervisedTuningSpec(
             training_dataset_uri=training_data_uri,
             validation_dataset_uri=validation_data_uri,
-            hyper_parameters=hyper_params
+            hyper_parameters=hyper_params,
         )
 
         tuning_job = TuningJob(
             base_model="gemini-2.5-flash-lite",
             supervised_tuning_spec=supervised_tuning_spec,
-            tuned_model_display_name=model_display_name
+            tuned_model_display_name=model_display_name,
         )
 
         logger.info("Submitting tuning job with hyperparameters:")
-        logger.info(f"  - Model: gemini-2.5-flash-lite")
+        logger.info("  - Model: gemini-2.5-flash-lite")
         logger.info(f"  - Epochs: {epochs}")
         logger.info(f"  - Adapter size: {adapter_size}")
-        logger.info(f"  - Learning rate multiplier: 1.0")
-        
+        logger.info("  - Learning rate multiplier: 1.0")
+
         response = client.create_tuning_job(parent=parent, tuning_job=tuning_job)
 
         logger.info(f"Tuning job submitted: {response.name}")
@@ -250,17 +235,21 @@ def run_gemini_tuning(
         # Save the job name for later reference
         job_info_path = Path("data/tuning_job_info.json")
         with open(job_info_path, "w") as f:
-            json.dump({
-                "job_name": response.name,
-                "model_display_name": model_display_name,
-                "base_model": "gemini-2.5-flash-lite",
-                "training_data_uri": training_data_uri,
-                "validation_data_uri": validation_data_uri,
-                "epochs": epochs,
-                "adapter_size": adapter_size,
-                "hyper_parameters": hyper_params,
-                "timestamp": str(response.create_time) if hasattr(response, 'create_time') else None
-            }, f, indent=2)
+            json.dump(
+                {
+                    "job_name": response.name,
+                    "model_display_name": model_display_name,
+                    "base_model": "gemini-2.5-flash-lite",
+                    "training_data_uri": training_data_uri,
+                    "validation_data_uri": validation_data_uri,
+                    "epochs": epochs,
+                    "adapter_size": adapter_size,
+                    "hyper_parameters": hyper_params,
+                    "timestamp": (str(response.create_time) if hasattr(response, "create_time") else None),
+                },
+                f,
+                indent=2,
+            )
         logger.info(f"Job info saved to {job_info_path}")
 
         return response.name
@@ -282,20 +271,20 @@ def check_billing_cost(project_id: str) -> None:
     Args:
         project_id: GCP project ID
     """
-    logger.info("\n" + "="*70)
+    logger.info("\n" + "=" * 70)
     logger.info("COST VERIFICATION INSTRUCTIONS")
-    logger.info("="*70)
-    logger.info(f"1. Visit: https://console.cloud.google.com/billing")
+    logger.info("=" * 70)
+    logger.info("1. Visit: https://console.cloud.google.com/billing")
     logger.info(f"2. Select project: {project_id}")
-    logger.info(f"3. Navigate to 'Reports' tab")
-    logger.info(f"4. Filter by service: 'Vertex AI'")
-    logger.info(f"5. Look for charges related to 'Model Tuning'")
+    logger.info("3. Navigate to 'Reports' tab")
+    logger.info("4. Filter by service: 'Vertex AI'")
+    logger.info("5. Look for charges related to 'Model Tuning'")
     logger.info("")
     logger.info("Expected cost for Gemini 2.5 Flash Lite:")
     logger.info("  - Training: $1.50 per million tokens")
     logger.info("  - For 15K examples (~4.1M tokens) x 3 epochs:")
     logger.info("  - Estimated cost: ~$18.50")
-    logger.info("="*70 + "\n")
+    logger.info("=" * 70 + "\n")
 
 
 def main():
@@ -310,9 +299,7 @@ def main():
     location = os.getenv("GCP_REGION", "us-central1")
 
     if not project_id or not bucket_name:
-        raise ValueError(
-            "Missing required environment variables: GCP_PROJECT_ID, GCS_BUCKET_NAME"
-        )
+        raise ValueError("Missing required environment variables: GCP_PROJECT_ID, GCS_BUCKET_NAME")
 
     logger.info(f"Project ID: {project_id}")
     logger.info(f"Bucket: {bucket_name}")
@@ -322,67 +309,49 @@ def main():
     dataset = download_fiqa_dataset()
 
     # Step 2: Prepare ALL training examples in Gemini format
-    formatted_file = prepare_gemini_format(
-        dataset, 
-        split="train",
-        output_file="data/gemini_train_full.jsonl",
-        num_examples=None
-    )
+    formatted_file = prepare_gemini_format(dataset, split="train", output_file="data/gemini_train_full.jsonl", num_examples=None)
 
     # Step 3: Prepare validation set
-    validation_formatted_file = prepare_gemini_format(
-        dataset,
-        split="test",
-        output_file="data/gemini_validation.jsonl",
-        num_examples=None
-    )
+    validation_formatted_file = prepare_gemini_format(dataset, split="test", output_file="data/gemini_validation.jsonl", num_examples=None)
     logger.info(f"Validation set prepared: {validation_formatted_file}")
 
     # Step 4: Upload training data to GCS
-    train_gcs_uri = upload_to_gcs(
-        formatted_file, 
-        bucket_name,
-        "finetuning/gemini_train_full.jsonl"
-    )
+    train_gcs_uri = upload_to_gcs(formatted_file, bucket_name, "finetuning/gemini_train_full.jsonl")
 
     # Step 5: Upload validation data to GCS
-    validation_gcs_uri = upload_to_gcs(
-        validation_formatted_file,
-        bucket_name,
-        "finetuning/gemini_validation.jsonl"
-    )
+    validation_gcs_uri = upload_to_gcs(validation_formatted_file, bucket_name, "finetuning/gemini_validation.jsonl")
     logger.info(f"Validation data uploaded: {validation_gcs_uri}")
 
     # Step 6: Run full finetuning job with 3 epochs
     job_name = run_gemini_tuning(
-        project_id, 
-        location, 
+        project_id,
+        location,
         train_gcs_uri,
         validation_gcs_uri,
         model_display_name="gemini-flash-lite-fiqa-full",
         epochs=3,
-        adapter_size="ADAPTER_SIZE_FOUR"
+        adapter_size="ADAPTER_SIZE_FOUR",
     )
 
     # Step 7: Show billing instructions
     check_billing_cost(project_id)
 
-    logger.info("\n" + "="*70)
+    logger.info("\n" + "=" * 70)
     logger.info("FULL TRAINING INITIATED SUCCESSFULLY")
-    logger.info("="*70)
+    logger.info("=" * 70)
     logger.info(f"Job name: {job_name}")
-    logger.info(f"Model: Gemini 2.5 Flash Lite")
+    logger.info("Model: Gemini 2.5 Flash Lite")
     logger.info(f"Training examples: {len(dataset['train'])}")
     logger.info(f"Validation examples: {len(dataset['test'])}")
-    logger.info(f"Epochs: 3")
-    logger.info(f"Adapter size: ADAPTER_SIZE_FOUR")
+    logger.info("Epochs: 3")
+    logger.info("Adapter size: ADAPTER_SIZE_FOUR")
     logger.info("\nNext steps:")
     logger.info("1. Monitor job at: https://console.cloud.google.com/vertex-ai/generative/language/tuning")
     logger.info(f"   Project: {project_id}")
     logger.info("2. Wait for completion (may take 60-120 minutes for 3 epochs)")
     logger.info("3. Check billing for actual costs")
     logger.info("4. Run evaluate_tuned_model.py to test the model")
-    logger.info("="*70 + "\n")
+    logger.info("=" * 70 + "\n")
 
 
 if __name__ == "__main__":

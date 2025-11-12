@@ -1,4 +1,5 @@
 """Generic HTML parsing helpers for government financial sites."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -37,24 +38,18 @@ def _clean_text(text: str) -> str:
 def extract_main_html(html: str, *, additional_removals: list[str] | None = None) -> tuple[str, list[HtmlBlock]]:
     """
     Extract relevant content blocks from HTML.
-    
+
     Args:
         html: Raw HTML string
         additional_removals: Extra CSS selectors to remove (source-specific)
-    
+
     Returns:
         Tuple of (title, blocks)
     """
     soup = BeautifulSoup(html, "html.parser")
-    
+
     # Try to find main content area (different sites use different selectors)
-    main = (
-        soup.select_one("main") or 
-        soup.select_one(".region-content") or 
-        soup.select_one("#content") or 
-        soup.select_one("article") or
-        soup
-    )
+    main = soup.select_one("main") or soup.select_one(".region-content") or soup.select_one("#content") or soup.select_one("article") or soup
 
     # Remove navigation, ads, etc.
     removals = DEFAULT_REMOVALS + (additional_removals or [])
@@ -64,7 +59,7 @@ def extract_main_html(html: str, *, additional_removals: list[str] | None = None
 
     # Extract title
     title = (soup.title.string or "").strip() if soup.title else ""
-    
+
     # Extract content blocks
     blocks: list[HtmlBlock] = []
     for node in main.find_all(TARGET_TAGS):

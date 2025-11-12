@@ -19,6 +19,7 @@ def log_message(session_id: str, role: str, content: str) -> None:
     )
     response.raise_for_status()
 
+
 def query_llm(user_id: str, session_id: str, query: str) -> str:
     """Send a query to the combined LLM service"""
     payload = {
@@ -30,6 +31,7 @@ def query_llm(user_id: str, session_id: str, query: str) -> str:
     response = requests.post(f"{LLM_URL}/query", json=payload)
     response.raise_for_status()
     return response.json()
+
 
 def main():
     user_id = str(uuid.uuid4())
@@ -70,8 +72,10 @@ def main():
                 log_message(session_id, "assistant", answer)
             except Exception as exc:
                 print(f"[warn] Failed to record assistant message: {exc}")
-        
+
         except Exception as exc:
             print(f"[error] Query failed: {exc}")
+
+
 if __name__ == "__main__":
     main()

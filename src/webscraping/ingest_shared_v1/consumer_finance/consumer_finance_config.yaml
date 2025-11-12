@@ -6,7 +6,7 @@ seeds:
   # ============================================================================
   # Consumer Tools - Hub Pages (will follow links from these)
   # ============================================================================
-  
+
   - "https://www.consumerfinance.gov/consumer-tools/retirement/"
   - "https://www.consumerfinance.gov/consumer-tools/credit-cards/"
   - "https://www.consumerfinance.gov/consumer-tools/mortgages/"
@@ -18,27 +18,27 @@ seeds:
   - "https://www.consumerfinance.gov/consumer-tools/financial-well-being/"
   - "https://www.consumerfinance.gov/consumer-tools/educator-tools/"
   - "https://www.consumerfinance.gov/consumer-tools/fraud/"
-  
+
   # ============================================================================
   # Home Ownership - Hub Pages (will follow links)
   # ============================================================================
-  
+
   - "https://www.consumerfinance.gov/owning-a-home/"
   - "https://www.consumerfinance.gov/owning-a-home/explore/"
   - "https://www.consumerfinance.gov/owning-a-home/compare/"
   - "https://www.consumerfinance.gov/owning-a-home/close/"
-  
+
   # ============================================================================
   # Paying for College - Hub Pages (will follow links)
   # ============================================================================
-  
+
   - "https://www.consumerfinance.gov/paying-for-college/"
   - "https://www.consumerfinance.gov/paying-for-college/repay-student-debt/"
-  
+
   # ============================================================================
   # Ask CFPB - Individual FAQs (don't follow links from these)
   # ============================================================================
-  
+
   - "https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/"
   - "https://www.consumerfinance.gov/ask-cfpb/what-is-a-credit-score-en-315/"
   - "https://www.consumerfinance.gov/ask-cfpb/what-is-a-credit-report-en-309/"
@@ -87,7 +87,7 @@ link_deny_patterns:
   - "/ru-/"  # Russian pages
   - "/tl-/"  # Tagalog pages
   - "/vi-/"  # Vietnamese pages
-  
+
 # Note: PDFs ARE followed and scraped! One PDF page = one NDJSON record
 
 # Note: Script will automatically discover and scrape linked articles

@@ -6,6 +6,7 @@ financial documents (e.g., W-2 PDFs). It exposes a small REST API that
 other microservices can call to record interactions and fetch enriched
 context for downstream LLM prompts.
 """
+
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -31,16 +32,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 def on_startup() -> None:
     """Ensure database tables exist when the service starts."""
     init_db()
 
-#health check
+
+# health check
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
-
 
 
 @app.post("/sessions/", response_model=schemas.SessionResponse)
@@ -51,9 +53,7 @@ def create_session(payload: schemas.SessionCreate, db: Session = Depends(get_db)
 
 
 @app.post("/sessions/{session_id}/messages", response_model=schemas.MessageResponse)
-def append_message(
-    session_id: str, payload: schemas.MessageCreate, db: Session = Depends(get_db)
-):
+def append_message(session_id: str, payload: schemas.MessageCreate, db: Session = Depends(get_db)):
     session = models.Session.get(db, session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -96,6 +96,7 @@ async def upload_w2(
         raw_metadata=extracted.model_dump_json(),
     )
     return schemas.DocumentResponse.from_orm(document)
+
 
 @app.post("/sessions/{session_id}/1099", response_model=schemas.DocumentResponse)
 async def upload_1099(
@@ -171,7 +172,7 @@ def get_session_context(session_id: str, db: Session = Depends(get_db)):
     session = models.Session.get(db, session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     messages = models.Message.latest_for_session(db, session_id=session_id, limit=20)
     documents = db.query(models.Document).filter(models.Document.session_id == session_id).all()
     return context_service.build_context(session=session, messages=messages, documents=documents)

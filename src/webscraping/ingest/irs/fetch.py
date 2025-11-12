@@ -1,4 +1,5 @@
 """Utilities for fetching IRS content over HTTP."""
+
 from __future__ import annotations
 
 import time
@@ -28,8 +29,13 @@ class FetchResult:
         return "application/pdf" in self.content_type or self.url.lower().endswith(".pdf")
 
 
-def fetch_url(url: str, *, headers: Optional[dict[str, str]] = None, sleep: float = 0.5,
-              session: Optional[requests.Session] = None) -> FetchResult:
+def fetch_url(
+    url: str,
+    *,
+    headers: Optional[dict[str, str]] = None,
+    sleep: float = 0.5,
+    session: Optional[requests.Session] = None,
+) -> FetchResult:
     """Fetches a URL and returns the raw payload with content metadata."""
     sess = session or requests.Session()
     response = sess.get(url, headers=headers or DEFAULT_HEADERS, timeout=30)

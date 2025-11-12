@@ -29,7 +29,7 @@ Visit the ```reports/milestone2/README.md``` to see logs for milestone 2.
 ## Quick Start
 
 ### Prerequisites
-- Docker Desktop (or Docker Engine) + docker-compose plugin  
+- Docker Desktop (or Docker Engine) + docker-compose plugin
 - GCP service account with access to Vertex AI and the configured GCS buckets with local copies of JSON keys stored in `secrets/`
 
 ### Environment Configuration
@@ -52,9 +52,9 @@ Put matching credentials for any additional buckets into `secrets/`.
 docker-compose up --build
 ```
 This composes:
-- **postgres** – session + document metadata  
-- **llm** – RAG/LLM API with Vertex AI + Chroma  
-- **agent** – chat + W‑2 ingestion microservice  
+- **postgres** – session + document metadata
+- **llm** – RAG/LLM API with Vertex AI + Chroma
+- **agent** – chat + W‑2 ingestion microservice
 - **query_client** – interactive user interface
 
 Once the services are healthy you can open a second terminal to validate the stack:
@@ -75,6 +75,30 @@ Additional utilities:
 cd src/gcp_storage
 python test_gcs.py
 ```
+
+### Linting & Formatting (Black + Flake8 via pre-commit)
+We pin formatter/linter versions with [pre-commit](https://pre-commit.com), which keeps local runs in sync with CI.
+
+1. Install tooling once per machine:
+   ```bash
+   pip install pre-commit
+   pre-commit install
+   pre-commit install --hook-type pre-push
+   ```
+   The default hook runs on `git commit`; the additional `pre-push` hook re-checks the whole repo before uploading.
+
+2. To run manually (e.g., before opening a PR):
+   ```bash
+   pre-commit run --all-files
+   ```
+
+3. When pushing:
+   ```bash
+   git add <files>
+   git commit -m "Message"
+   git push
+   ```
+   The `pre-push` hook executes Black/Flake8 inside pre-commit’s managed virtualenvs. Fix any reported issues, re-stage, and push again. GitHub Actions also runs `pre-commit run --all-files` to keep CI aligned with local checks.
 
 ---
 

@@ -1,4 +1,5 @@
 """Driver for consumer finance document ingestion and normalization."""
+
 from __future__ import annotations
 
 import argparse
@@ -55,14 +56,14 @@ def process_fetch_result(result: FetchResult, *, doc_hint: Optional[str] = None)
 def process_html(result: FetchResult, *, doc_hint: Optional[str] = None) -> list[IngestRecord]:
     """Process HTML - ONE record per page (no chunking)."""
     title, blocks = extract_main_html(str(result.content))
-    
+
     if not blocks:
         LOGGER.warning("No content blocks extracted from %s", result.url)
         return []
-    
+
     # Combine all text into one record (no chunking)
     all_text = "\n".join(block.text for block in blocks)
-    
+
     doc_id = slugify(title or doc_hint or result.url)
     year = infer_year(title) or infer_year(result.url)
     doctype = determine_doctype(result.url)
@@ -79,18 +80,18 @@ def process_html(result: FetchResult, *, doc_hint: Optional[str] = None) -> list
         doctype=doctype,
         authority="consumerfinance.gov",
     )
-    
+
     return [record]
 
 
 def process_pdf(result: FetchResult, *, doc_hint: Optional[str] = None) -> list[IngestRecord]:
     """Process PDF - ONE record per page (no chunking)."""
     blocks = pdf_to_blocks(bytes(result.content))
-    
+
     if not blocks:
         LOGGER.warning("No content blocks from PDF %s", result.url)
         return []
-    
+
     # Combine all text into one record (no chunking)
     all_text = "\n".join(block.text for block in blocks)
 
@@ -112,7 +113,7 @@ def process_pdf(result: FetchResult, *, doc_hint: Optional[str] = None) -> list[
         authority="consumerfinance.gov",
         page=None,
     )
-    
+
     return [record]
 
 
@@ -141,8 +142,14 @@ def filter_allowed(seeds: list[str], allow_domains: list[str]) -> list[str]:
     return allowed
 
 
-def ingest_from_config(config_path: Path, *, output_dir: Path, bucket: Optional[str],
-                       gcs_prefix: Optional[str], max_pages: Optional[int] = None) -> None:
+def ingest_from_config(
+    config_path: Path,
+    *,
+    output_dir: Path,
+    bucket: Optional[str],
+    gcs_prefix: Optional[str],
+    max_pages: Optional[int] = None,
+) -> None:
     config = load_config(config_path)
     seeds: list[str] = config.get("seeds", [])
     allow_domains: list[str] = config.get("allow_domains", [])
@@ -182,18 +189,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Normalize consumer finance documents for FinWhiz ingest")
     parser.add_argument("--config", type=Path, required=True, help="Path to consumer_finance_config.yaml")
     parser.add_argument(
-        "--output-dir", type=Path, default=Path("data/consumer_finance"), help="Directory to store NDJSON output"
+        "--output-dir",
+        type=Path,
+        default=Path("data/consumer_finance"),
+        help="Directory to store NDJSON output",
     )
     parser.add_argument("--bucket", type=str, default=None, help="Optional GCS bucket name")
-    parser.add_argument(
-        "--gcs-prefix", type=str, default=None, help="Path prefix inside the GCS bucket"
-    )
-    parser.add_argument(
-        "--max-pages", type=int, default=None, help="Override maximum pages from config"
-    )
-    parser.add_argument(
-        "--log-level", type=str, default="INFO", help="Logging verbosity"
-    )
+    parser.add_argument("--gcs-prefix", type=str, default=None, help="Path prefix inside the GCS bucket")
+    parser.add_argument("--max-pages", type=int, default=None, help="Override maximum pages from config")
+    parser.add_argument("--log-level", type=str, default="INFO", help="Logging verbosity")
     return parser.parse_args()
 
 

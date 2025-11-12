@@ -1,7 +1,6 @@
 from __future__ import annotations
 import os
 from pathlib import Path
-import re
 import time
 import yaml
 import typer
@@ -14,9 +13,11 @@ from .extract import extract_page_fields, within_allow, matches_deny
 
 app = typer.Typer(add_completion=False)
 
+
 def load_yaml(path: str) -> dict:
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
+
 
 @app.command()
 def main(
@@ -83,6 +84,7 @@ def main(
 
     dur = time.time() - start
     print(f"Fetched {fetched} pages in {dur:.1f}s → {out}")
+
 
 if __name__ == "__main__":
     app()

@@ -1,4 +1,5 @@
 """Helpers for writing NDJSON payloads to Google Cloud Storage."""
+
 from __future__ import annotations
 
 import json

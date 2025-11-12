@@ -1,4 +1,5 @@
 """HTML parsing helpers tailored to consumerfinance.gov layouts."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

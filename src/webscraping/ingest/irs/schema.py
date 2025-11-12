@@ -1,4 +1,5 @@
 """Defines the ingest record schema for FinWhiz IRS documents."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
@@ -22,10 +23,20 @@ class IngestRecord:
         return asdict(self)
 
 
-def make_record(*, doc_id: str, url: str, title: str, year: Optional[int],
-                section: Optional[str], chunk_id: int, text: str,
-                authority: str = "irs.gov", doctype: str = "publication",
-                language: str = "en", page: Optional[int] = None) -> IngestRecord:
+def make_record(
+    *,
+    doc_id: str,
+    url: str,
+    title: str,
+    year: Optional[int],
+    section: Optional[str],
+    chunk_id: int,
+    text: str,
+    authority: str = "irs.gov",
+    doctype: str = "publication",
+    language: str = "en",
+    page: Optional[int] = None,
+) -> IngestRecord:
     record_id = f"{doc_id}#c{chunk_id}"
     return IngestRecord(
         id=record_id,

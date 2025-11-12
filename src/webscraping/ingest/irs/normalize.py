@@ -1,4 +1,5 @@
 """Driver for IRS document ingestion and normalization."""
+
 from __future__ import annotations
 
 import argparse
@@ -143,8 +144,14 @@ def filter_allowed(seeds: list[str], allow_domains: list[str]) -> list[str]:
     return allowed
 
 
-def ingest_from_config(config_path: Path, *, output_dir: Path, bucket: Optional[str],
-                       gcs_prefix: Optional[str], max_pages: Optional[int] = None) -> None:
+def ingest_from_config(
+    config_path: Path,
+    *,
+    output_dir: Path,
+    bucket: Optional[str],
+    gcs_prefix: Optional[str],
+    max_pages: Optional[int] = None,
+) -> None:
     config = load_config(config_path)
     seeds: list[str] = config.get("seeds", [])
     allow_domains: list[str] = config.get("allow_domains", [])
@@ -183,20 +190,17 @@ def ingest_from_config(config_path: Path, *, output_dir: Path, bucket: Optional[
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Normalize IRS documents for FinWhiz ingest")
-    parser.add_argument("--config", type=Path, default=str(Path(__file__).parent/"crawl_config.yaml"), help="Path to crawl_config.yaml")
     parser.add_argument(
-        "--output-dir", type=Path, default=Path("data/tmp"), help="Directory to store NDJSON output"
+        "--config",
+        type=Path,
+        default=str(Path(__file__).parent / "crawl_config.yaml"),
+        help="Path to crawl_config.yaml",
     )
+    parser.add_argument("--output-dir", type=Path, default=Path("data/tmp"), help="Directory to store NDJSON output")
     parser.add_argument("--bucket", type=str, default=None, help="Optional GCS bucket name")
-    parser.add_argument(
-        "--gcs-prefix", type=str, default=None, help="Path prefix inside the GCS bucket"
-    )
-    parser.add_argument(
-        "--max-pages", type=int, default=None, help="Override maximum pages from config"
-    )
-    parser.add_argument(
-        "--log-level", type=str, default="INFO", help="Logging verbosity"
-    )
+    parser.add_argument("--gcs-prefix", type=str, default=None, help="Path prefix inside the GCS bucket")
+    parser.add_argument("--max-pages", type=int, default=None, help="Override maximum pages from config")
+    parser.add_argument("--log-level", type=str, default="INFO", help="Logging verbosity")
     return parser.parse_args()
 
 

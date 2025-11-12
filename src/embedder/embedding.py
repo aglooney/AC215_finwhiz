@@ -4,7 +4,6 @@ import gzip
 import logging
 import gc
 import subprocess
-import torch
 from datetime import datetime
 from tqdm import tqdm
 from google.cloud import storage
@@ -38,22 +37,24 @@ collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
 # Load embedding model
 logging.info("Loading SentenceTransformer embedding model")
 embedder = SentenceTransformer(EMBEDDING_MODEL, trust_remote_code=True)
-embedder = embedder.half()
+
 
 def get_git_commit():
     git_commit = os.getenv("GIT_COMMIT")
     if git_commit:
         return git_commit
-    
+
     try:
         git_commit = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
         return git_commit
     except Exception:
         return "unknown"
 
+
 # Utility functions
 def chunk_text(text, max_chars=500):
-    return [text[i:i+max_chars] for i in range(0, len(text), max_chars)]
+    return [text[i : i + max_chars] for i in range(0, len(text), max_chars)]
+
 
 def clean_metadata(meta: dict) -> dict:
     return {
@@ -64,8 +65,10 @@ def clean_metadata(meta: dict) -> dict:
         "year": meta.get("year") if meta.get("year") is not None else -1,
     }
 
+
 def embed_texts(texts):
     return embedder.encode(texts, batch_size=BATCH_SIZE, task="retrieval.passage", convert_to_numpy=True).tolist()
+
 
 def store_records(records, collection):
     if not records:
@@ -86,13 +89,9 @@ def store_records(records, collection):
         return 0
 
     embeddings = embed_texts(texts)
-    collection.add(
-        ids=ids,
-        embeddings=embeddings,
-        documents=texts,
-        metadatas=metadatas
-    )
+    collection.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
     return len(records)
+
 
 # Stream functions for GCS blobs
 def stream_ndjson_from_blob(bucket, blob_name):
@@ -103,14 +102,16 @@ def stream_ndjson_from_blob(bucket, blob_name):
             if line:
                 yield json.loads(line)
 
+
 def stream_jsonl_gz_from_blob(bucket, blob_name):
     blob = bucket.blob(blob_name)
     with blob.open("rb") as f:
-        with gzip.open(f, 'rt', encoding='utf-8') as gz:
+        with gzip.open(f, "rt", encoding="utf-8") as gz:
             for line in gz:
                 line = line.strip()
                 if line:
                     yield json.loads(line)
+
 
 # Upload ChromaDB to GCS (optional, if you want persistence)
 def upload_chroma_to_gcs(local_dir, bucket_name, dest_prefix):
@@ -128,7 +129,8 @@ def upload_chroma_to_gcs(local_dir, bucket_name, dest_prefix):
             logging.info(f"Uploaded {local_path} to gs://{bucket_name}/{blob_path}")
     return uploaded_files
 
-def upload_metadata_to_gcs(metadata:dict, bucket_name:str, dest_prefix:str ):
+
+def upload_metadata_to_gcs(metadata: dict, bucket_name: str, dest_prefix: str):
     client = storage.Client.from_service_account_json(KEY_PATH)
     bucket = client.bucket(bucket_name)
 
@@ -159,7 +161,7 @@ def ingest_from_gcs():
             stream_func = stream_jsonl_gz_from_blob
         else:
             continue
-        
+
         files_processed.append(blob.name)
         batch = []
         for record in stream_func(bucket, blob.name):
@@ -174,6 +176,7 @@ def ingest_from_gcs():
     logging.info(f"Finished ingesting {total_ingested} records into ChromaDB collection '{COLLECTION_NAME}'")
     return total_ingested, files_processed  # return in-memory collection
 
+
 # Example usage
 if __name__ == "__main__":
     total_records, files_processed = ingest_from_gcs()
@@ -181,8 +184,6 @@ if __name__ == "__main__":
 
     logging.info("Pushing Database to GCS")
     uploaded_files = upload_metadata_to_gcs(local_dir=CHROMA_PATH, bucket_name=BUCKET_NAME, dest_prefix="chroma_storage_backup")
-    
-
 
     git_commit = get_git_commit()
     metadata = {
@@ -195,7 +196,7 @@ if __name__ == "__main__":
         "uploaded_files": uploaded_files,
         "bucket": BUCKET_NAME,
         "chroma_path": CHROMA_PATH,
-        "git_commit": git_commit
+        "git_commit": git_commit,
     }
 
     logging.info("Pushing Metadata to GCS")

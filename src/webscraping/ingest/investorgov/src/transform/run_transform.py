@@ -5,6 +5,7 @@ import re
 from bs4 import BeautifulSoup
 import json
 
+
 def extract_text(html_content, selectors_cfg):
     soup = BeautifulSoup(html_content, "html.parser")
 
@@ -31,6 +32,7 @@ def extract_text(html_content, selectors_cfg):
 
     return "\n".join(parts)
 
+
 def transform_one(html_path, selectors_cfg, routing_cfg, out_chunk_dir):
     content = html_path.read_text(encoding="utf-8", errors="ignore")
     body = extract_text(content, selectors_cfg)
@@ -51,13 +53,14 @@ def transform_one(html_path, selectors_cfg, routing_cfg, out_chunk_dir):
         "source": html_path.name,
         "title": fname,
         "content": body,
-        "tags": route_tags
+        "tags": route_tags,
     }
 
     out_file = out_chunk_dir / f"{fname}.jsonl"
     with open(out_file, "w", encoding="utf-8") as f:
         f.write(json.dumps(chunk) + "\n")
     return out_file
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -85,6 +88,7 @@ def main():
             print(f"⚠️ Skipped {html_file.name} (no content)")
 
     print(f"\nDone. {success}/{total} pages transformed successfully.")
+
 
 if __name__ == "__main__":
     main()
