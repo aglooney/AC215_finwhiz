@@ -1,7 +1,24 @@
-import type { Session, Message, QueryResponse, Document, UserProfile } from '../types';
+import type {
+  Session,
+  Message,
+  QueryResponse,
+  Document,
+  UserProfile,
+  SessionContext,
+} from '../types';
 
 // Mock delay to simulate API calls
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const mockDocumentsBySession = new Map<string, Document[]>();
+const mockSessionUsers = new Map<string, string>();
+
+const getSessionDocuments = (sessionId: string) => {
+  if (!mockDocumentsBySession.has(sessionId)) {
+    mockDocumentsBySession.set(sessionId, []);
+  }
+  return mockDocumentsBySession.get(sessionId)!;
+};
 
 // Mock LLM responses based on query keywords
 const mockLLMResponses: Record<string, string> = {
@@ -31,6 +48,7 @@ export const mockApi = {
     await delay(300);
     const sessionId = crypto.randomUUID();
     console.log('✓ Mock: Created session', sessionId);
+    mockSessionUsers.set(sessionId, userId);
     return {
       id: sessionId,
       user_id: userId,
@@ -52,25 +70,43 @@ export const mockApi = {
   async uploadW2(sessionId: string, file: File): Promise<Document> {
     await delay(1500); // Simulate processing time
     console.log('✓ Mock: Uploaded W-2', file.name);
-    return {
+    const document = {
       id: crypto.randomUUID(),
       session_id: sessionId,
       document_type: 'w2',
       gcs_uri: `mock://bucket/w2/${file.name}`,
       created_at: new Date().toISOString(),
     };
+    getSessionDocuments(sessionId).push(document);
+    return document;
   },
 
   async upload1099(sessionId: string, file: File): Promise<Document> {
     await delay(1500); // Simulate processing time
     console.log('✓ Mock: Uploaded 1099', file.name);
-    return {
+    const document = {
       id: crypto.randomUUID(),
       session_id: sessionId,
       document_type: '1099',
       gcs_uri: `mock://bucket/1099/${file.name}`,
       created_at: new Date().toISOString(),
     };
+    getSessionDocuments(sessionId).push(document);
+    return document;
+  },
+
+  async uploadPortfolio(sessionId: string, file: File): Promise<Document> {
+    await delay(1500);
+    console.log('✓ Mock: Uploaded portfolio', file.name);
+    const document = {
+      id: crypto.randomUUID(),
+      session_id: sessionId,
+      document_type: 'portfolio',
+      gcs_uri: `mock://bucket/portfolio/${file.name}`,
+      created_at: new Date().toISOString(),
+    };
+    getSessionDocuments(sessionId).push(document);
+    return document;
   },
 
   // LLM Query
@@ -107,14 +143,17 @@ export const mockApi = {
   },
 
   // Get Session Context
-  async getSessionContext(sessionId: string): Promise<any> {
+  async getSessionContext(sessionId: string): Promise<SessionContext> {
     await delay(100);
     console.log('✓ Mock: Getting session context', sessionId);
     return {
       session_id: sessionId,
+      user_id: mockSessionUsers.get(sessionId) || crypto.randomUUID(),
       recent_messages: [],
       w2_fields: {},
       form1099_fields: {},
+      portfolio_fields: {},
+      documents: [...getSessionDocuments(sessionId)],
     };
   },
 };

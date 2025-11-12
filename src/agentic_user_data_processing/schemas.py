@@ -127,4 +127,5 @@ class SessionContext(BaseModel):
     w2_fields: Optional[W2Fields] = None
     form1099_fields: Optional[Form1099Fields] = None
     portfolio_fields: Optional[PortfolioFields] = None
+    documents: Optional[list[DocumentResponse]] = None
     summary: Optional[str] = None

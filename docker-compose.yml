@@ -118,9 +118,6 @@ services:
       retries: 3
       start_period: 5s
 
-  postgres:
-    image: postgres:16
-    container_name: finwhiz_postgres
   cloudsql-proxy:
     image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.11.3
     command:

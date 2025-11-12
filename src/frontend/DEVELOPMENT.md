@@ -89,14 +89,20 @@ The frontend uses Vite's proxy configuration to forward API requests:
 ### Development (.env.development)
 ```env
 VITE_API_BASE_URL=http://localhost:3000
+VITE_USE_MOCK_API=false
 ```
 
 ### Production (.env.production)
 ```env
 VITE_API_BASE_URL=
+VITE_USE_MOCK_API=false
 ```
 
 The production build uses relative paths since the frontend is served from the same origin as the API gateway.
+
+### Mock API Toggle
+
+If you need to run the frontend without the backend services (e.g., design work or demos), set `VITE_USE_MOCK_API=true`. This keeps the chat and upload flows responsive using in-memory data. Setting it to `false` (default) enables live API calls through the Vite proxy (`/api/agent` and `/api/llm`).
 
 ## API Service Structure
 

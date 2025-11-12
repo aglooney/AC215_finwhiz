@@ -37,6 +37,7 @@ def _load_session_metadata(bucket, session_id:str) -> list:
         return []
     except Exception as e:
         logging.warning(f"Failed to load metadata.json for {session_id}: {e}")
+        return []
 
 def _save_session_metadata(bucket, session_id: str, metadata_list: list):
     """Upload the updated metadata list as JSON to GCS"""
@@ -69,7 +70,9 @@ def save_document_bytes(
         client=_get_gcs_client()
         bucket = client.bucket(BUCKET_NAME)
         blob = bucket.blob(object_name)
-
+    except Exception as e:
+        logging.error(f"Could not get GCS Client: {e}")
+    try:
         blob.upload_from_string(contents, content_type=content_type)
         gcs_uri=f"gs://{BUCKET_NAME}/{object_name}"
         logging.info(f"Uploaded {filename} to {gcs_uri}")
