@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv pip install --system pytest pytest-cov pytest-asyncio
-          uv pip install --system -e src/llm -e src/embedder -e src/agentic_user_data_processing -e src/gcp_storage -e src/query_client -e src/webscraping
+          uv pip install --system -e src/llm -e src/embedder -e src/agentic_user_data_processing -e src/query_client -e src/webscraping
 
       - name: Run unit tests
         run: pytest tests/unit
