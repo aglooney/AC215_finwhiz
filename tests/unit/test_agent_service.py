@@ -141,15 +141,15 @@ def test_save_session_metadata_uploads_json():
 
 
 def test_build_context_includes_documents():
-    session = SimpleNamespace(id="sess", user_id="user")
+    session = SimpleNamespace(id="f1e21111-1111-1111-1111-111111111111", user_id="d1e21111-1111-1111-1111-111111111111")
     messages = [
         SimpleNamespace(role="assistant", content="Hi", created_at=datetime.utcnow()),
         SimpleNamespace(role="user", content="Hello", created_at=datetime.utcnow()),
     ]
     documents = [
         SimpleNamespace(
-            id="doc1",
-            session_id="sess",
+            id="2f5d2222-2222-2222-2222-222222222222",
+            session_id="f1e21111-1111-1111-1111-111111111111",
             document_type="w2",
             gcs_uri="gs://bucket/file",
             raw_metadata=json.dumps({"employee_name": "Alice"}),
@@ -158,6 +158,6 @@ def test_build_context_includes_documents():
     ]
 
     ctx = context_service.build_context(session=session, messages=messages, documents=documents)
-    assert ctx.session_id == "sess"
+    assert ctx.session_id == "f1e21111-1111-1111-1111-111111111111"
     assert ctx.w2_fields.employee_name == "Alice"
     assert ctx.recent_messages[0].role == "user"  # reversed order
