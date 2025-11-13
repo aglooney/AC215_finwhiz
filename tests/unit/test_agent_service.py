@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -142,8 +143,8 @@ def test_save_session_metadata_uploads_json():
 def test_build_context_includes_documents():
     session = SimpleNamespace(id="sess", user_id="user")
     messages = [
-        SimpleNamespace(role="assistant", content="Hi", created_at="t1"),
-        SimpleNamespace(role="user", content="Hello", created_at="t2"),
+        SimpleNamespace(role="assistant", content="Hi", created_at=datetime.utcnow()),
+        SimpleNamespace(role="user", content="Hello", created_at=datetime.utcnow()),
     ]
     documents = [
         SimpleNamespace(
@@ -152,7 +153,7 @@ def test_build_context_includes_documents():
             document_type="w2",
             gcs_uri="gs://bucket/file",
             raw_metadata=json.dumps({"employee_name": "Alice"}),
-            created_at="now",
+            created_at=datetime.utcnow(),
         )
     ]
 
