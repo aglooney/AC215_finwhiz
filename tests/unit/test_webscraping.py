@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 
 from webscraping.ingest_shared.shared import chunk as chunk_mod
 from webscraping.ingest_shared.shared import parse_html
+from webscraping.ingest_shared.finra.src.transform import chunkers
 
 
 def test_clean_text_normalizes_whitespace():
@@ -48,3 +49,27 @@ def test_chunk_blocks_respects_sections_and_pages():
     assert chunks[1].section == "Section A"
     assert chunks[1].start_page == 2
     assert all(isinstance(chunk.text, str) and chunk.text for chunk in chunks)
+
+
+def test_h2_chunker_groups_by_headers():
+    page = {
+        "url": "https://finra.org/edu",
+        "title": "Investor Education",
+        "breadcrumbs": ["FINRA", "Investor Education"],
+        "blocks": [
+            {"type": "p", "text": "Intro content"},
+            {"type": "h2", "text": "Avoiding Fraud"},
+            {"type": "p", "text": "Paragraph " * 5},
+            {"type": "h3", "text": "Red Flags"},
+            {"type": "list", "items": ["Tip 1", "Tip 2"]},
+            {"type": "h2", "text": "Planning"},
+            {"type": "p", "text": "Budget basics"},
+        ],
+    }
+
+    chunks = chunkers.h2_chunker(page, max_chars=80)
+    assert len(chunks) >= 2
+    sections = [chunk["section"][-1] if chunk["section"] else None for chunk in chunks]
+    assert "Avoiding Fraud" in sections
+    assert "Planning" in sections
+    assert all(len(chunk["id"]) == 16 for chunk in chunks)
