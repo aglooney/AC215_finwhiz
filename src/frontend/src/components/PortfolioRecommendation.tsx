@@ -1,21 +1,67 @@
-import { PieChart, TrendingUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { PieChart, TrendingUp, Sparkles } from 'lucide-react';
 import type { UserProfile } from '../types';
 import { calculatePortfolio } from '../services/api';
+import { api } from '../services/api';
 
 interface PortfolioRecommendationProps {
   profile: UserProfile;
+  sessionId: string;
 }
 
-export default function PortfolioRecommendation({ profile }: PortfolioRecommendationProps) {
-  const portfolio = calculatePortfolio(profile);
+export default function PortfolioRecommendation({ profile, sessionId }: PortfolioRecommendationProps) {
+  const defaultPortfolio = calculatePortfolio(profile);
+  const [portfolio, setPortfolio] = useState(defaultPortfolio);
+  const [isCustom, setIsCustom] = useState(false);
   const yearsToRetirement = profile.retirementAge - profile.age;
+
+  useEffect(() => {
+    // Check if there's a custom allocation
+    const loadCustomAllocation = async () => {
+      try {
+        const response = await api.getCustomAllocation(sessionId);
+        if (response.allocation) {
+          setPortfolio({
+            stocks: response.allocation.stocks,
+            bonds: response.allocation.bonds,
+            cash: response.allocation.cash,
+            description: 'AI-recommended allocation based on your profile and goals.'
+          });
+          setIsCustom(true);
+        }
+      } catch (error) {
+        // No custom allocation, use default
+        setIsCustom(false);
+        setPortfolio(defaultPortfolio);
+      }
+    };
+
+    loadCustomAllocation();
+    
+    // Refresh when switching to this tab
+    const interval = setInterval(loadCustomAllocation, 5000);
+    return () => clearInterval(interval);
+  }, [sessionId, defaultPortfolio]);
 
   return (
     <div className="card">
       <div className="flex items-center gap-2 mb-4">
         <PieChart className="w-6 h-6 text-primary-600" />
-        <h3 className="text-xl font-bold">Your Personalized Portfolio</h3>
+        <h3 className="text-xl font-bold">
+          {isCustom ? 'AI-Recommended Portfolio' : 'Your Personalized Portfolio'}
+        </h3>
+        {isCustom && (
+          <Sparkles className="w-5 h-5 text-yellow-500" />
+        )}
       </div>
+
+      {isCustom && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-sm text-green-800 font-medium">
+            ✓ This allocation was recommended by your AI assistant based on your conversation.
+          </p>
+        </div>
+      )}
 
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">

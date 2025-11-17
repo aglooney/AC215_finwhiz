@@ -156,6 +156,110 @@ export const mockApi = {
       documents: [...getSessionDocuments(sessionId)],
     };
   },
+
+  async getPortfolioLive(_sessionId: string): Promise<any> {
+    return {
+      total_current_value: 150000,
+      total_original_value: 140000,
+      total_gain_loss: 10000,
+      total_gain_loss_percent: 7.14,
+      holdings: [
+        {
+          ticker: 'AAPL',
+          name: 'Apple Inc.',
+          shares: 100,
+          original_value: 15000,
+          current_price: 175.50,
+          current_value: 17550,
+          gain_loss: 2550,
+          gain_loss_percent: 17.0,
+          day_change: 2.5,
+          day_change_percent: 1.4
+        }
+      ],
+      account_name: 'Mock Portfolio',
+      updated_at: new Date().toISOString()
+    };
+  },
+
+  async getPortfolioAnalytics(_sessionId: string): Promise<any> {
+    return {
+      top_performers: [
+        { ticker: 'AAPL', name: 'Apple Inc.', gain_loss_percent: 17.0 }
+      ],
+      bottom_performers: [],
+      risk_metrics: {
+        number_of_holdings: 1,
+        largest_holding_percent: 100,
+        concentration_risk: 'High'
+      }
+    };
+  },
+
+  async getMarketQuote(ticker: string): Promise<any> {
+    return {
+      ticker,
+      name: `Mock ${ticker}`,
+      price: 100.00,
+      change: 1.50,
+      change_percent: 1.52,
+      volume: 1000000,
+      updated_at: new Date().toISOString()
+    };
+  },
+
+  async getMarketIndices(): Promise<any> {
+    return {
+      indices: [
+        { symbol: '^GSPC', name: 'S&P 500', price: 4500, change: 25, change_percent: 0.56 },
+        { symbol: '^DJI', name: 'Dow Jones', price: 35000, change: 150, change_percent: 0.43 },
+        { symbol: '^IXIC', name: 'NASDAQ', price: 14000, change: 80, change_percent: 0.57 },
+        { symbol: '^RUT', name: 'Russell 2000', price: 1800, change: 10, change_percent: 0.56 }
+      ],
+      updated_at: new Date().toISOString()
+    };
+  },
+
+  async getStockHistory(ticker: string, period: string = '1mo'): Promise<any> {
+    return {
+      ticker,
+      period,
+      history: [
+        { date: '2024-11-01', open: 100, high: 105, low: 99, close: 103, volume: 1000000 },
+        { date: '2024-11-02', open: 103, high: 106, low: 102, close: 105, volume: 1100000 }
+      ]
+    };
+  },
+
+  async saveCustomAllocation(_sessionId: string, allocation: { stocks: number; bonds: number; cash: number }): Promise<any> {
+    return { status: 'success', allocation };
+  },
+
+  async getCustomAllocation(_sessionId: string): Promise<any> {
+    throw new Error('No custom allocation found'); // Mock returns 404
+  },
+
+  async saveAssetAllocationTarget(_sessionId: string, allocation: any): Promise<any> {
+    return { status: 'success', allocation };
+  },
+
+  async getAssetAllocationTarget(_sessionId: string): Promise<any> {
+    throw new Error('No asset allocation target found');
+  },
+
+  async calculateAssetTargets(_sessionId: string, targetPercentages: Record<string, number>): Promise<any> {
+    return {
+      targets: Object.entries(targetPercentages).map(([ticker, target_percent]) => ({
+        ticker,
+        target_percent,
+        current_percent: 0,
+        action: 'buy',
+        shares_to_trade: 10,
+        dollar_amount: 1000
+      })),
+      total_portfolio_value: 100000
+    };
+  },
 };
 
 // Portfolio calculation helper

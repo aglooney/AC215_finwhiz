@@ -116,6 +116,60 @@ const realApi = {
     const response = await agentAPI.get<SessionContext>(`/sessions/${sessionId}/context`);
     return response.data;
   },
+
+  // Custom Allocation
+  async saveCustomAllocation(sessionId: string, allocation: { stocks: number; bonds: number; cash: number }): Promise<any> {
+    const response = await agentAPI.post(`/sessions/${sessionId}/allocation`, allocation);
+    return response.data;
+  },
+
+  async getCustomAllocation(sessionId: string): Promise<any> {
+    const response = await agentAPI.get(`/sessions/${sessionId}/allocation`);
+    return response.data;
+  },
+
+  async getPortfolioLive(sessionId: string): Promise<any> {
+    const response = await agentAPI.get(`/sessions/${sessionId}/portfolio/live`);
+    return response.data;
+  },
+
+  async getPortfolioAnalytics(sessionId: string): Promise<any> {
+    const response = await agentAPI.get(`/sessions/${sessionId}/portfolio/analytics`);
+    return response.data;
+  },
+
+  async getMarketQuote(ticker: string): Promise<any> {
+    const response = await agentAPI.get(`/market/quote/${ticker}`);
+    return response.data;
+  },
+
+  async getMarketIndices(): Promise<any> {
+    const response = await agentAPI.get(`/market/indices`);
+    return response.data;
+  },
+
+  async getStockHistory(ticker: string, period: string = '1mo'): Promise<any> {
+    const response = await agentAPI.get(`/market/history/${ticker}`, {
+      params: { period }
+    });
+    return response.data;
+  },
+
+  // Asset-Specific Allocation
+  async saveAssetAllocationTarget(sessionId: string, allocation: any): Promise<any> {
+    const response = await agentAPI.post(`/sessions/${sessionId}/allocation/assets`, allocation);
+    return response.data;
+  },
+
+  async getAssetAllocationTarget(sessionId: string): Promise<any> {
+    const response = await agentAPI.get(`/sessions/${sessionId}/allocation/assets`);
+    return response.data;
+  },
+
+  async calculateAssetTargets(sessionId: string, targetPercentages: Record<string, number>): Promise<any> {
+    const response = await agentAPI.post(`/sessions/${sessionId}/allocation/assets/calculate`, targetPercentages);
+    return response.data;
+  },
 };
 
 export const api = USE_MOCK_API ? mockApi : realApi;

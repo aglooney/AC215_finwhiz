@@ -4,6 +4,10 @@ import ChatInterface from '../components/ChatInterface';
 import DocumentUpload from '../components/DocumentUpload';
 import PortfolioRecommendation from '../components/PortfolioRecommendation';
 import type { UserProfile, Document } from '../types';
+import LivePortfolio from '../components/LivePortfolio';
+import MarketOverview from '../components/MarketOverview';
+import PortfolioAnalysis from '../components/PortfolioAnalysis';
+import TargetAllocation from '../components/TargetAllocation';
 
 interface DashboardProps {
   profile: UserProfile;
@@ -140,8 +144,15 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
                 </div>
               )}
               {activeTab === 'portfolio' && (
-                <div className="overflow-y-auto h-full">
-                  <PortfolioRecommendation profile={profile} />
+                <div className="overflow-y-auto h-full p-4 space-y-6">
+                  <MarketOverview />
+                  <PortfolioAnalysis sessionId={sessionId} />
+                  <TargetAllocation sessionId={sessionId} />
+                  <LivePortfolio sessionId={sessionId} />
+                  <div className="pt-4 border-t border-gray-200">
+                    <h3 className="font-bold mb-3">Recommended Allocation</h3>
+                    <PortfolioRecommendation profile={profile} sessionId={sessionId} />
+                  </div>
                 </div>
               )}
             </div>
