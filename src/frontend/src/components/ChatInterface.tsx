@@ -48,57 +48,113 @@ Let me know how I can help you today!`,
     scrollToBottom();
   }, [messages]);
 
+  // Load message history from backend when component mounts
+  useEffect(() => {
+    const loadMessageHistory = async () => {
+      try {
+        console.log('Loading message history for session:', sessionId);
+        const context = await api.getSessionContext(sessionId);
+
+        if (context.recent_messages && context.recent_messages.length > 0) {
+          const historicalMessages = context.recent_messages.map((msg: any) => ({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+          }));
+
+          // Preserve welcome message at index 0, add history after
+          setMessages((prev) => [prev[0], ...historicalMessages]);
+          console.log(`Loaded ${historicalMessages.length} historical messages`);
+        }
+      } catch (error) {
+        console.error('Failed to load message history:', error);
+        // Fail gracefully - keep welcome message
+      }
+    };
+
+    loadMessageHistory();
+  }, [sessionId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: 'user', content: input };
+    const queryText = input;
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
+    // Create placeholder for streaming response
+    const streamingMessageIndex = messages.length + 1;
+    setMessages((prev) => [
+      ...prev,
+      { role: 'assistant', content: '' },
+    ]);
+
     try {
       console.log('Sending message to session:', sessionId);
-      console.log('Message content:', input);
+      console.log('Message content:', queryText);
 
-      // Log message to agent
-      await api.addMessage(sessionId, 'user', input);
+      // Log user message to agent
+      await api.addMessage(sessionId, 'user', queryText);
       console.log('Message logged to agent');
 
-      // Query LLM
-      console.log('Querying LLM with session:', sessionId);
-      const response = await api.query(input, sessionId);
-      console.log('LLM Response:', response);
+      // Stream LLM response
+      console.log('Streaming LLM response for session:', sessionId);
+      let fullResponse = '';
 
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: response.answer,
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setSources(response.sources);
+      await api.queryStream(
+        queryText,
+        // onChunk: Update message as chunks arrive
+        (chunk: string) => {
+          fullResponse += chunk;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            newMessages[streamingMessageIndex] = {
+              role: 'assistant',
+              content: fullResponse,
+            };
+            return newMessages;
+          });
+        },
+        // onComplete: Handle sources and log final response
+        async (sources: any[]) => {
+          console.log('Streaming complete. Sources:', sources);
+          setSources(sources);
 
-      // Log assistant response
-      await api.addMessage(sessionId, 'assistant', response.answer);
-      console.log('Assistant response logged');
+          // Log complete assistant response to agent
+          await api.addMessage(sessionId, 'assistant', fullResponse);
+          console.log('Assistant response logged');
+          setIsLoading(false);
+        },
+        // onError: Handle streaming errors
+        (error: string) => {
+          console.error('Streaming error:', error);
+          const errorMsg = `Sorry, I encountered an error: ${error}`;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            newMessages[streamingMessageIndex] = {
+              role: 'assistant',
+              content: errorMsg,
+            };
+            return newMessages;
+          });
+          setIsLoading(false);
+        },
+        sessionId
+      );
     } catch (error: any) {
-      console.error('Error querying LLM:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
+      console.error('Error with streaming query:', error);
+
+      const errorMsg = 'Sorry, I encountered an error processing your request. Please try again.';
+      setMessages((prev) => {
+        const newMessages = [...prev];
+        newMessages[streamingMessageIndex] = {
+          role: 'assistant',
+          content: errorMsg,
+        };
+        return newMessages;
       });
-
-      let errorMsg = 'Sorry, I encountered an error processing your request. Please try again.';
-      if (error.response?.data?.detail) {
-        errorMsg += ` (${error.response.data.detail})`;
-      }
-
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: errorMsg,
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
       setIsLoading(false);
     }
   };
