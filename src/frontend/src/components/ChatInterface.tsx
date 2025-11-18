@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, ExternalLink } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Message, Source } from '../types';
 import { api } from '../services/api';
 
@@ -11,7 +13,26 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: "Hello! I'm FinWhiz, your financial education assistant. I can help you understand financial concepts, analyze your documents, and answer questions about investing, taxes, and retirement planning. How can I help you today?",
+      content: `# Welcome to FinWhiz! 👋
+
+I'm your **AI-powered financial education assistant**. I'm here to help you navigate the complex world of personal finance.
+
+## What I can help you with:
+
+- **Investment Strategies** - Learn about stocks, bonds, ETFs, and portfolio diversification
+- **Tax Planning** - Understand tax-advantaged accounts like 401(k)s and IRAs
+- **Retirement Planning** - Calculate savings goals and plan for your future
+- *Document Analysis* - Upload your financial documents for personalized insights
+
+## Getting Started:
+
+1. Ask me any financial question
+2. Upload documents (tax forms, statements, etc.)
+3. Get personalized, easy-to-understand answers
+
+**Try asking**: "What's the difference between a Roth IRA and Traditional IRA?" or "How should I diversify my portfolio?"
+
+Let me know how I can help you today!`,
     },
   ]);
   const [input, setInput] = useState('');
@@ -97,7 +118,13 @@ export default function ChatInterface({ sessionId }: ChatInterfaceProps) {
                   : 'bg-white border border-gray-200 text-gray-900'
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              <div className={`text-sm prose prose-sm max-w-none prose-headings:mt-3 prose-headings:mb-2 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 ${
+                message.role === 'user' ? 'prose-invert' : ''
+              }`}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.content}
+                </ReactMarkdown>
+              </div>
             </div>
           </div>
         ))}
