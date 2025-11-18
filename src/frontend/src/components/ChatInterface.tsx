@@ -48,6 +48,32 @@ Let me know how I can help you today!`,
     scrollToBottom();
   }, [messages]);
 
+  // Load message history from backend when component mounts
+  useEffect(() => {
+    const loadMessageHistory = async () => {
+      try {
+        console.log('Loading message history for session:', sessionId);
+        const context = await api.getSessionContext(sessionId);
+        console.log('Session context:', context);
+
+        if (context.recent_messages && context.recent_messages.length > 0) {
+          const historicalMessages = context.recent_messages.map((msg: any) => ({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+          }));
+
+          // Preserve welcome message, add historical messages after it
+          setMessages((prev) => [prev[0], ...historicalMessages]);
+          console.log('Loaded', historicalMessages.length, 'historical messages');
+        }
+      } catch (error) {
+        console.error('Failed to load message history:', error);
+      }
+    };
+
+    loadMessageHistory();
+  }, [sessionId]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
