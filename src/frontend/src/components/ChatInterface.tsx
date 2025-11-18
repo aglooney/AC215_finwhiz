@@ -54,6 +54,7 @@ Let me know how I can help you today!`,
       try {
         console.log('Loading message history for session:', sessionId);
         const context = await api.getSessionContext(sessionId);
+        console.log('Session context:', context);
 
         if (context.recent_messages && context.recent_messages.length > 0) {
           const historicalMessages = context.recent_messages.map((msg: any) => ({
@@ -61,13 +62,12 @@ Let me know how I can help you today!`,
             content: msg.content,
           }));
 
-          // Preserve welcome message at index 0, add history after
+          // Preserve welcome message, add historical messages after it
           setMessages((prev) => [prev[0], ...historicalMessages]);
-          console.log(`Loaded ${historicalMessages.length} historical messages`);
+          console.log('Loaded', historicalMessages.length, 'historical messages');
         }
       } catch (error) {
         console.error('Failed to load message history:', error);
-        // Fail gracefully - keep welcome message
       }
     };
 
@@ -79,82 +79,52 @@ Let me know how I can help you today!`,
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = { role: 'user', content: input };
-    const queryText = input;
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
-    // Create placeholder for streaming response
-    const streamingMessageIndex = messages.length + 1;
-    setMessages((prev) => [
-      ...prev,
-      { role: 'assistant', content: '' },
-    ]);
-
     try {
       console.log('Sending message to session:', sessionId);
-      console.log('Message content:', queryText);
+      console.log('Message content:', input);
 
-      // Log user message to agent
-      await api.addMessage(sessionId, 'user', queryText);
+      // Log message to agent
+      await api.addMessage(sessionId, 'user', input);
       console.log('Message logged to agent');
 
-      // Stream LLM response
-      console.log('Streaming LLM response for session:', sessionId);
-      let fullResponse = '';
+      // Query LLM
+      console.log('Querying LLM with session:', sessionId);
+      const response = await api.query(input, sessionId);
+      console.log('LLM Response:', response);
 
-      await api.queryStream(
-        queryText,
-        // onChunk: Update message as chunks arrive
-        (chunk: string) => {
-          fullResponse += chunk;
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            newMessages[streamingMessageIndex] = {
-              role: 'assistant',
-              content: fullResponse,
-            };
-            return newMessages;
-          });
-        },
-        // onComplete: Handle sources and log final response
-        async (sources: any[]) => {
-          console.log('Streaming complete. Sources:', sources);
-          setSources(sources);
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: response.answer,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+      setSources(response.sources);
 
-          // Log complete assistant response to agent
-          await api.addMessage(sessionId, 'assistant', fullResponse);
-          console.log('Assistant response logged');
-          setIsLoading(false);
-        },
-        // onError: Handle streaming errors
-        (error: string) => {
-          console.error('Streaming error:', error);
-          const errorMsg = `Sorry, I encountered an error: ${error}`;
-          setMessages((prev) => {
-            const newMessages = [...prev];
-            newMessages[streamingMessageIndex] = {
-              role: 'assistant',
-              content: errorMsg,
-            };
-            return newMessages;
-          });
-          setIsLoading(false);
-        },
-        sessionId
-      );
+      // Log assistant response
+      await api.addMessage(sessionId, 'assistant', response.answer);
+      console.log('Assistant response logged');
     } catch (error: any) {
-      console.error('Error with streaming query:', error);
-
-      const errorMsg = 'Sorry, I encountered an error processing your request. Please try again.';
-      setMessages((prev) => {
-        const newMessages = [...prev];
-        newMessages[streamingMessageIndex] = {
-          role: 'assistant',
-          content: errorMsg,
-        };
-        return newMessages;
+      console.error('Error querying LLM:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
       });
+
+      let errorMsg = 'Sorry, I encountered an error processing your request. Please try again.';
+      if (error.response?.data?.detail) {
+        errorMsg += ` (${error.response.data.detail})`;
+      }
+
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: errorMsg,
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
     }
   };
