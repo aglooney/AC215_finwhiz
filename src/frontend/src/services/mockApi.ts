@@ -231,35 +231,6 @@ export const mockApi = {
     };
   },
 
-  async saveCustomAllocation(_sessionId: string, allocation: { stocks: number; bonds: number; cash: number }): Promise<any> {
-    return { status: 'success', allocation };
-  },
-
-  async getCustomAllocation(_sessionId: string): Promise<any> {
-    throw new Error('No custom allocation found'); // Mock returns 404
-  },
-
-  async saveAssetAllocationTarget(_sessionId: string, allocation: any): Promise<any> {
-    return { status: 'success', allocation };
-  },
-
-  async getAssetAllocationTarget(_sessionId: string): Promise<any> {
-    throw new Error('No asset allocation target found');
-  },
-
-  async calculateAssetTargets(_sessionId: string, targetPercentages: Record<string, number>): Promise<any> {
-    return {
-      targets: Object.entries(targetPercentages).map(([ticker, target_percent]) => ({
-        ticker,
-        target_percent,
-        current_percent: 0,
-        action: 'buy',
-        shares_to_trade: 10,
-        dollar_amount: 1000
-      })),
-      total_portfolio_value: 100000
-    };
-  },
 };
 
 // Portfolio calculation helper

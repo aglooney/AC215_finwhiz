@@ -105,7 +105,7 @@ def get_portfolio_live_data(holdings: List[Dict[str, Any]]) -> Dict[str, Any]:
         original_value = holding.get('value')
         
         if not ticker or not shares:
-            logger.warning(f"[get_portfolio_live_data] Skipping holding with missing ticker or shares")
+            logger.warning("[get_portfolio_live_data] Skipping holding with missing ticker or shares")
             continue
         
         try:

@@ -117,17 +117,7 @@ const realApi = {
     return response.data;
   },
 
-  // Custom Allocation
-  async saveCustomAllocation(sessionId: string, allocation: { stocks: number; bonds: number; cash: number }): Promise<any> {
-    const response = await agentAPI.post(`/sessions/${sessionId}/allocation`, allocation);
-    return response.data;
-  },
-
-  async getCustomAllocation(sessionId: string): Promise<any> {
-    const response = await agentAPI.get(`/sessions/${sessionId}/allocation`);
-    return response.data;
-  },
-
+  
   async getPortfolioLive(sessionId: string): Promise<any> {
     const response = await agentAPI.get(`/sessions/${sessionId}/portfolio/live`);
     return response.data;
@@ -155,21 +145,6 @@ const realApi = {
     return response.data;
   },
 
-  // Asset-Specific Allocation
-  async saveAssetAllocationTarget(sessionId: string, allocation: any): Promise<any> {
-    const response = await agentAPI.post(`/sessions/${sessionId}/allocation/assets`, allocation);
-    return response.data;
-  },
-
-  async getAssetAllocationTarget(sessionId: string): Promise<any> {
-    const response = await agentAPI.get(`/sessions/${sessionId}/allocation/assets`);
-    return response.data;
-  },
-
-  async calculateAssetTargets(sessionId: string, targetPercentages: Record<string, number>): Promise<any> {
-    const response = await agentAPI.post(`/sessions/${sessionId}/allocation/assets/calculate`, targetPercentages);
-    return response.data;
-  },
 };
 
 export const api = USE_MOCK_API ? mockApi : realApi;
