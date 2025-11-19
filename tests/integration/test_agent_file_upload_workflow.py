@@ -4,7 +4,7 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from .helpers import ResponseAdapter, build_agent_stub
+from tests.integration.helpers import ResponseAdapter, build_agent_stub
 
 ROOT = Path(__file__).resolve().parents[2]
 W2_SAMPLE = ROOT / "src" / "synthetic_data" / "w2" / "outputs" / "w2_000.pdf"

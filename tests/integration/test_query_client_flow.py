@@ -2,7 +2,7 @@ from fastapi.testclient import TestClient
 
 from query_client import interactive_query
 
-from .helpers import ResponseAdapter, build_agent_stub
+from tests.integration.helpers import ResponseAdapter, build_agent_stub
 
 
 def test_query_client_roundtrip_through_agent_and_llm(monkeypatch, llm_embedder_env):
