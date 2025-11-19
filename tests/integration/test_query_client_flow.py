@@ -46,7 +46,9 @@ def test_query_client_roundtrip_through_agent_and_llm(monkeypatch, llm_embedder_
     monkeypatch.setattr(interactive_query.requests, "post", dispatch_post)
     monkeypatch.setattr(env["llm_service"].requests, "get", dispatch_get)
 
-    user_id = "user-integration"
+    from uuid import uuid4
+
+    user_id = str(uuid4())
     session_id = interactive_query.create_session(user_id)
     interactive_query.log_message(session_id, "user", "How are the markets doing?")
     result = interactive_query.query_llm(user_id, session_id, "Provide a market summary")
