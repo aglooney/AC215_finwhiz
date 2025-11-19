@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 import pytest
 
 from query_client import interactive_query

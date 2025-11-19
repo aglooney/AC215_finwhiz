@@ -2,8 +2,6 @@ import io
 import gzip
 import os
 
-import pytest
-
 os.environ.setdefault("FINWHIZ_TEST_MODE", "1")
 os.environ.setdefault("GCS_BUCKET", "dummy-bucket")
 os.environ.setdefault("BUCKET_CREDENTIALS", "dummy-creds.json")
