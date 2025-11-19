@@ -29,7 +29,7 @@ def build_agent_stub():
 
     @app.post("/sessions/")
     def create_session(payload: dict):
-        session_id = str(uuid4())
+        session_id = payload.get("user_id") or str(uuid4())
         state["sessions"][session_id] = []
         state["documents"][session_id] = {"w2": [], "1099": []}
         return {"id": session_id}
