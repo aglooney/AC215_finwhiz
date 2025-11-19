@@ -1,5 +1,3 @@
-from bs4 import BeautifulSoup
-
 from webscraping.ingest_shared.shared import chunk as chunk_mod
 from webscraping.ingest_shared.shared import parse_html
 

@@ -20,8 +20,8 @@ jobs:
     env:
       FINWHIZ_TEST_MODE: "1"
       GCS_BUCKET: dummy-bucket
-      BUCKET_CREDENTIALS: /tmp/fake-creds.json
-      VERTEXAI_CREDENTIALS: /tmp/fake-creds.json
+      BUCKET_CREDENTIALS: tests/fake-creds.json
+      VERTEXAI_CREDENTIALS: tests/fake-creds.json
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -35,7 +35,9 @@ jobs:
         uses: astral-sh/setup-uv@v1
 
       - name: Create fake credentials
-        run: echo '{}' > /tmp/fake-creds.json
+        run: |
+          mkdir -p tests
+          echo '{}' > tests/fake-creds.json
 
       - name: Install dependencies
         run: |
@@ -43,4 +45,4 @@ jobs:
           uv pip install --system -e src/llm -e src/embedder -e src/agentic_user_data_processing -e src/query_client -e src/webscraping
 
       - name: Run unit tests
-        run: pytest tests/unit
+        run: pytest
