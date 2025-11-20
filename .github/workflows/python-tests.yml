@@ -48,6 +48,7 @@ jobs:
         env:
           COVERAGE_FILE: .coverage.unit
         run: |
+          rm -f .coverage.unit
           coverage run -m pytest \
             src/llm/tests \
             src/embedder/tests \
@@ -96,6 +97,7 @@ jobs:
         env:
           COVERAGE_FILE: .coverage.integration
         run: |
+          rm -f .coverage.integration
           coverage run -m pytest tests/integration
           coverage report
 
