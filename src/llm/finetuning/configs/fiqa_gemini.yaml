@@ -1,0 +1,33 @@
+dataset:
+  name: fiqa
+  source: huggingface://LLukas22/fiqa
+  dvc_file: src/llm/finetuning/data.dvc
+  local_path: src/llm/finetuning/data
+  format_files:
+    raw_train: fiqa_train.jsonl
+    raw_test: fiqa_test.jsonl
+    gemini_train: gemini_train_full.jsonl
+    gemini_validation: gemini_test_full.jsonl
+  version_note: initial_import_ms4
+
+remote_storage:
+  dvc_remote: finetuning_gcs
+  bucket: finwhiz-storage
+  dvc_path: finetuning_dvc
+
+training:
+  base_model: gemini-2.5-flash-lite-preview-02
+  tuned_model_display_name: gemini-flash-lite-fiqa-v1
+  vertex_project: finwhiz-ac215
+  vertex_region: us-central1
+  adapter_size: ADAPTER_SIZE_FOUR
+  epochs: 3
+  gcs_output_prefix: finetuning/gemini_fiqa_v1
+
+evaluation:
+  holdout_split: test
+  num_samples: 50
+  metrics:
+    - rougeL
+    - cosine_similarity
+  llm_judge_model: gemini-1.5-pro
