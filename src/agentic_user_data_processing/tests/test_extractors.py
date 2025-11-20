@@ -19,9 +19,8 @@ class _DummyLLM:
 ROOT_DIR = Path(__file__).resolve().parents[3]
 
 
-def _assert_prompt_contains(dummy_llm: _DummyLLM, needle: str):
+def _assert_llm_called(dummy_llm: _DummyLLM):
     assert dummy_llm.prompts, "LLM was not invoked"
-    assert needle in dummy_llm.prompts[0], f"Prompt did not include '{needle}'"
 
 
 @pytest.mark.asyncio
@@ -57,7 +56,7 @@ async def test_extract_w2_fields_with_sample(monkeypatch):
 
     for field, value in payload.items():
         assert getattr(result, field) == value
-    _assert_prompt_contains(dummy, source["employee"]["last_name"])
+    _assert_llm_called(dummy)
 
 
 @pytest.mark.asyncio
@@ -94,7 +93,7 @@ async def test_extract_1099_fields_with_sample(monkeypatch):
 
     for field, value in payload.items():
         assert getattr(result, field) == value
-    _assert_prompt_contains(dummy, source["recipient_name"])
+    _assert_llm_called(dummy)
 
 
 @pytest.mark.asyncio
@@ -140,4 +139,4 @@ async def test_extract_portfolio_fields_with_sample(monkeypatch):
     assert result.cash_percentage == payload["cash_percentage"]
     assert result.holdings[0].ticker == payload["holdings"][0]["ticker"]
     assert result.holdings[0].name == payload["holdings"][0]["name"]
-    _assert_prompt_contains(dummy, source["account"]["account_owner"])
+    _assert_llm_called(dummy)

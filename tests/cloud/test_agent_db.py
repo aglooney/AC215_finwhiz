@@ -1,4 +1,3 @@
-import os
 import uuid
 
 import pytest
@@ -8,13 +7,6 @@ from agentic_user_data_processing import models
 from agentic_user_data_processing.db import SessionLocal, session_scope
 
 
-REQUIRES_DB = pytest.mark.skipif(
-    not os.getenv("DB_HOST"),
-    reason="Database environment variables not configured",
-)
-
-
-@REQUIRES_DB
 def test_session_message_crud_against_cloud_db():
     external_id = f"cloud-pytest-{uuid.uuid4()}"
 

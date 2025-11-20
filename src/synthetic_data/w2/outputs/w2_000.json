@@ -1,0 +1,57 @@
+{
+  "tax_year": 2025,
+  "employee": {
+    "first_name": "Bradley",
+    "last_name": "Nguyen",
+    "address_line1": "2066 Jennifer Landing Suite 879",
+    "address_line2": "Gloverchester, GU 70058",
+    "social_security_number": "510-88-6504"
+  },
+  "employer": {
+    "name_address_block": "Rodriguez, Roberts and Gonzalez\n63597 Vaughn Fort\nNorth Emily, RI 78600",
+    "ein": "24-6651304",
+    "control_number": "332028"
+  },
+  "box1_wages": 109652.68,
+  "box2_federal_income_tax_withheld": 13748.83,
+  "box3_social_security_wages": 109652.68,
+  "box4_social_security_tax_withheld": 6798.47,
+  "box5_medicare_wages_tips": 109652.68,
+  "box6_medicare_tax_withheld": 1589.96,
+  "box7_social_security_tips": null,
+  "box8_allocated_tips": 2427.42,
+  "box9_verification_code": "ZDCD0265",
+  "box10_dependent_care_benefits": null,
+  "box11_nonqualified_plans": null,
+  "box12": [
+    {
+      "code": "D",
+      "amount": 3456.44
+    },
+    {
+      "code": "DD",
+      "amount": 5367.89
+    }
+  ],
+  "box14_other": "Union dues: $230.57",
+  "checkboxes": {
+    "statutory_employee": false,
+    "retirement_plan": true,
+    "third_party_sick_pay": true
+  },
+  "state_local": [
+    {
+      "state": "GU",
+      "state_id": "222160550",
+      "state_wages": 109652.68,
+      "state_income_tax": 5722.78,
+      "local_wages": null,
+      "local_income_tax": null,
+      "locality": null
+    }
+  ],
+  "additional_fields": {
+    "medicare_tax_rate": 0.0145,
+    "federal_withholding_rate": 0.1253852619014875
+  }
+}
