@@ -158,7 +158,7 @@ def main():
 
     # Use langchain's VertexAI for judge (avoids publisher model 404 errors)
     from langchain_google_vertexai import VertexAI
-    
+
     aiplatform.init(project=project_id, location=args.location)
     judge = VertexAI(model_name=args.judge_model, project=project_id, location=args.location)
     logger.info("Loaded judge model via langchain: %s", args.judge_model)

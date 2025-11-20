@@ -15,7 +15,7 @@
 - Base model: `gemini-2.5-flash-lite-preview-02`
 - Adapter size / epochs: `ADAPTER_SIZE_FOUR`, 3 epochs
 - Output artifacts: `data/tuning_job_info.json` captures Vertex tuned endpoint; tuned weights remain in Vertex AI registry.
-- Execution command (example):  
+- Execution command (example):
   ```bash
   python src/llm/finetuning/train_gemini_full.py \
       --config src/llm/finetuning/configs/fiqa_gemini.yaml
@@ -25,7 +25,7 @@
 - Comparison script: `src/llm/finetuning/evaluate_tuned_model.py`
   - Runs tuned endpoint vs. base Gemini on the DVC-versioned FIQA test set.
   - Outputs raw predictions + metrics to `data/evaluation_compare.json`.
-  - Sample command:  
+  - Sample command:
     ```bash
     python src/llm/finetuning/evaluate_tuned_model.py \
         --project-id finwhiz-ac215 \
@@ -40,7 +40,7 @@
 - Script: `reports/milestone4/llm_judge.py`
   - Consumes `data/evaluation_compare.json`, calls a judge model (default `gemini-2.5-pro`), and records win/tie/loss counts plus rationale.
   - Output stored in `reports/milestone4/llm_judge_results.json`.
-  - Command:  
+  - Command:
     ```bash
     python reports/milestone4/llm_judge.py \
         --input data/evaluation_compare.json \
