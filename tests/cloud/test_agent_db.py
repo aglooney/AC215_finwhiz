@@ -21,15 +21,17 @@ def test_session_message_crud_against_cloud_db():
                 f"Cloud SQL unreachable using DB_HOST={os.getenv('DB_HOST')} "
                 f"DB_NAME={os.getenv('DB_NAME')} DB_USER={os.getenv('DB_USER')}: {exc}"
             ) from exc
+        session_id = str(agent_session.id)
+        user_id = str(user.id)
 
     with session_scope() as db:
-        messages = models.Message.latest_for_session(db, session_id=str(agent_session.id), limit=1)
+        messages = models.Message.latest_for_session(db, session_id=session_id, limit=1)
         assert messages, "Expected at least one message retrieved from Cloud SQL"
         assert messages[0].content == "cloud-integration-test"
 
     with SessionLocal() as db:
-        db.execute(delete(models.Message).where(models.Message.session_id == agent_session.id))
-        db.execute(delete(models.Document).where(models.Document.session_id == agent_session.id))
-        db.execute(delete(models.Session).where(models.Session.id == agent_session.id))
-        db.execute(delete(models.User).where(models.User.id == user.id))
+        db.execute(delete(models.Message).where(models.Message.session_id == session_id))
+        db.execute(delete(models.Document).where(models.Document.session_id == session_id))
+        db.execute(delete(models.Session).where(models.Session.id == session_id))
+        db.execute(delete(models.User).where(models.User.id == user_id))
         db.commit()
