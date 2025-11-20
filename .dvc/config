@@ -1,0 +1,4 @@
+[core]
+    remote = finetuning_gcs
+['remote "finetuning_gcs"']
+    url = gs://finwhiz-storage/finetuning_dvc
