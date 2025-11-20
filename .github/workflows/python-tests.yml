@@ -88,7 +88,7 @@ jobs:
 
       - name: Determine cloud secret availability
         run: |
-          echo "HAS_CLOUD_SECRETS=${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON != '' && secrets.CLOUDSQL_PASSWORD != '' }}" >> $GITHUB_ENV
+          echo "HAS_CLOUD_SECRETS=${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON != '' && secrets.CLOUDSQL_PASSWORD != '' && secrets.CLOUDSQL_PROXY_JSON != '' }}" >> $GITHUB_ENV
 
 
       - name: Load deployment env values
@@ -130,6 +130,11 @@ jobs:
         run: |
           echo '${{ secrets.CLOUDSQL_PASSWORD }}' > /tmp/sql_password.txt
 
+      - name: Write Cloud SQL proxy credentials
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        run: |
+          echo '${{ secrets.CLOUDSQL_PROXY_JSON }}' > /tmp/cloudsql-proxy.json
+
       - name: Install system dependencies for cloud tests
         if: env.HAS_CLOUD_SECRETS == 'true'
         run: sudo apt-get update && sudo apt-get install -y ghostscript netcat-openbsd
@@ -145,7 +150,7 @@ jobs:
         env:
           CLOUDSQL_INSTANCE: finwhiz-ac215:us-central1:finwhiz-cloud-sql
         run: |
-          ./cloud-sql-proxy $CLOUDSQL_INSTANCE --credentials-file=/tmp/vertexai.json --port 5432 &
+          ./cloud-sql-proxy $CLOUDSQL_INSTANCE --credentials-file=/tmp/cloudsql-proxy.json --port 5432 &
           echo $! > /tmp/cloud_sql_proxy_pid
 
       - name: Wait for Cloud SQL Proxy
