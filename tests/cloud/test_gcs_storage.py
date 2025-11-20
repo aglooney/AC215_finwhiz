@@ -49,5 +49,11 @@ def test_save_document_bytes_uploads_and_writes_metadata():
         entries = json.loads(metadata_text)
         assert any(entry["filename"] == pdf_path.name for entry in entries)
     finally:
-        blob.delete(if_exists=True)
-        metadata_blob.delete(if_exists=True)
+        try:
+            blob.delete()
+        except Exception:
+            pass
+        try:
+            metadata_blob.delete()
+        except Exception:
+            pass
