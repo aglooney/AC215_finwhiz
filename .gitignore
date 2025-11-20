@@ -218,6 +218,10 @@ service-account-key.json
 
 #DS_Store
 *.DS_Store
+# Python bytecode
+*.pyc
+*.pyo
+
 #chroma_db
 **/chroma_storage/
 **/chroma_storage_backup/

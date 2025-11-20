@@ -16,20 +16,20 @@ REQUIRES_CREDS = pytest.mark.skipif(
 
 def _load_real_fixture(name: str) -> Path:
     if not REAL_FIXTURE_DIR or not REAL_FIXTURE_DIR.exists():
-        pytest.fail(
+        pytest.skip(
             "REAL_FIXTURE_DIR not set or missing. Ensure cloud fixtures were downloaded "
             "from gs://finwhiz-storage/cloud_testing before running cloud tests."
         )
     real_path = REAL_FIXTURE_DIR / name
     if not real_path.exists():
-        pytest.fail(f"Expected cloud fixture {real_path} not found.")
+        pytest.skip(f"Missing cloud fixture {real_path}")
     return real_path
 
 
 @REQUIRES_CREDS
 @pytest.mark.asyncio
 async def test_w2_extractor_calls_vertex():
-    real_path = _load_real_fixture("w2_full.pdf")
+    real_path = _load_real_fixture("w2_000.pdf")
     pdf_bytes = real_path.read_bytes()
     source = json.loads((ROOT_DIR / "src" / "synthetic_data" / "w2" / "outputs" / "w2_000.json").read_text())
     result = await extraction.extract_w2_fields(pdf_bytes)
@@ -44,7 +44,7 @@ async def test_w2_extractor_calls_vertex():
 @REQUIRES_CREDS
 @pytest.mark.asyncio
 async def test_1099_extractor_calls_vertex():
-    real_path = _load_real_fixture("1099_full.pdf")
+    real_path = _load_real_fixture("1099int_001.pdf")
     pdf_bytes = real_path.read_bytes()
     source = json.loads((ROOT_DIR / "src" / "synthetic_data" / "int_1099" / "outputs" / "1099int_001.json").read_text())
     result = await extraction_1099.extract_1099_fields(pdf_bytes)
@@ -56,7 +56,7 @@ async def test_1099_extractor_calls_vertex():
 @REQUIRES_CREDS
 @pytest.mark.asyncio
 async def test_portfolio_extractor_calls_vertex():
-    real_path = _load_real_fixture("portfolio_full.pdf")
+    real_path = _load_real_fixture("portfolio_001.pdf")
     pdf_bytes = real_path.read_bytes()
     source = json.loads((ROOT_DIR / "src" / "synthetic_data" / "portfolio" / "outputs" / "portfolio_001.json").read_text())
     result = await extraction_portfolio.extract_portfolio_fields(pdf_bytes)

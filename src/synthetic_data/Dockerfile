@@ -39,4 +39,4 @@ COPY --chown=app:app . ./
 #ENTRYPOINT ["python", "-m", "w2.synthetic_w2.cli"]
 #CMD ["generate", "--output-dir", "app/outputs", "--count", "1"]
 ENTRYPOINT ["/bin/bash"]
-CMD ["-c", "source /home/app/.venv/bin/activate && exec python -m w2.synthetic_w2.cli"]
+CMD ["-c", "source /home/app/.venv/bin/activate && exec bash"]

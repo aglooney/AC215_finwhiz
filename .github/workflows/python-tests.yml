@@ -182,9 +182,9 @@ jobs:
           out_dir.mkdir(parents=True, exist_ok=True)
 
           files = {
-              f"{prefix}/w2_000.pdf": out_dir / "w2_full.pdf",
-              f"{prefix}/1099int_001.pdf": out_dir / "1099_full.pdf",
-              f"{prefix}/portfolio_001.pdf": out_dir / "portfolio_full.pdf",
+              f"{prefix}/w2_000.pdf": out_dir / "w2_000.pdf",
+              f"{prefix}/1099int_001.pdf": out_dir / "1099int_001.pdf",
+              f"{prefix}/portfolio_001.pdf": out_dir / "portfolio_001.pdf",
           }
 
           client = storage.Client.from_service_account_json("/tmp/vertexai.json")
