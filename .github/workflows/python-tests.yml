@@ -87,12 +87,14 @@ jobs:
         run: pytest tests/integration
 
       - name: Determine cloud secret availability
+        shell: bash
         run: |
-          if [ -n "${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}" ] && [ -n "${{ secrets.CLOUDSQL_PASSWORD }}" ]; then
+          if [[ -n "${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}" && -n "${{ secrets.CLOUDSQL_PASSWORD }}" ]]; then
             echo "HAS_CLOUD_SECRETS=true" >> $GITHUB_ENV
           else
             echo "HAS_CLOUD_SECRETS=false" >> $GITHUB_ENV
           fi
+
 
       - name: Load deployment env values
         if: env.HAS_CLOUD_SECRETS == 'true'
