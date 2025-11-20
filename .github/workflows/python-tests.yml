@@ -204,6 +204,10 @@ jobs:
           VERTEXAI_CREDENTIALS: /tmp/vertexai.json
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/vertexai.json
           BUCKET_CREDENTIALS: /tmp/vertexai.json
+          GOOGLE_CLOUD_PROJECT: finwhiz-ac215
+          GCP_PROJECT: finwhiz-ac215
+          VERTEXAI_PROJECT: finwhiz-ac215
+          VERTEXAI_LOCATION: us-central1
           DB_PASS: /tmp/sql_password.txt
           DB_USER: postgres
           DB_NAME: postgres
