@@ -85,3 +85,139 @@ jobs:
 
       - name: Run integration tests
         run: pytest tests/integration
+
+      - name: Determine cloud secret availability
+        run: |
+          echo "HAS_CLOUD_SECRETS=${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON != '' && secrets.CLOUDSQL_PASSWORD != '' && secrets.CLOUDSQL_PROXY_JSON != '' }}" >> $GITHUB_ENV
+
+
+      - name: Load deployment env values
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        run: |
+          python - <<'PY'
+          import os
+
+          env_path = ".env"
+          vals = {}
+          if os.path.exists(env_path):
+              with open(env_path) as fh:
+                  for line in fh:
+                      line = line.strip()
+                      if not line or line.startswith("#") or "=" not in line:
+                          continue
+                      key, value = line.split("=", 1)
+                      vals[key.strip()] = value.strip()
+
+          bucket = vals.get("GCS_BUCKET", "finwhiz-storage")
+          with open(os.environ["GITHUB_ENV"], "a") as envfile:
+              envfile.write(f"GCS_BUCKET={bucket}\n")
+              envfile.write("REAL_FIXTURE_BUCKET=finwhiz-storage\n")
+              envfile.write("REAL_FIXTURE_PREFIX=cloud_testing\n")
+          PY
+
+      - name: Skip cloud tests when missing secrets
+        if: env.HAS_CLOUD_SECRETS == 'false'
+        run: |
+          echo "Skipping cloud-backed tests: secrets not configured."
+
+      - name: Write Vertex credentials
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        run: |
+          echo '${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}' > /tmp/vertexai.json
+
+      - name: Write Cloud SQL password
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        run: |
+          echo '${{ secrets.CLOUDSQL_PASSWORD }}' > /tmp/sql_password.txt
+
+      - name: Write Cloud SQL proxy credentials
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        run: |
+          echo '${{ secrets.CLOUDSQL_PROXY_JSON }}' > /tmp/cloudsql-proxy.json
+
+      - name: Install system dependencies for cloud tests
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        run: sudo apt-get update && sudo apt-get install -y ghostscript netcat-openbsd
+
+      - name: Download Cloud SQL Proxy
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        run: |
+          curl -sSL https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3/cloud-sql-proxy.linux.amd64 -o cloud-sql-proxy
+          chmod +x cloud-sql-proxy
+
+      - name: Start Cloud SQL Proxy
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        env:
+          CLOUDSQL_INSTANCE: finwhiz-ac215:us-central1:finwhiz-cloud-sql
+        run: |
+          ./cloud-sql-proxy $CLOUDSQL_INSTANCE --credentials-file=/tmp/cloudsql-proxy.json --port 5432 &
+          echo $! > /tmp/cloud_sql_proxy_pid
+
+      - name: Wait for Cloud SQL Proxy
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        run: |
+          for i in {1..15}; do nc -z localhost 5432 && exit 0; sleep 2; done
+          echo "Cloud SQL proxy did not start" >&2
+          exit 1
+
+      - name: Install agent package for cloud tests
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        run: |
+          uv pip install --system -e src/agentic_user_data_processing
+
+      - name: Download real fixture PDFs
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          from google.cloud import storage
+
+          bucket_name = os.environ.get("REAL_FIXTURE_BUCKET") or os.environ.get("GCS_BUCKET")
+          prefix = os.environ.get("REAL_FIXTURE_PREFIX", "cloud_testing").rstrip("/")
+          if not bucket_name:
+              raise SystemExit("REAL_FIXTURE_BUCKET or GCS_BUCKET must be set for cloud fixtures")
+
+          out_dir = Path("tests/cloud_fixtures")
+          out_dir.mkdir(parents=True, exist_ok=True)
+
+          files = {
+              f"{prefix}/w2_000.pdf": out_dir / "w2_000.pdf",
+              f"{prefix}/1099int_001.pdf": out_dir / "1099int_001.pdf",
+              f"{prefix}/portfolio_001.pdf": out_dir / "portfolio_001.pdf",
+          }
+
+          client = storage.Client.from_service_account_json("/tmp/vertexai.json")
+          bucket = client.bucket(bucket_name)
+          for blob_name, destination in files.items():
+              blob = bucket.blob(blob_name)
+              blob.download_to_filename(destination)
+              print(f"Downloaded {blob_name} -> {destination}")
+
+          with open(os.environ["GITHUB_ENV"], "a") as envfile:
+              envfile.write(f"REAL_FIXTURE_DIR={out_dir}\n")
+          PY
+
+      - name: Run cloud-backed tests
+        if: env.HAS_CLOUD_SECRETS == 'true'
+        env:
+          VERTEXAI_CREDENTIALS: /tmp/vertexai.json
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/vertexai.json
+          BUCKET_CREDENTIALS: /tmp/vertexai.json
+          GOOGLE_CLOUD_PROJECT: finwhiz-ac215
+          GCP_PROJECT: finwhiz-ac215
+          VERTEXAI_PROJECT: finwhiz-ac215
+          VERTEXAI_LOCATION: us-central1
+          DB_PASS: /tmp/sql_password.txt
+          DB_USER: postgres
+          DB_NAME: postgres
+          DB_HOST: 127.0.0.1
+          DB_PORT: "5432"
+        run: pytest tests/cloud
+
+      - name: Stop Cloud SQL Proxy
+        if: ${{ always() && env.HAS_CLOUD_SECRETS == 'true' }}
+        run: |
+          if [ -f /tmp/cloud_sql_proxy_pid ]; then
+            kill "$(cat /tmp/cloud_sql_proxy_pid)" || true
+          fi

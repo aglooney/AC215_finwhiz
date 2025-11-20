@@ -1,0 +1,53 @@
+{
+  "tax_year": 2025,
+  "employee": {
+    "first_name": "Robert",
+    "last_name": "Cole",
+    "address_line1": "26542 Susan Junction Apt. 161",
+    "address_line2": "Melanieview, AS 06196",
+    "social_security_number": "748-59-8786"
+  },
+  "employer": {
+    "name_address_block": "Rodriguez, Figueroa and Sanchez\n181 Johnson Course\nEast William, AK 74064",
+    "ein": "34-9142600",
+    "control_number": "689113"
+  },
+  "box1_wages": 173789.69,
+  "box2_federal_income_tax_withheld": 45093.84,
+  "box3_social_security_wages": 168600.0,
+  "box4_social_security_tax_withheld": 10453.2,
+  "box5_medicare_wages_tips": 173789.69,
+  "box6_medicare_tax_withheld": 2519.95,
+  "box7_social_security_tips": null,
+  "box8_allocated_tips": 1902.85,
+  "box9_verification_code": "BZLX6761",
+  "box10_dependent_care_benefits": 640.57,
+  "box11_nonqualified_plans": null,
+  "box12": [
+    {
+      "code": "D",
+      "amount": 8435.73
+    }
+  ],
+  "box14_other": null,
+  "checkboxes": {
+    "statutory_employee": false,
+    "retirement_plan": true,
+    "third_party_sick_pay": false
+  },
+  "state_local": [
+    {
+      "state": "AS",
+      "state_id": "304707725",
+      "state_wages": 173789.69,
+      "state_income_tax": 6595.9,
+      "local_wages": null,
+      "local_income_tax": null,
+      "locality": null
+    }
+  ],
+  "additional_fields": {
+    "medicare_tax_rate": 0.0145,
+    "federal_withholding_rate": 0.2594736200979471
+  }
+}
