@@ -85,3 +85,71 @@ jobs:
 
       - name: Run integration tests
         run: pytest tests/integration
+
+  cloud-integration:
+    runs-on: ubuntu-latest
+    needs: integration
+    if: ${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON != '' && secrets.CLOUDSQL_PASSWORD != '' }}
+    env:
+      VERTEXAI_CREDENTIALS: /tmp/vertexai.json
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/vertexai.json
+      BUCKET_CREDENTIALS: /tmp/vertexai.json
+      DB_PASS: /tmp/sql_password.txt
+      DB_USER: postgres
+      DB_NAME: postgres
+      DB_HOST: 127.0.0.1
+      DB_PORT: "5432"
+      CLOUDSQL_INSTANCE: finwhiz-ac215:us-central1:finwhiz-cloud-sql
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v1
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y ghostscript netcat-openbsd
+
+      - name: Write Vertex credentials
+        run: |
+          echo '${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}' > $VERTEXAI_CREDENTIALS
+
+      - name: Write Cloud SQL password
+        run: |
+          echo '${{ secrets.CLOUDSQL_PASSWORD }}' > $DB_PASS
+
+      - name: Download Cloud SQL Proxy
+        run: |
+          curl -sSL https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3/cloud-sql-proxy.linux.amd64 -o cloud-sql-proxy
+          chmod +x cloud-sql-proxy
+
+      - name: Start Cloud SQL Proxy
+        run: |
+          ./cloud-sql-proxy $CLOUDSQL_INSTANCE --credentials-file=$VERTEXAI_CREDENTIALS --port 5432 &
+          echo $! > /tmp/cloud_sql_proxy_pid
+
+      - name: Wait for Cloud SQL Proxy
+        run: |
+          for i in {1..15}; do nc -z localhost 5432 && exit 0; sleep 2; done
+          echo "Cloud SQL proxy did not start" >&2
+          exit 1
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system pytest pytest-asyncio
+          uv pip install --system -e src/agentic_user_data_processing
+
+      - name: Run cloud tests
+        run: pytest tests/cloud
+
+      - name: Stop Cloud SQL Proxy
+        if: always()
+        run: |
+          if [ -f /tmp/cloud_sql_proxy_pid ]; then
+            kill "$(cat /tmp/cloud_sql_proxy_pid)" || true
+          fi
