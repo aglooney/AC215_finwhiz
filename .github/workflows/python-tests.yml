@@ -89,8 +89,8 @@ jobs:
   cloud-integration:
     runs-on: ubuntu-latest
     needs: integration
-    if: ${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON != '' && secrets.CLOUDSQL_PASSWORD != '' }}
     env:
+      HAS_CLOUD_SECRETS: ${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON != '' && secrets.CLOUDSQL_PASSWORD != '' }}
       VERTEXAI_CREDENTIALS: /tmp/vertexai.json
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/vertexai.json
       BUCKET_CREDENTIALS: /tmp/vertexai.json
@@ -101,54 +101,70 @@ jobs:
       DB_PORT: "5432"
       CLOUDSQL_INSTANCE: finwhiz-ac215:us-central1:finwhiz-cloud-sql
     steps:
+      - name: Ensure secrets configured
+        if: env.HAS_CLOUD_SECRETS != 'true'
+        run: |
+          echo "Skipping cloud tests: secrets not configured."
+
       - name: Checkout repository
+        if: env.HAS_CLOUD_SECRETS == 'true'
         uses: actions/checkout@v4
 
       - name: Set up Python
+        if: env.HAS_CLOUD_SECRETS == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install uv
+        if: env.HAS_CLOUD_SECRETS == 'true'
         uses: astral-sh/setup-uv@v1
 
       - name: Install system dependencies
+        if: env.HAS_CLOUD_SECRETS == 'true'
         run: sudo apt-get update && sudo apt-get install -y ghostscript netcat-openbsd
 
       - name: Write Vertex credentials
+        if: env.HAS_CLOUD_SECRETS == 'true'
         run: |
           echo '${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}' > $VERTEXAI_CREDENTIALS
 
       - name: Write Cloud SQL password
+        if: env.HAS_CLOUD_SECRETS == 'true'
         run: |
           echo '${{ secrets.CLOUDSQL_PASSWORD }}' > $DB_PASS
 
       - name: Download Cloud SQL Proxy
+        if: env.HAS_CLOUD_SECRETS == 'true'
         run: |
           curl -sSL https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.11.3/cloud-sql-proxy.linux.amd64 -o cloud-sql-proxy
           chmod +x cloud-sql-proxy
 
       - name: Start Cloud SQL Proxy
+        if: env.HAS_CLOUD_SECRETS == 'true'
         run: |
           ./cloud-sql-proxy $CLOUDSQL_INSTANCE --credentials-file=$VERTEXAI_CREDENTIALS --port 5432 &
           echo $! > /tmp/cloud_sql_proxy_pid
 
       - name: Wait for Cloud SQL Proxy
+        if: env.HAS_CLOUD_SECRETS == 'true'
         run: |
           for i in {1..15}; do nc -z localhost 5432 && exit 0; sleep 2; done
           echo "Cloud SQL proxy did not start" >&2
           exit 1
 
       - name: Install dependencies
+        if: env.HAS_CLOUD_SECRETS == 'true'
         run: |
           uv pip install --system pytest pytest-asyncio
           uv pip install --system -e src/agentic_user_data_processing
 
       - name: Run cloud tests
+        if: env.HAS_CLOUD_SECRETS == 'true'
         run: pytest tests/cloud
 
       - name: Stop Cloud SQL Proxy
-        if: always()
+        if: ${{ always() && env.HAS_CLOUD_SECRETS == 'true' }}
         run: |
           if [ -f /tmp/cloud_sql_proxy_pid ]; then
             kill "$(cat /tmp/cloud_sql_proxy_pid)" || true
