@@ -218,6 +218,10 @@ service-account-key.json
 
 #DS_Store
 *.DS_Store
+# Python bytecode
+*.pyc
+*.pyo
+
 #chroma_db
 **/chroma_storage/
 **/chroma_storage_backup/
@@ -225,8 +229,9 @@ service-account-key.json
 #data
 **data/
 
-#remove outputs
-**/outputs/
+# allow synthetic data fixtures
+!src/synthetic_data/
+!src/synthetic_data/**
 
 #local uploads
 **/local_uploads/
@@ -234,8 +239,7 @@ service-account-key.json
 
 # local dev notes
 local_notes/
-# Synthetic portfolio outputs
-src/synthetic_data/portfolio/outputs/*.pdf
-src/synthetic_data/portfolio/outputs/*.json
 docker-compose.override.yml
+tests/cloud_fixtures/
+LOCAL_TESTING_README.md
 LOCAL_TESTING_README.md

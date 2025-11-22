@@ -83,6 +83,14 @@ pytest          # runs unit tests with coverage
 pytest -m system  # run heavier system tests (requires docker-compose stack)
 ```
 
+To mirror the CI pipeline locally (unit + integration suites with combined coverage), run:
+
+```bash
+./scripts/run_tests_with_coverage.sh
+```
+
+The script wipes prior `.coverage*` files, runs both suites under `coverage run`, and emits merged HTML + XML reports under `coverage/`.
+
 ### Linting & Formatting (Black + Flake8 via pre-commit)
 We pin formatter/linter versions with [pre-commit](https://pre-commit.com), which keeps local runs in sync with CI.
 
