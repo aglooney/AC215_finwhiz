@@ -117,7 +117,7 @@ const realApi = {
     return response.data;
   },
 
-  
+
   async getPortfolioLive(sessionId: string): Promise<any> {
     const response = await agentAPI.get(`/sessions/${sessionId}/portfolio/live`);
     return response.data;

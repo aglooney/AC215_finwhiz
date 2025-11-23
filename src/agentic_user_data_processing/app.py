@@ -182,6 +182,7 @@ def get_session_context(session_id: str, db: Session = Depends(get_db)):
     documents = db.query(models.Document).filter(models.Document.session_id == session_id).all()
     return context_service.build_context(session=session, messages=messages, documents=documents)
 
+
 @app.get("/sessions/{session_id}/portfolio/live")
 def get_live_portfolio(session_id: str, db: Session = Depends(get_db)):
     """
@@ -189,47 +190,49 @@ def get_live_portfolio(session_id: str, db: Session = Depends(get_db)):
     Follows the same pattern as get_session_context endpoint.
     """
     logger.info(f"[get_live_portfolio] Fetching live portfolio for session {session_id}")
-    
+
     session_obj = models.Session.get(db, session_id)
     if session_obj is None:
         logger.warning(f"[get_live_portfolio] Session not found: {session_id}")
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     # Get the latest portfolio document (matches Document.latest_for_session pattern)
-    portfolio_doc = db.query(models.Document).filter(
-        models.Document.session_id == session_id,
-        models.Document.document_type == "portfolio"
-    ).order_by(models.Document.created_at.desc()).first()
-    
+    portfolio_doc = (
+        db.query(models.Document)
+        .filter(models.Document.session_id == session_id, models.Document.document_type == "portfolio")
+        .order_by(models.Document.created_at.desc())
+        .first()
+    )
+
     if not portfolio_doc or not portfolio_doc.raw_metadata:
         logger.warning(f"[get_live_portfolio] No portfolio found for session {session_id}")
         raise HTTPException(status_code=404, detail="No portfolio found for this session")
-    
+
     try:
         portfolio_data = json.loads(portfolio_doc.raw_metadata)
-        holdings = portfolio_data.get('holdings', [])
-        
+        holdings = portfolio_data.get("holdings", [])
+
         if not holdings:
             logger.info(f"[get_live_portfolio] No holdings in portfolio for session {session_id}")
             return {
                 "message": "No holdings found in portfolio",
                 "total_current_value": 0,
-                "total_original_value": portfolio_data.get('total_portfolio_value', 0),
-                "holdings": []
+                "total_original_value": portfolio_data.get("total_portfolio_value", 0),
+                "holdings": [],
             }
-        
+
         logger.info(f"[get_live_portfolio] Processing {len(holdings)} holdings")
         live_data = yfinance_service.get_portfolio_live_data(holdings)
-        
+
         # Include original portfolio metadata
-        live_data['account_name'] = portfolio_data.get('account_name')
-        live_data['account_number'] = portfolio_data.get('account_number')
-        live_data['account_type'] = portfolio_data.get('account_type')
-        live_data['statement_date'] = portfolio_data.get('statement_date')
-        
+        live_data["account_name"] = portfolio_data.get("account_name")
+        live_data["account_number"] = portfolio_data.get("account_number")
+        live_data["account_type"] = portfolio_data.get("account_type")
+        live_data["statement_date"] = portfolio_data.get("statement_date")
+
         logger.info(f"[get_live_portfolio] Successfully calculated live portfolio value: ${live_data['total_current_value']}")
         return live_data
-        
+
     except json.JSONDecodeError as e:
         logger.error(f"[get_live_portfolio] Invalid JSON in portfolio metadata: {e}")
         raise HTTPException(status_code=500, detail="Invalid portfolio data format")
@@ -242,33 +245,35 @@ def get_live_portfolio(session_id: str, db: Session = Depends(get_db)):
 def get_portfolio_analytics(session_id: str, db: Session = Depends(get_db)):
     """Get portfolio analytics and insights."""
     logger.info(f"[get_portfolio_analytics] Fetching analytics for session {session_id}")
-    
+
     session_obj = models.Session.get(db, session_id)
     if session_obj is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     # Get the latest portfolio document
-    portfolio_doc = db.query(models.Document).filter(
-        models.Document.session_id == session_id,
-        models.Document.document_type == "portfolio"
-    ).order_by(models.Document.created_at.desc()).first()
-    
+    portfolio_doc = (
+        db.query(models.Document)
+        .filter(models.Document.session_id == session_id, models.Document.document_type == "portfolio")
+        .order_by(models.Document.created_at.desc())
+        .first()
+    )
+
     if not portfolio_doc or not portfolio_doc.raw_metadata:
         raise HTTPException(status_code=404, detail="No portfolio found for this session")
-    
+
     try:
         portfolio_data = json.loads(portfolio_doc.raw_metadata)
-        holdings = portfolio_data.get('holdings', [])
-        
+        holdings = portfolio_data.get("holdings", [])
+
         # Get live data first
         live_data = yfinance_service.get_portfolio_live_data(holdings)
-        
+
         # Get analytics
-        analytics = yfinance_service.get_portfolio_analytics(live_data['holdings'])
-        
+        analytics = yfinance_service.get_portfolio_analytics(live_data["holdings"])
+
         logger.info(f"[get_portfolio_analytics] Analytics calculated for {len(live_data['holdings'])} holdings")
         return analytics
-        
+
     except Exception as e:
         logger.error(f"[get_portfolio_analytics] Error calculating analytics: {e}")
         raise HTTPException(status_code=500, detail=f"Error processing analytics: {str(e)}")
@@ -278,12 +283,12 @@ def get_portfolio_analytics(session_id: str, db: Session = Depends(get_db)):
 def get_market_quote(ticker: str):
     """Get current quote for a specific ticker."""
     logger.info(f"[get_market_quote] Fetching quote for {ticker}")
-    
+
     quote = yfinance_service.get_stock_quote(ticker.upper())
     if not quote:
         logger.warning(f"[get_market_quote] Unable to fetch data for {ticker}")
         raise HTTPException(status_code=404, detail=f"Unable to fetch data for {ticker}")
-    
+
     return quote
 
 
@@ -291,12 +296,12 @@ def get_market_quote(ticker: str):
 def get_market_indices():
     """Get current data for major market indices."""
     logger.info("[get_market_indices] Fetching market indices")
-    
+
     indices = yfinance_service.get_market_indices()
     if not indices:
         logger.error("[get_market_indices] Failed to fetch any market indices")
         raise HTTPException(status_code=500, detail="Unable to fetch market indices")
-    
+
     return {"indices": indices, "updated_at": datetime.now().isoformat()}
 
 
@@ -304,22 +309,15 @@ def get_market_indices():
 def get_stock_history(ticker: str, period: str = "1mo"):
     """
     Get historical price data for a stock.
-    
+
     Query params:
         period: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
     """
     logger.info(f"[get_stock_history] Fetching {period} history for {ticker}")
-    
+
     history = yfinance_service.get_stock_history(ticker.upper(), period)
     if not history:
         logger.warning(f"[get_stock_history] Unable to fetch history for {ticker}")
         raise HTTPException(status_code=404, detail=f"Unable to fetch history for {ticker}")
-    
+
     return {"ticker": ticker, "period": period, "history": history}
-
-
-
-
-
-
-    

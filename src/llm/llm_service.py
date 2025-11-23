@@ -188,72 +188,72 @@ def retrieve_agent_context(session_id: str | None) -> tuple[str, dict]:
     """
     Fetch chat and uploaded document context from agent.
     Now also fetches live portfolio data and market overview.
-    
+
     Returns:
         tuple: (formatted_context_string, raw_data_dict)
     """
     if not session_id:
         return "", {}
-    
+
     context_parts = []
     raw_data = {}
-    
+
     try:
         # 1. Get basic session context (messages, documents)
         response = requests.get(f"{AGENT_URL}/sessions/{session_id}/context")
         response.raise_for_status()
         data = response.json()
-        raw_data['session'] = data
-        
+        raw_data["session"] = data
+
         # Recent messages
         messages_text = "\n".join(f"{m['role']}: {m['content']}" for m in data.get("recent_messages", []))
         if messages_text:
             context_parts.append(f"Recent Conversation:\n{messages_text}")
-        
+
         # 2. Get live portfolio data (current prices, gains/losses)
         try:
             portfolio_response = requests.get(f"{AGENT_URL}/sessions/{session_id}/portfolio/live")
             if portfolio_response.status_code == 200:
                 live_portfolio = portfolio_response.json()
-                raw_data['live_portfolio'] = live_portfolio
-                
+                raw_data["live_portfolio"] = live_portfolio
+
                 # Format live portfolio for context
                 portfolio_context = format_live_portfolio(live_portfolio)
                 if portfolio_context:
                     context_parts.append(portfolio_context)
         except Exception as e:
             logger.warning(f"Could not fetch live portfolio data: {e}")
-        
+
         # 3. Get market overview (indices)
         try:
             market_response = requests.get(f"{AGENT_URL}/market/indices")
             if market_response.status_code == 200:
                 market_data = market_response.json()
-                raw_data['market_overview'] = market_data
-                
+                raw_data["market_overview"] = market_data
+
                 # Format market overview
                 market_context = format_market_overview(market_data)
                 if market_context:
                     context_parts.append(market_context)
         except Exception as e:
             logger.warning(f"Could not fetch market overview: {e}")
-        
+
         # 4. Add W-2 and 1099 data if available
         w2 = data.get("w2_fields", {})
         f1099 = data.get("form1099_fields", {})
-        
+
         if w2:
             w2_text = format_tax_fields(w2, "W-2 Tax Data")
             if w2_text:
                 context_parts.append(w2_text)
-        
+
         if f1099:
             f1099_text = format_tax_fields(f1099, "1099 Tax Data")
             if f1099_text:
                 context_parts.append(f1099_text)
-        
+
         return "\n\n".join(context_parts), raw_data
-        
+
     except Exception as e:
         logger.warning(f"Failed to fetch agent context: {e}")
         return "", {}
@@ -262,41 +262,41 @@ def retrieve_agent_context(session_id: str | None) -> tuple[str, dict]:
 def format_live_portfolio(portfolio_data: dict) -> str:
     """Format live portfolio data for LLM context."""
     lines = ["=== YOUR PORTFOLIO (LIVE DATA) ==="]
-    
+
     # Account info
-    if portfolio_data.get('account_name'):
+    if portfolio_data.get("account_name"):
         lines.append(f"Account: {portfolio_data['account_name']}")
-    if portfolio_data.get('account_type'):
+    if portfolio_data.get("account_type"):
         lines.append(f"Type: {portfolio_data['account_type']}")
-    
+
     # Overall performance
-    total_current = portfolio_data.get('total_current_value', 0)
-    total_original = portfolio_data.get('total_original_value', 0)
-    total_gain_loss = portfolio_data.get('total_gain_loss', 0)
-    total_gain_loss_pct = portfolio_data.get('total_gain_loss_percent', 0)
-    
+    total_current = portfolio_data.get("total_current_value", 0)
+    total_original = portfolio_data.get("total_original_value", 0)
+    total_gain_loss = portfolio_data.get("total_gain_loss", 0)
+    total_gain_loss_pct = portfolio_data.get("total_gain_loss_percent", 0)
+
     lines.append(f"\nTotal Value: ${total_current:,.2f}")
     lines.append(f"Original Value: ${total_original:,.2f}")
     lines.append(f"Total Gain/Loss: ${total_gain_loss:,.2f} ({total_gain_loss_pct:+.2f}%)")
-    
+
     # Individual holdings
-    holdings = portfolio_data.get('holdings', [])
+    holdings = portfolio_data.get("holdings", [])
     if holdings:
         lines.append(f"\nHoldings ({len(holdings)} positions):")
-        
+
         for holding in holdings:
-            ticker = holding.get('ticker', 'N/A')
-            name = holding.get('name', 'N/A')
-            shares = holding.get('shares', 0)
-            current_price = holding.get('current_price', 0)
-            current_value = holding.get('current_value', 0)
-            gain_loss = holding.get('gain_loss', 0)
-            gain_loss_pct = holding.get('gain_loss_percent', 0)
-            day_change_pct = holding.get('day_change_percent', 0)
-            
+            ticker = holding.get("ticker", "N/A")
+            name = holding.get("name", "N/A")
+            shares = holding.get("shares", 0)
+            current_price = holding.get("current_price", 0)
+            current_value = holding.get("current_value", 0)
+            gain_loss = holding.get("gain_loss", 0)
+            gain_loss_pct = holding.get("gain_loss_percent", 0)
+            day_change_pct = holding.get("day_change_percent", 0)
+
             # Calculate allocation percentage
             allocation_pct = (current_value / total_current * 100) if total_current > 0 else 0
-            
+
             lines.append(
                 f"\n  • {ticker} ({name})"
                 f"\n    - Shares: {shares:,.2f}"
@@ -305,33 +305,33 @@ def format_live_portfolio(portfolio_data: dict) -> str:
                 f"\n    - Total Gain/Loss: ${gain_loss:,.2f} ({gain_loss_pct:+.2f}%)"
                 f"\n    - Today's Change: {day_change_pct:+.2f}%"
             )
-    
-    updated_at = portfolio_data.get('updated_at', 'N/A')
+
+    updated_at = portfolio_data.get("updated_at", "N/A")
     lines.append(f"\nLast Updated: {updated_at}")
-    
+
     return "\n".join(lines)
 
 
 def format_market_overview(market_data: dict) -> str:
     """Format market indices data for LLM context."""
-    indices = market_data.get('indices', [])
+    indices = market_data.get("indices", [])
     if not indices:
         return ""
-    
+
     lines = ["=== MARKET OVERVIEW ==="]
-    
+
     for index in indices:
-        symbol = index.get('symbol', 'N/A')
-        name = index.get('name', 'N/A')
-        price = index.get('price', 0)
-        change = index.get('change', 0)
-        change_pct = index.get('change_percent', 0)
-        
+        symbol = index.get("symbol", "N/A")
+        name = index.get("name", "N/A")
+        price = index.get("price", 0)
+        change = index.get("change", 0)
+        change_pct = index.get("change_percent", 0)
+
         lines.append(f"{name} ({symbol}): ${price:,.2f} ({change:+.2f}, {change_pct:+.2f}%)")
-    
-    updated_at = market_data.get('updated_at', 'N/A')
+
+    updated_at = market_data.get("updated_at", "N/A")
     lines.append(f"\nMarket data as of: {updated_at}")
-    
+
     return "\n".join(lines)
 
 
@@ -339,14 +339,14 @@ def format_tax_fields(fields: dict, title: str) -> str:
     """Format tax document fields for context."""
     if not fields:
         return ""
-    
+
     lines = [f"=== {title} ==="]
     for key, value in fields.items():
         if value is not None:
             # Format key nicely (convert snake_case to Title Case)
-            formatted_key = key.replace('_', ' ').title()
+            formatted_key = key.replace("_", " ").title()
             lines.append(f"{formatted_key}: {value}")
-    
+
     return "\n".join(lines)
 
 
@@ -366,10 +366,10 @@ def generate_answer(prompt: str) -> str:
 async def handle_query(req: QueryRequest):
     # Fetch agentic context (chat messages + documents + LIVE portfolio + market data)
     agent_context, raw_agent_data = retrieve_agent_context(req.session_id)
-    
+
     # Fetch Chroma context
     chroma_context, citations = retrieve_context(req.query, top_k=req.top_k, method="rrf")
-    
+
     # Combine contexts
     full_context = ""
     if agent_context:
@@ -379,9 +379,9 @@ async def handle_query(req: QueryRequest):
             full_context += "\n\n"  # separate agent & Chroma
         full_context += "=== FINANCIAL EDUCATION KNOWLEDGE BASE ===\n"
         full_context += chroma_context
-    
+
     logger.info(f"Full context for query '{req.query}':\n{full_context}")
-    
+
     # Build optional sources section for the prompt
     sources_text = ""
     if citations:
@@ -391,26 +391,26 @@ async def handle_query(req: QueryRequest):
             section = item.get("section")
             source_lines.append(f"[S{index}] {label}" + (f" — {section}" if section else ""))
         sources_text = "\n\nSources:\n" + "\n".join(source_lines)
-    
+
     # Build enhanced LLM prompt with specific portfolio awareness
     prompt = build_enhanced_prompt(full_context, sources_text, req.query, raw_agent_data)
-    
+
     answer = generate_answer(prompt)
     return {"answer": answer, "context": full_context, "sources": citations}
 
 
 def build_enhanced_prompt(context: str, sources: str, query: str, raw_data: dict) -> str:
     """Build an enhanced prompt with portfolio-specific instructions."""
-    
+
     # Check if user has portfolio data
-    has_portfolio = bool(raw_data.get('live_portfolio', {}).get('holdings'))
-    
+    has_portfolio = bool(raw_data.get("live_portfolio", {}).get("holdings"))
+
     base_prompt = (
         "You are FinWhiz, an educational financial information assistant. "
         "You provide EDUCATIONAL information about financial concepts, portfolio composition, "
         "investment principles, allocation strategies, and market insights.\n\n"
     )
-    
+
     if has_portfolio:
         portfolio_instructions = (
             "IMPORTANT - You have access to the user's live portfolio data with current market prices. "
@@ -420,7 +420,6 @@ def build_enhanced_prompt(context: str, sources: str, query: str, raw_data: dict
             "- Discuss their portfolio concentration (% allocations to each position)\n"
             "- Compare their holdings' performance to market indices\n"
             "- Provide educational context about diversification based on their actual positions\n\n"
-            
             "When discussing their portfolio:\n"
             "- Be specific: mention tickers, percentages, and current values you see\n"
             "- Note winners and losers: identify positions with positive/negative performance\n"
@@ -436,7 +435,7 @@ def build_enhanced_prompt(context: str, sources: str, query: str, raw_data: dict
             "percentages (e.g., 'A common balanced approach is 60% stocks, 40% bonds'). "
             "Frame responses as educational examples, not personalized advice.\n\n"
         )
-    
+
     disclaimer = (
         "CRITICAL DISCLAIMERS:\n"
         "- Always maintain educational framing - you are teaching, not advising\n"
@@ -444,9 +443,9 @@ def build_enhanced_prompt(context: str, sources: str, query: str, raw_data: dict
         "- Never say 'you should buy/sell' - instead say 'educational principles suggest...'\n"
         "- Make it clear you are NOT a licensed financial advisor\n\n"
     )
-    
+
     base_prompt += disclaimer
-    
+
     full_prompt = (
         f"{base_prompt}"
         f"Context:\n{context}{sources}\n\n"
@@ -454,7 +453,7 @@ def build_enhanced_prompt(context: str, sources: str, query: str, raw_data: dict
         f"Provide an educational response. Be specific about their portfolio if available. "
         f"Reference market conditions and stock performance where relevant."
     )
-    
+
     return full_prompt
 
 
