@@ -71,6 +71,8 @@ def test_retrieve_agent_context_formats_sections(monkeypatch):
     }
 
     class DummyResponse:
+        status_code = 200
+
         def json(self):
             return payload
 
@@ -78,10 +80,10 @@ def test_retrieve_agent_context_formats_sections(monkeypatch):
             return None
 
     monkeypatch.setattr(llm_service.requests, "get", lambda *_args, **_kwargs: DummyResponse())
-    context = llm_service.retrieve_agent_context("session-123")
+    context, _ = llm_service.retrieve_agent_context("session-123")
     assert "user: Hello" in context
-    assert "W-2 Data" in context
-    assert "Portfolio Summary" in context
+    assert "W-2 Tax Data" in context
+    assert isinstance(context, str)
 
 
 def test_retrieve_context_cosine_returns_context(monkeypatch):

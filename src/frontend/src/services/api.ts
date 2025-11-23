@@ -116,6 +116,35 @@ const realApi = {
     const response = await agentAPI.get<SessionContext>(`/sessions/${sessionId}/context`);
     return response.data;
   },
+
+
+  async getPortfolioLive(sessionId: string): Promise<any> {
+    const response = await agentAPI.get(`/sessions/${sessionId}/portfolio/live`);
+    return response.data;
+  },
+
+  async getPortfolioAnalytics(sessionId: string): Promise<any> {
+    const response = await agentAPI.get(`/sessions/${sessionId}/portfolio/analytics`);
+    return response.data;
+  },
+
+  async getMarketQuote(ticker: string): Promise<any> {
+    const response = await agentAPI.get(`/market/quote/${ticker}`);
+    return response.data;
+  },
+
+  async getMarketIndices(): Promise<any> {
+    const response = await agentAPI.get(`/market/indices`);
+    return response.data;
+  },
+
+  async getStockHistory(ticker: string, period: string = '1mo'): Promise<any> {
+    const response = await agentAPI.get(`/market/history/${ticker}`, {
+      params: { period }
+    });
+    return response.data;
+  },
+
 };
 
 export const api = USE_MOCK_API ? mockApi : realApi;

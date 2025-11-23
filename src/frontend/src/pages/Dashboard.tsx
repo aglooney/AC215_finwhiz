@@ -3,6 +3,8 @@ import { LogOut, User, MessageSquare, Upload, PieChart as PieChartIcon } from 'l
 import ChatInterface from '../components/ChatInterface';
 import DocumentUpload from '../components/DocumentUpload';
 import PortfolioRecommendation from '../components/PortfolioRecommendation';
+import LivePortfolio from '../components/LivePortfolio';
+import MarketOverview from '../components/MarketOverview';
 import type { UserProfile, Document } from '../types';
 
 interface DashboardProps {
@@ -140,10 +142,15 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
                 </div>
               )}
               {activeTab === 'portfolio' && (
-                <div className="overflow-y-auto h-full">
+              <div className="overflow-y-auto h-full p-4 space-y-6">
+                <MarketOverview />
+                <LivePortfolio sessionId={sessionId} />
+                <div className="pt-4 border-t border-gray-200">
+                  <h3 className="font-bold mb-3">Recommended Allocation</h3>
                   <PortfolioRecommendation profile={profile} />
                 </div>
-              )}
+              </div>
+            )}
             </div>
           </div>
         </div>
