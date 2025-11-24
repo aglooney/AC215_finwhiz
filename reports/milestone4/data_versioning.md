@@ -206,7 +206,7 @@ git commit -m "Add synthetic W-2 test case 001"
 
 **Tool:** PostgreSQL (local) / Cloud SQL (production) with SQLAlchemy ORM
 
-**Schema:** See `src/agentic_user_data_processing/models.py`  
+**Schema:** See `src/agentic_user_data_processing/models.py`
 (tables: `users`, `sessions`, `messages`, `documents`, `w2_fields`, `form1099_fields`, `portfolio_fields`)
 
 **Versioning Strategy:**
