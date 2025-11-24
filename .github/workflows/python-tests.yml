@@ -225,30 +225,39 @@ jobs:
   system:
     runs-on: ubuntu-latest
     needs: integration
-    if: >
-      ${{
-        secrets.VERTEXAI_SERVICE_ACCOUNT_JSON != '' &&
-        secrets.CLOUDSQL_PASSWORD != '' &&
-        secrets.CLOUDSQL_PROXY_JSON != ''
-      }}
     env:
       RUN_SYSTEM_TESTS: "1"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Determine system secret availability
+        run: |
+          if [ -n "${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}" ] && [ -n "${{ secrets.CLOUDSQL_PASSWORD }}" ] && [ -n "${{ secrets.CLOUDSQL_PROXY_JSON }}" ]; then
+            echo "HAS_SYSTEM_SECRET=true" >> $GITHUB_ENV
+          else
+            echo "HAS_SYSTEM_SECRET=false" >> $GITHUB_ENV
+          fi
+
+      - name: Skip system tests without secrets
+        if: env.HAS_SYSTEM_SECRET == 'false'
+        run: echo "Skipping system tests -- secrets not configured."
+
       - name: Set up Python
+        if: env.HAS_SYSTEM_SECRET == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install test dependencies
+        if: env.HAS_SYSTEM_SECRET == 'true'
         run: |
           sudo apt-get update && sudo apt-get install -y jq
           python -m pip install --upgrade pip
           python -m pip install pytest
 
       - name: Prepare secrets for services
+        if: env.HAS_SYSTEM_SECRET == 'true'
         run: |
           mkdir -p secrets
           echo '${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}' > secrets/service-account-key.json
@@ -257,10 +266,12 @@ jobs:
           echo '${{ secrets.CLOUDSQL_PROXY_JSON }}' > secrets/proxy-key.json
 
       - name: Start docker-compose stack
+        if: env.HAS_SYSTEM_SECRET == 'true'
         run: |
           docker compose up -d cloudsql-proxy llm agent
 
       - name: Wait for services
+        if: env.HAS_SYSTEM_SECRET == 'true'
         run: |
           for i in {1..40}; do
             if curl -sSf http://localhost:8010/health >/dev/null; then
@@ -273,10 +284,11 @@ jobs:
           exit 1
 
       - name: Run system tests
+        if: env.HAS_SYSTEM_SECRET == 'true'
         env:
           RUN_SYSTEM_TESTS: "1"
         run: pytest tests/system
 
       - name: Teardown docker-compose stack
-        if: always()
+        if: ${{ always() && env.HAS_SYSTEM_SECRET == 'true' }}
         run: docker compose down
