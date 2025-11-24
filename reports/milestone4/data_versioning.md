@@ -187,15 +187,10 @@ git commit -m "Add synthetic W-2 test case 001"
 **Versioning Strategy:**
 - ⚠️ **NOT tracked in version control** - Session data contains PII (names, SSNs, income) and is ephemeral/user-specific
 - **Schema versioning** - NOT YET IMPLEMENTED (planned via Alembic in MS5); currently schema defined in `models.py` only
-- **Backup strategy** (operational, not version control):
-  - **Local development:** Docker volume (`postgres_data`) persists across container restarts; dropped between major refactors
-  - **Cloud SQL (production):** Automated daily backups (7-day retention) + point-in-time recovery for disaster recovery
-  - **No DVC/Git tracking:** User data never leaves the database; only schema migrations are version-controlled
-
-**Reproducibility Note:**
-- Database **schema** migrations versioned via **Alembic** (planned for MS5) - tracks schema evolution (e.g., `ALTER TABLE` statements), not individual rows
-- Test fixtures use **SQLAlchemy factories** with deterministic seeds (see `tests/integration/conftest.py`) - ephemeral test data only
-- CloudSQL compatibility maintained via **standard SQLAlchemy patterns** (no database-specific SQL)
+- **Backup Strategy (Operational, Not Version Control):**
+- **Local development:** Docker volume (`postgres_data`) persists across container restarts
+- **Production:** Cloud SQL automated backups (7-day retention, disaster recovery only)
+- **Never tracked in Git/DVC:** User data remains in database only
 
 **Why no versioning for user data?**
 - **PII compliance** - Names, SSNs, financial details must not be tracked in Git/DVC
@@ -210,8 +205,8 @@ git commit -m "Add synthetic W-2 test case 001"
 | Data Type | Pull Command | Push Command |
 |-----------|--------------|--------------|
 | **FIQA (DVC)** | `dvc pull src/llm/finetuning/data.dvc` | `dvc push` |
-| **Scraped Content** | `gsutil cp -r gs://fw_ws/chunked_documents_<DATE>/ data/` (manual) | `gsutil cp -r data/ gs://fw_ws/chunked_documents_<DATE>/` (manual) |
-| **ChromaDB** | `docker-compose up llm` (auto-downloads on container start) | `python src/embedder/embedding.py` (auto-uploads to `chroma_storage_backup`) |
+| **Scraped Content** | `gsutil cp -r gs://finwhiz-storage/base-knowledge/scraped-data/ data/` | `python src/gcp_storage/upload_all_scraped_data.py` (overwrites existing) |
+| **ChromaDB** | `docker-compose up llm` (auto-downloads on container start) | `python src/embedder/embedding.py` (auto-uploads, overwrites existing) |
 | **Synthetic Data** | `git pull` | `git add src/synthetic_data/*/outputs/ && git commit` |
 | **Session DB** | `pg_dump finwhiz > backup.sql` (local dev only) | Cloud SQL automated backups (production); **never version-controlled due to PII** |
 
