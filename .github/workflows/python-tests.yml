@@ -221,3 +221,62 @@ jobs:
           if [ -f /tmp/cloud_sql_proxy_pid ]; then
             kill "$(cat /tmp/cloud_sql_proxy_pid)" || true
           fi
+
+  system:
+    runs-on: ubuntu-latest
+    needs: integration
+    if: >
+      ${{
+        secrets.VERTEXAI_SERVICE_ACCOUNT_JSON != '' &&
+        secrets.CLOUDSQL_PASSWORD != '' &&
+        secrets.CLOUDSQL_PROXY_JSON != ''
+      }}
+    env:
+      RUN_SYSTEM_TESTS: "1"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+
+      - name: Prepare secrets for services
+        run: |
+          mkdir -p secrets
+          echo '${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}' > secrets/service-account-key.json
+          cp secrets/service-account-key.json secrets/vertexai-service-account.json
+          echo '${{ secrets.CLOUDSQL_PASSWORD }}' > secrets/sql_password.txt
+          echo '${{ secrets.CLOUDSQL_PROXY_JSON }}' > secrets/proxy-key.json
+
+      - name: Start docker-compose stack
+        run: |
+          docker compose up -d cloudsql-proxy llm agent
+
+      - name: Wait for services
+        run: |
+          for i in {1..40}; do
+            if curl -sSf http://localhost:8010/health >/dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Agent service failed to become healthy" >&2
+          docker compose ps
+          exit 1
+
+      - name: Run system tests
+        env:
+          RUN_SYSTEM_TESTS: "1"
+        run: pytest tests/system
+
+      - name: Teardown docker-compose stack
+        if: always()
+        run: docker compose down
