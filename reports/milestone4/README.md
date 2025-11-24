@@ -1,4 +1,15 @@
-# Milestone 4
+# Milestone 4: Development & Deployment
+
+## Overview
+
+This milestone integrates fine-tuning evaluation, data versioning, and testing infrastructure to demonstrate a deployment-ready FinWhiz system.
+
+## Documentation
+
+- **[Fine-Tuning & Evaluation](model_finetuning.md)** - Training process, results, and deployment strategy
+- **[Data Versioning Strategy](data_versioning.md)** - Hybrid DVC + GCS approach with reproducibility instructions
+
+---
 
 ## Fine-Tuning & Evaluation Summary
 
