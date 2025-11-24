@@ -11,8 +11,8 @@ FinWhiz uses a hybrid approach to data versioning. We combine DVC for static tra
 | Data Type | Volume | Update Frequency | Versioning Method | Rationale |
 |-----------|--------|------------------|-------------------|-----------|
 | **ML Training Data** (FIQA) | ~17K QA pairs, 50MB | Static (one-time import) | **DVC** | Diff-based tracking ideal for reproducible model training; Git-like workflow for dataset iterations |
-| **Scraped Financial Content** | ~2GB chunked NDJSON | Weekly/monthly refreshes | **GCS timestamped snapshots** | Snapshot-based approach better for large, append-heavy datasets; GCS bucket structure supports versioned prefixes |
-| **ChromaDB Embeddings** | ~500MB vector DB | Updated with scraped content | **GCS backups** | Entire DB snapshot uploaded after each embedding run; older versions retained with timestamps |
+| **Scraped Content** | ~2GB chunked NDJSON | Weekly/monthly refreshes | **GCS manual upload** | Manual `gsutil` uploads to timestamped prefixes (e.g., `chunked_documents_2025-01-10/`); no automated versioning yet |
+| **ChromaDB Embeddings** | ~500MB vector DB | Updated with scraped content | **GCS manual upload** | Entire DB uploaded via embedder script (`upload_chroma_to_gcs()`); timestamped prefixes for versions if needed |
 | **User Session Data** | <100MB (local), grows with users | Real-time transactional | **Not versioned (PII)** | Contains PII (SSNs, income); only schema migrations tracked via Alembic. Operational backups via CloudSQL, not version control |
 | **Synthetic Test Data** | <10MB PDFs/JSON | Generated on-demand | **Git-tracked** | Small enough to commit directly; prompts + outputs both stored for LLM transparency |
 
@@ -63,52 +63,53 @@ dvc pull src/llm/finetuning/data.dvc
 
 ---
 
-### 2. GCS Snapshot Versioning for Scraped Content
+### 2. GCS Manual Upload for Scraped Content & ChromaDB
 
-**What:** Web-scraped financial resources (IRS, FINRA, Investor.gov, Consumer Finance)
+**What:** Web-scraped financial resources + ChromaDB embeddings
 
-**Tool:** Google Cloud Storage with timestamped prefix structure
+**Tool:** Manual `gsutil` commands or Python upload scripts (NOT a GCS built-in feature)
 
-**Bucket Structure:**
+**Current Implementation:**
+- **Embedder script** (`src/embedder/embedding.py`) has `upload_chroma_to_gcs()` function
+- **Manual process**: Run embedder → uploads to `gs://fw_ws/chroma_storage_backup/`
+- **Retrieval**: `src/llm/chroma_utils.py` downloads from GCS on container start
+
+**Bucket Structure (Current):**
 ```
 gs://fw_ws/
-├── raw_scrapes/
-│   ├── 2024-11-01_irs/
-│   ├── 2024-11-15_finra/
-│   └── 2025-01-10_consumer_finance/
-├── chunked_documents/
-│   ├── v1_2024-11-01/
-│   └── v2_2025-01-10/
-└── chroma_storage_backup/
-    ├── 2024-11-01/
-    └── 2025-01-10/
+├── raw_scrapes/               # Manually uploaded via webscraping pipelines
+├── chunked_documents/          # Manually uploaded via embedder
+└── chroma_storage_backup/     # Uploaded by embedder script
+    ├── chroma.sqlite3
+    └── 1a90eda1-e932-4e73-89dd-edb1adf9d126/  # Collection directory
 ```
 
-**Workflow:**
-1. **Ingestion pipeline** runs weekly/monthly (see `src/webscraping/`)
-2. Output written to **timestamped GCS prefix** (e.g., `gs://fw_ws/chunked_documents/v2_2025-01-10/`)
-3. **Embedding job** (see `src/embedder/`) processes new chunks, updates ChromaDB locally
-4. **ChromaDB snapshot** uploaded to `gs://fw_ws/chroma_storage_backup/<DATE>/`
+**Version Strategy (Manual):**
+To create "versions", you would manually change the upload prefix:
+```python
+# Example: Add timestamps to create versions
+upload_chroma_to_gcs(local_dir="src/chroma_storage/", 
+                     bucket_name="fw_ws", 
+                     dest_prefix="chroma_storage_backup_2025-01-10")  # Manual version name
+```
 
 **Retrieval:**
 ```bash
-# Download specific snapshot version
-gsutil -m cp -r gs://fw_ws/chroma_storage_backup/2025-01-10/ src/chroma_storage/
+# Download latest snapshot (what the LLM service does on startup)
+# Via chroma_utils.py - automatically pulls from GCS
+docker-compose up llm  # Auto-downloads if local dir is empty
 
-# Or use the utility script
-python src/llm/view_bucket_contents.py  # lists available versions
+# Manual download
+gsutil -m cp -r gs://fw_ws/chroma_storage_backup/ src/chroma_storage/
 ```
 
-**Version History:**
-- Versions identified by **ISO date prefix** in GCS paths
-- **Lifecycle policy** retains last 3 snapshots (older versions auto-deleted after 90 days to control costs)
-- Application uses `GCS_PREFIX` env var to select which snapshot to load (default: `chroma_storage_backup` → latest)
+**Why manual upload (not DVC)?**
+- **Large size** (500MB+) - ChromaDB is too big for efficient Git/DVC tracking
+- **Generated data** - ChromaDB is derived from scraped content, not source material
+- **Infrequent updates** - Only regenerated when scraping runs (weekly/monthly)
+- **Simple access pattern** - LLM service just needs "latest" version, not historical comparisons
 
-**Why GCS snapshots for this data?**
-- **Large size** (2GB+) makes DVC's diff tracking expensive
-- **Append-heavy workflow** (add new chunks, rarely modify existing) → full snapshots more efficient than diffs
-- **Decoupled updates** from code deploys (data refresh schedule independent of releases)
-- Native GCS versioning/lifecycle policies simplify retention management
+**Future Enhancement:** Could add timestamped prefixes + GCS lifecycle policies to retain N versions automatically.
 
 ---
 
@@ -170,7 +171,7 @@ git commit -m "Add synthetic W-2 test case 001"
 
 **Versioning Strategy:**
 - ⚠️ **NOT tracked in version control** - Session data contains PII (names, SSNs, income) and is ephemeral/user-specific
-- **Schema versioning only** - Database migrations (planned via Alembic in MS5) track schema changes, not data
+- **Schema versioning** - NOT YET IMPLEMENTED (planned via Alembic in MS5); currently schema defined in `models.py` only
 - **Backup strategy** (operational, not version control):
   - **Local development:** Docker volume (`postgres_data`) persists across container restarts; dropped between major refactors
   - **Cloud SQL (production):** Automated daily backups (7-day retention) + point-in-time recovery for disaster recovery
@@ -194,8 +195,8 @@ git commit -m "Add synthetic W-2 test case 001"
 | Data Type | Pull Command | Push Command |
 |-----------|--------------|--------------|
 | **FIQA (DVC)** | `dvc pull src/llm/finetuning/data.dvc` | `dvc push` |
-| **Scraped Content** | `gsutil cp -r gs://fw_ws/chunked_documents/v2_2025-01-10/ data/` | `gsutil cp -r data/ gs://fw_ws/chunked_documents/v3_<DATE>/` |
-| **ChromaDB** | `python src/llm/chroma_utils.py` (downloads on container start) | `gsutil cp -r src/chroma_storage/ gs://fw_ws/chroma_storage_backup/<DATE>/` |
+| **Scraped Content** | `gsutil cp -r gs://fw_ws/chunked_documents_<DATE>/ data/` (manual) | `gsutil cp -r data/ gs://fw_ws/chunked_documents_<DATE>/` (manual) |
+| **ChromaDB** | `docker-compose up llm` (auto-downloads on container start) | `python src/embedder/embedding.py` (auto-uploads to `chroma_storage_backup`) |
 | **Synthetic Data** | `git pull` | `git add src/synthetic_data/*/outputs/ && git commit` |
 | **Session DB** | `pg_dump finwhiz > backup.sql` (local dev only) | Cloud SQL automated backups (production); **never version-controlled due to PII** |
 
@@ -221,7 +222,7 @@ For a teammate to reproduce the **entire FinWhiz system from scratch**:
 
 ## Future Enhancements (Post-MS4)
 
-- **Alembic migrations** for DB schema versioning (track schema changes alongside code)
+- **Alembic migrations** for DB schema versioning (NOT YET IMPLEMENTED - planned for MS5; currently schema changes require manual table recreation)
 - **DVC pipelines** to automate: scrape → embed → upload (replaces manual `gsutil` commands)
 - **MLflow integration** for experiment tracking (links model versions to specific data.dvc hashes)
 - **Artifact Registry** for Docker images (ensures container versions match data/code versions)
@@ -235,4 +236,3 @@ For a teammate to reproduce the **entire FinWhiz system from scratch**:
 - Scraping pipelines: `src/webscraping/README.md`
 - GCS utilities: `src/gcp_storage/README.md`
 - Synthetic data generation: `src/synthetic_data/README.md`
-
