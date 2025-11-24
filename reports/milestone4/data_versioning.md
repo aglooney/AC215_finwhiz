@@ -10,36 +10,28 @@ FinWhiz uses a hybrid approach to data versioning. We combine DVC for static tra
 
 Our project has diverse data characteristics that require different versioning approaches:
 
-| Data Type | Volume | Update Frequency | Versioning Method | Tutorial Alignment |
-|-----------|--------|------------------|-------------------|-------------------|
-| **ML Training Data** (FIQA) | ~17K QA pairs, 50MB | Static (one-time import) | **DVC** ✅ | Matches tutorial exactly: DVC + GCS remote + Git tags |
-| **Scraped Financial Content** | ~2GB chunked NDJSON | Weekly/monthly refreshes | **Manual GCS backup** ⚠️ | NOT tracked by DVC; documented as limitation (too large/dynamic) |
-| **ChromaDB Embeddings** | ~500MB vector DB | Updated with scraped content | **GCS manual upload** ⚠️ | Derived data (not source); auto-uploaded by embedder script |
-| **User Session Data** | <100MB (local), grows with users | Real-time transactional | **Not versioned (PII)** ✅ | Out of scope: contains PII, ephemeral |
-| **Synthetic Test Data** | <10MB PDFs/JSON | Generated on-demand | **Git-tracked** ✅ | Small enough for Git; generation code + outputs committed |
-| **Database Schema** | N/A (code) | Changed with code | **Git** ✅ | Schema is code (`models.py`), versioned via Git |
-
-**Tutorial Pattern (Tutorial T7):**
-- Static datasets → DVC tracking → GCS remote → Git tags
-- Our FIQA dataset follows this exactly (see `src/llm/finetuning/data.dvc`)
-
-**Known Limitations:**
-- Scraped content NOT DVC-tracked due to size/update frequency (acknowledged tradeoff)
-- ChromaDB is derived data (embeddings of scraped content), not versioned independently
+| Data Type | Volume | Update Frequency | Versioning Method | Rationale |
+|-----------|--------|------------------|-------------------|-----------|
+| **ML Training Data** (FIQA) | ~17K QA pairs, 50MB | Static (one-time import) | **DVC + GCS remote** | Git-like workflow for dataset iterations; hash-based integrity; reproducible across environments |
+| **Scraped Financial Content** | ~2GB chunked NDJSON | Weekly/monthly refreshes | **GCS manual upload** | Too large for DVC tracking; infrequent updates make manual snapshots practical; GCS bucket organization via prefixes |
+| **ChromaDB Embeddings** | ~500MB vector DB | Updated with scraped content | **GCS auto-upload** | Derived data (computed from scraped content); embedder script automatically uploads after each build |
+| **User Session Data** | Growing with users | Real-time transactional | **Not versioned** | Contains PII (SSNs, income); operational backups only, never tracked in version control |
+| **Synthetic Test Data** | <10MB PDFs/JSON | Generated on-demand | **Git-committed** | Small enough for direct Git tracking; generation code versioned alongside outputs |
+| **Database Schema** | N/A (code) | Changed with code | **Git** | Schema defined in `models.py`, versioned as code |
 
 ---
 
 ## Implementation Details
 
-### 1. DVC for ML Training Data (Follows Tutorial T7)
+### 1. DVC for ML Training Data
 
 **What:** FIQA financial QA dataset (train/test splits in Gemini JSONL format)
 
-**Tool:** [DVC](https://dvc.org/) with GCS remote storage - **matches tutorial pattern exactly**
+**Tool:** [DVC](https://dvc.org/) with GCS remote storage
 
 **Configuration:**
 ```yaml
-# .dvc/config (same structure as tutorial)
+# .dvc/config
 [core]
     remote = finetuning_gcs
 ['remote "finetuning_gcs"']
@@ -47,54 +39,38 @@ Our project has diverse data characteristics that require different versioning a
 ```
 
 **Tracked Files:**
-- `src/llm/finetuning/data.dvc` → tracks `fiqa_train.jsonl`, `fiqa_test.jsonl`, `gemini_train_full.jsonl`, `gemini_test_full.jsonl`
+- `src/llm/finetuning/data.dvc` → tracks 4 JSONL files totaling 38MB
 
-**Workflow (mirrors tutorial):**
+**Workflow:**
 ```bash
-# Initial setup (already done)
-dvc init
-dvc remote add -d finetuning_gcs gs://finwhiz-storage/finetuning_dvc
+# Pull versioned data (for teammates or CI/CD)
+export GOOGLE_APPLICATION_CREDENTIALS=secrets/service-account-key.json
+dvc pull src/llm/finetuning/data.dvc
+
+# After dataset changes (future updates)
 dvc add src/llm/finetuning/data/
 dvc push
-
-# Version in Git (tutorial pattern)
 git add src/llm/finetuning/data.dvc
-git commit -m 'FIQA dataset v1'
-git tag -a 'fiqa_v1' -m 'Initial FIQA import'
-git push --atomic origin main fiqa_v1
-
-# Retrieve versioned data (for teammates or CI/CD)
-export GOOGLE_APPLICATION_CREDENTIALS=secrets/service-account-key.json
-git checkout fiqa_v1            # Get specific version
-dvc pull src/llm/finetuning/data.dvc
+git commit -m 'Update FIQA dataset'
 ```
 
-**Version History:**
-- Current version: Initial FIQA import (commit `5910ccd`, DVC hash `78f36b1c`)
-- Dataset hash in `.dvc` file ensures reproducibility across environments
-- Future iterations: `dvc add` → `git commit` → `git tag` (same as tutorial)
-
 **Why DVC for this data?**
-- Dataset is **static** (one-time HuggingFace import)
-- **Small size** (~50MB) fits DVC's diff-based model well
-- **Training reproducibility** is critical; DVC + Git ensures exact dataset reconstruction
-- **Follows Tutorial T7 exactly** (cheese_dataset → fiqa_dataset)
+- **Reproducibility**: Hash-based tracking ensures exact dataset reconstruction
+- **Size-appropriate**: 50MB fits DVC's model well
+- **Static nature**: One-time import, infrequent updates
+- **Git integration**: DVC metadata files tracked in Git alongside code
 
 ---
 
-### 2. GCS Manual Upload for Scraped Content & ChromaDB (Known Limitation)
+### 2. GCS Manual Upload for Scraped Content & ChromaDB
 
 **What:** Web-scraped financial resources + ChromaDB embeddings
 
-**Tool:** Manual `gsutil` commands or Python upload scripts
-
-**Why NOT DVC?** 
-- ⚠️ **Size**: 2GB+ scraped data makes DVC tracking impractical
-- ⚠️ **Update frequency**: Weekly refreshes create version churn
-- ⚠️ **Derived data**: ChromaDB is computed from scraped data (embeddings), not source material
-
-**Acknowledged Tradeoff:**
-This deviates from Tutorial T7 pattern. For full tutorial alignment, scraped data SHOULD be DVC-tracked with Git tags. We accept this limitation for pragmatic reasons (size/frequency), but document it transparently.
+**Why NOT DVC?**
+- **Size**: 2GB+ scraped data makes DVC tracking impractical (slow pulls, large Git metadata)
+- **Update frequency**: Weekly/monthly refreshes would create excessive DVC churn
+- **Derived data**: ChromaDB is computed from scraped content (embeddings), not original source material
+- **Access pattern**: Application only needs "latest" version, not historical comparisons
 
 **Current Implementation:**
 - **Embedder script** (`src/embedder/embedding.py`) has `upload_chroma_to_gcs()` function
@@ -250,28 +226,20 @@ For a teammate to reproduce the **entire FinWhiz system from scratch**:
 3. ✅ Set GCS credentials: `export GOOGLE_APPLICATION_CREDENTIALS=secrets/service-account-key.json`
 4. ✅ Download latest ChromaDB snapshot: `docker-compose up embedder` (auto-pulls from GCS on start)
 5. ✅ Scrape fresh content (optional): `docker run finwhiz_webscrape python -m webscraping.ingest_shared.finra.src.crawl.run_crawl`
-6. ✅ Initialize DB schema: `docker-compose up postgres agent` (Alembic auto-migration in MS5)
-7. ✅ Use committed synthetic data for tests: files already in `src/synthetic_data/*/outputs/`
+6. ✅ Initialize DB schema: `docker-compose up postgres agent`
+7. ✅ Use committed synthetic data for tests: files in `src/synthetic_data/*/outputs/`
 
-**Note:** User session data is NOT versioned (contains PII); only schema migrations will be tracked via Alembic.
+**Note:** User session data is NOT versioned (contains PII).
 
 **All required config/credentials documented in:** `README.md`, `QUICKSTART.md`, and service-specific READMEs.
 
 ---
 
-## Future Enhancements (Post-MS4)
-
-- **Alembic migrations** for DB schema versioning (NOT YET IMPLEMENTED - planned for MS5; currently schema changes require manual table recreation)
-- **DVC pipelines** to automate: scrape → embed → upload (replaces manual `gsutil` commands)
-- **MLflow integration** for experiment tracking (links model versions to specific data.dvc hashes)
-- **Artifact Registry** for Docker images (ensures container versions match data/code versions)
-
----
-
 ## References
 
-- DVC setup: [Tutorial T7](../../local_notes/tutorials/data-versioning/)
+- DVC configuration: `.dvc/config`
 - Fine-tuning config: `src/llm/finetuning/configs/fiqa_gemini.yaml`
 - Scraping pipelines: `src/webscraping/README.md`
 - GCS utilities: `src/gcp_storage/README.md`
 - Synthetic data generation: `src/synthetic_data/README.md`
+- Database models: `src/agentic_user_data_processing/models.py`
