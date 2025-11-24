@@ -7,7 +7,63 @@ This milestone integrates fine-tuning evaluation, data versioning, and testing i
 ## Documentation
 
 - **[Fine-Tuning & Evaluation](model_finetuning.md)** - Training process, results, and deployment strategy
-- **[Data Versioning Strategy](data_versioning.md)** - Hybrid DVC + GCS approach with reproducibility instructions
+- **[Data Versioning Strategy](data_versioning.md)** - DVC for ML data and scraped content, with reproducibility instructions
+
+---
+
+## Data Versioning Summary
+
+### DVC-Tracked Datasets
+
+We use DVC (Data Version Control) with GCS remote storage for static datasets:
+
+1. **FIQA (ML Training Data)**
+   - **Location**: `src/llm/finetuning/data.dvc`
+   - **Size**: 38MB (17K QA pairs)
+   - **Pull command**:
+     ```bash
+     export GOOGLE_APPLICATION_CREDENTIALS=secrets/service-account-key.json
+     dvc pull src/llm/finetuning/data.dvc
+     ```
+
+2. **Webscraped Financial Content**
+   - **Location**: `src/webscraping/data.dvc`
+   - **Size**: 7.4MB (108 NDJSON files from IRS, FINRA, FRED, consumer finance)
+   - **Pull command**:
+     ```bash
+     export GOOGLE_APPLICATION_CREDENTIALS=secrets/service-account-key.json
+     dvc pull src/webscraping/data.dvc
+     ```
+   - **Why DVC?** Cannot re-scrape historical content; RAG responses depend on knowledge base version
+
+### DVC Configuration
+
+```yaml
+# .dvc/config
+[core]
+    remote = finetuning_gcs
+['remote "finetuning_gcs"']
+    url = gs://finwhiz-storage/finetuning_dvc
+```
+
+### Reproducibility Workflow
+
+To reproduce any past experiment:
+```bash
+# 1. Checkout Git tag
+git checkout scraped_2024_nov
+
+# 2. Pull DVC-tracked data
+dvc pull
+
+# 3. Rebuild derived data (ChromaDB)
+python src/embedder/embedding.py
+
+# 4. Run experiments
+docker-compose up llm  # RAG with historical knowledge base
+```
+
+See **[data_versioning.md](data_versioning.md)** for complete strategy and command reference.
 
 ---
 
