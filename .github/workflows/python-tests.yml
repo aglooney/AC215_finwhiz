@@ -261,6 +261,15 @@ jobs:
           echo '${{ secrets.CLOUDSQL_PASSWORD }}' > secrets/sql_password.txt
           echo '${{ secrets.CLOUDSQL_PROXY_JSON }}' > secrets/proxy-key.json
 
+      - name: Configure Artifact Registry auth
+        if: env.HAS_SYSTEM_SECRET == 'true'
+        env:
+          AR_KEY: ${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}
+        run: |
+          echo "$AR_KEY" > /tmp/ar-creds.json
+          gcloud auth activate-service-account --key-file=/tmp/ar-creds.json
+          gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
+
       - name: Start docker-compose stack
         if: env.HAS_SYSTEM_SECRET == 'true'
         run: |
