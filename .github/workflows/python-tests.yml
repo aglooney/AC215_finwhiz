@@ -233,12 +233,7 @@ jobs:
 
       - name: Determine system secret availability
         run: |
-          if [ -n "${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}" ] && \
-             [ -n "${{ secrets.CLOUDSQL_PASSWORD }}" ]; then
-            echo "HAS_SYSTEM_SECRET=true" >> $GITHUB_ENV
-          else
-            echo "HAS_SYSTEM_SECRET=false" >> $GITHUB_ENV
-          fi
+          echo "HAS_SYSTEM_SECRET=${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON != '' && secrets.CLOUDSQL_PASSWORD != '' && secrets.CLOUDSQL_PROXY_JSON != '' }}" >> $GITHUB_ENV
 
       - name: Skip system tests without secrets
         if: env.HAS_SYSTEM_SECRET == 'false'
