@@ -233,7 +233,8 @@ jobs:
 
       - name: Determine system secret availability
         run: |
-          if [ -n "${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}" ] && [ -n "${{ secrets.CLOUDSQL_PASSWORD }}" ] && [ -n "${{ secrets.CLOUDSQL_PROXY_JSON }}" ]; then
+          if [ -n "${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}" ] && \
+             [ -n "${{ secrets.CLOUDSQL_PASSWORD }}" ]; then
             echo "HAS_SYSTEM_SECRET=true" >> $GITHUB_ENV
           else
             echo "HAS_SYSTEM_SECRET=false" >> $GITHUB_ENV
