@@ -430,7 +430,7 @@ For comprehensive troubleshooting, see [docs/DEVELOPMENT.md#troubleshooting](doc
 - Comprehensive evaluation (quantitative + LLM-as-judge)
 - Hybrid deployment strategy
 
-For submission details, see [MILESTONE4.md](MILESTONE4.md).
+For submission details, see [reports/milestone4/README.md](reports/milestone4/README.md).
 
 ---
 
@@ -483,7 +483,7 @@ FinWhiz is developed by the AC215 FinWhiz team.
 
 - **Harvard AC215**: MLOps course and teaching staff
 - **Google Cloud**: Vertex AI, Cloud SQL, Cloud Storage
-- **Financial Data Sources**: IRS, FINRA, FRED
+- **Financial Data Sources**: IRS, FINRA, FRED, and INVESTOR GOV
 - **Open Source**: React, FastAPI, ChromaDB, and the broader Python/JavaScript ecosystems
 
 ---
