@@ -1,8 +1,38 @@
 # Milestone 4: Development & Deployment
 
+*Last Updated: November 25, 2024*
+
 ## Overview
 
 This milestone integrates fine-tuning evaluation, data versioning, and testing infrastructure to demonstrate a deployment-ready FinWhiz system.
+
+**Status**: ✅ All Milestone 4 requirements completed
+
+### Major Deliverables
+
+1. **Full-Stack Application**: React frontend with authentication, chat, document upload, and live portfolio tracking
+2. **Complete API Integration**: Agent API (8010) and LLM API (8001) with comprehensive endpoints
+3. **CI/CD Pipeline**: GitHub Actions with automated testing and linting
+4. **Data Versioning**: DVC with GCS remote for reproducible datasets
+5. **Model Fine-Tuning**: Gemini 2.5 Flash Lite trained on FIQA dataset with comprehensive evaluation
+
+### Architecture Updates Since Milestone 2
+
+**New Services:**
+- Frontend service (React + Nginx, port 3000)
+- Cloud SQL Proxy (replacing local PostgreSQL)
+- Market data integration (Yahoo Finance)
+
+**New Features:**
+- User authentication UI (Login/Signup components)
+- Live portfolio tracking with real-time market prices
+- Market overview dashboard (S&P 500, Dow, NASDAQ)
+- Portfolio analytics (gains/losses, asset allocation)
+- Enhanced document processing (portfolio statements)
+
+**For complete system architecture, see**: [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md)
+
+**For submission checklist and overview, see**: [MILESTONE4.md](../../MILESTONE4.md)
 
 ## Documentation
 
