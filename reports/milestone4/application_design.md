@@ -8,6 +8,8 @@ FinWhiz is a RAG-powered financial education platform that delivers both general
 
 ### 1.2 System Architecture
 
+![System Architecture Diagram](tech_diagram.png)
+
 #### 1.2.1 Architectural Layers
 
 **Presentation Layer:** The frontend is a React 18 single-page application built with TypeScript and styled using Tailwind CSS. It runs on port 3000 and provides three primary interfaces: an onboarding wizard that collects user demographic and risk tolerance data, a chat interface for conversational queries, and a document upload module supporting W-2s, 1099s, and portfolio statements. The application maintains session state in browser localStorage and communicates with backend services exclusively through RESTful APIs.
