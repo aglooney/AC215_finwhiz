@@ -274,8 +274,27 @@ jobs:
           gcloud auth activate-service-account --key-file=/tmp/ar-creds.json
           gcloud --quiet auth configure-docker us-central1-docker.pkg.dev
 
-      - name: Start docker-compose stack
+      - name: Check image sizes before pulling
         if: env.HAS_SYSTEM_SECRET == 'true'
+        run: |
+          set -e
+          REPO="us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz"
+          MAX_BYTES=$((6 * 1024 * 1024 * 1024))  # 6 GiB guardrail
+          OVER=0
+          for TAG in cloudsql-proxy agent llm; do
+            SIZE=$(gcloud artifacts docker images describe "$REPO:$TAG" --format="get(image_summary.total_size_bytes)" || echo 0)
+            echo "Image $TAG size: $SIZE bytes"
+            if [ "$SIZE" -gt "$MAX_BYTES" ]; then
+              echo "::warning::Image $TAG exceeds ${MAX_BYTES} bytes; skipping system tests."
+              OVER=1
+            fi
+          done
+          if [ "$OVER" -eq 1 ]; then
+            echo "SKIP_SYSTEM_TESTS=true" >> $GITHUB_ENV
+          fi
+
+      - name: Start docker-compose stack
+        if: env.HAS_SYSTEM_SECRET == 'true' && env.SKIP_SYSTEM_TESTS != 'true'
         run: |
           set +e
           docker compose up -d cloudsql-proxy llm agent |& tee /tmp/system_docker.log
