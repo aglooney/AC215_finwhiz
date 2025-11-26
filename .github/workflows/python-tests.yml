@@ -239,10 +239,6 @@ jobs:
         if: env.HAS_SYSTEM_SECRET == 'false'
         run: echo "Skipping system tests -- secrets not configured."
 
-      - name: Initialize system-test guard
-        if: env.HAS_SYSTEM_SECRET == 'true'
-        run: echo "SKIP_SYSTEM_TESTS=false" >> $GITHUB_ENV
-
       - name: Set up Python
         if: env.HAS_SYSTEM_SECRET == 'true'
         uses: actions/setup-python@v5
@@ -276,6 +272,7 @@ jobs:
 
       - name: Check image sizes before pulling
         if: env.HAS_SYSTEM_SECRET == 'true'
+        id: image-guard
         run: |
           set -e
           REPO="us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz"
@@ -290,11 +287,14 @@ jobs:
             fi
           done
           if [ "$OVER" -eq 1 ]; then
-            echo "SKIP_SYSTEM_TESTS=true" >> $GITHUB_ENV
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Start docker-compose stack
-        if: env.HAS_SYSTEM_SECRET == 'true' && env.SKIP_SYSTEM_TESTS != 'true'
+        if: env.HAS_SYSTEM_SECRET == 'true' && steps.image-guard.outputs.skip != 'true'
+        id: compose-up
         run: |
           set +e
           docker compose up -d cloudsql-proxy llm agent |& tee /tmp/system_docker.log
@@ -303,16 +303,17 @@ jobs:
           if [ "$status" -ne 0 ]; then
             if grep -qiE "no space left on device|no matching manifest|denied: Unauthenticated request" /tmp/system_docker.log; then
               echo "Docker compose failed due to infrastructure limits. Skipping system tests."
-              echo "SKIP_SYSTEM_TESTS=true" >> $GITHUB_ENV
+              echo "skip=true" >> $GITHUB_OUTPUT
               exit 0
             fi
             echo "docker compose up failed; see log below."
             cat /tmp/system_docker.log
             exit "$status"
           fi
+          echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Wait for services
-        if: env.HAS_SYSTEM_SECRET == 'true' && env.SKIP_SYSTEM_TESTS != 'true'
+        if: env.HAS_SYSTEM_SECRET == 'true' && steps.image-guard.outputs.skip != 'true' && steps.compose-up.outputs.skip != 'true'
         run: |
           for i in {1..40}; do
             if curl -sSf http://localhost:8010/health >/dev/null; then
@@ -325,11 +326,11 @@ jobs:
           exit 1
 
       - name: Run system tests
-        if: env.HAS_SYSTEM_SECRET == 'true' && env.SKIP_SYSTEM_TESTS != 'true'
+        if: env.HAS_SYSTEM_SECRET == 'true' && steps.image-guard.outputs.skip != 'true' && steps.compose-up.outputs.skip != 'true'
         env:
           RUN_SYSTEM_TESTS: "1"
         run: pytest tests/system
 
       - name: Teardown docker-compose stack
-        if: ${{ always() && env.HAS_SYSTEM_SECRET == 'true' && env.SKIP_SYSTEM_TESTS != 'true' }}
+        if: ${{ always() && env.HAS_SYSTEM_SECRET == 'true' && steps.image-guard.outputs.skip != 'true' && steps.compose-up.outputs.skip != 'true' }}
         run: docker compose down
