@@ -1,9 +1,6 @@
 services:
   llm:
-    build:
-      context: ./src/llm
-      dockerfile: Dockerfile
-    image: finwhiz_llm
+    image: us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz:llm
     container_name: finwhiz_llm
     ports:
       - "8001:8001"
@@ -29,11 +26,7 @@ services:
       retries: 30
       start_period: 180s
   agent:
-    build:
-      context: ./src/agentic_user_data_processing
-      dockerfile: Dockerfile
-
-    image: finwhiz_agent
+    image: us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz:agent
     container_name: finwhiz_agent
     volumes:
       - .:/app
@@ -67,10 +60,7 @@ services:
       retries: 10
       start_period: 20s
   query_client:
-    build:
-      context: ./src/query_client
-      dockerfile: Dockerfile
-    image: finwhiz_query
+    image: us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz:client
     container_name: finwhiz_query
     depends_on:
       llm:
@@ -93,10 +83,7 @@ services:
     restart: on-failure
 
   frontend:
-    build:
-      context: ./src/frontend
-      dockerfile: Dockerfile
-    image: finwhiz_frontend
+    image: us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz:frontend
     container_name: finwhiz_frontend
     ports:
       - "3000:80"

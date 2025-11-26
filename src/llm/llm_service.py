@@ -367,8 +367,12 @@ async def handle_query(req: QueryRequest):
     # Fetch agentic context (chat messages + documents + LIVE portfolio + market data)
     agent_context, raw_agent_data = retrieve_agent_context(req.session_id)
 
-    # Fetch Chroma context
-    chroma_context, citations = retrieve_context(req.query, top_k=req.top_k, method="rrf")
+    # Fetch Chroma context but fail gracefully if embeddings/chroma are unavailable
+    try:
+        chroma_context, citations = retrieve_context(req.query, top_k=req.top_k, method="rrf")
+    except Exception as e:
+        logger.error(f"Chroma retrieval failed: {e}")
+        chroma_context, citations = "", []
 
     # Combine contexts
     full_context = ""
