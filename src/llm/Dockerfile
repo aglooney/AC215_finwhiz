@@ -26,6 +26,11 @@ WORKDIR /app
 COPY --chown=app:app pyproject.toml uv.lock ./
 RUN uv sync
 
+# Force CPU-only torch build to keep image small for CI.
+RUN bash -c "source /home/app/.venv/bin/activate && \
+    pip uninstall -y torch || true && \
+    pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch==2.4.0"
+
 COPY --chown=app:app . .
 
 EXPOSE 8001
