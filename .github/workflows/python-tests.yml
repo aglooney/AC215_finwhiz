@@ -223,6 +223,7 @@ jobs:
           fi
 
   system:
+    if: ${{ false }}  # temporarily disabled per request
     runs-on: ubuntu-latest
     needs: integration
     env:

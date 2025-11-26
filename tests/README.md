@@ -1,6 +1,6 @@
 # Test Suite Overview
 
-This directory contains every test target executed by the CI workflow. Tests are grouped by scope so you can run only what you need while developing or debugging.
+This directory contains every test target executed by the CI workflow. Tests are grouped by scope so you can run only what you need while developing or debugging. We currently have 47% of the code covered by unit tests.
 
 ## 1. Unit Tests (`tests/unit`, `src/*/tests`)
 
@@ -54,8 +54,12 @@ CI automatically fetches the PDFs to `tests/cloud_fixtures/` before running thes
   ```
   The CI workflow will skip system tests gracefully if Docker fails because of disk limits (logs note the skip and other jobs still finish).
 
-## 5. General Tips
+## 6. Tests Coverage
 
-- Always export `FINWHIZ_TEST_MODE=1` when you only want local mocks.
-- Clean up Cloud SQL proxy/background processes using `pkill -f cloud-sql-proxy` when finished.
-- When running selectively, you can target a single file (e.g., `pytest tests/cloud/test_vertex_extractors.py`) to debug faster.
+Unit Tests:
+![Unit Test Coverage](imgs/unit_tests.jpeg)
+
+Cloud Backend Integration Tests:
+![Integration Test Coverage](imgs/integration_test.jpeg)
+
+Full System Tests still in progress
