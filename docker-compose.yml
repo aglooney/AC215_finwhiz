@@ -44,9 +44,9 @@ services:
       - DB_PASS=${DB_PASS}
       - DB_NAME=${DB_NAME}
       - DB_HOST=${DB_HOST}
-    depends_on:
-      llm:
-        condition: service_healthy
+    #depends_on:
+      #llm:
+        #condition: service_healthy
       # postgres:
       #   condition: service_started
     restart: unless-stopped
@@ -63,8 +63,8 @@ services:
     image: us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz:client
     container_name: finwhiz_query
     depends_on:
-      llm:
-        condition: service_healthy
+      #llm:
+        #condition: service_healthy
       agent:
         condition: service_healthy
     env_file:
@@ -90,8 +90,8 @@ services:
     environment:
       - DOCKER_ENV=true
     depends_on:
-      llm:
-        condition: service_healthy
+      #llm:
+        #condition: service_healthy
       agent:
         condition: service_healthy
     networks:
