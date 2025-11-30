@@ -10,7 +10,8 @@ from pydantic import BaseModel, Field
 
 
 class SessionCreate(BaseModel):
-    user_id: uuid.UUID
+    """Create a new session - user_id is extracted from JWT token."""
+    pass
 
 
 class SessionResponse(BaseModel):
@@ -20,6 +21,12 @@ class SessionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SessionListResponse(BaseModel):
+    """Response containing a list of sessions for the current user."""
+    sessions: List[SessionResponse]
+    total: int
 
 
 class MessageCreate(BaseModel):
@@ -136,3 +143,38 @@ class SessionContext(BaseModel):
     portfolio_fields: Optional[PortfolioFields] = None
     documents: Optional[list[DocumentResponse]] = None
     summary: Optional[str] = None
+
+
+# Authentication Schemas
+class SignUpRequest(BaseModel):
+    email: str = Field(..., description="User's email address")
+    password: str = Field(..., min_length=6, description="User's password (min 6 characters)")
+    full_name: Optional[str] = Field(None, description="User's full name (optional)")
+
+
+class SignInRequest(BaseModel):
+    email: str = Field(..., description="User's email address")
+    password: str = Field(..., description="User's password")
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str = Field(..., description="Refresh token to get new access token")
+
+
+class AuthUser(BaseModel):
+    id: str
+    email: str
+
+
+class AuthSession(BaseModel):
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+
+
+class AuthResponse(BaseModel):
+    user: AuthUser
+    session: Optional[AuthSession] = None
+
+
+class SimpleMessageResponse(BaseModel):
+    message: str

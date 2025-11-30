@@ -9,7 +9,63 @@ import type {
 } from '../types';
 import { mockApi } from './mockApi';
 
-const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'false';
+// Authentication types
+export interface AuthUser {
+  id: string;
+  email: string;
+  full_name?: string;
+  created_at: string;
+}
+
+export interface AuthSession {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  expires_at: number;
+}
+
+export interface AuthResponse {
+  user: AuthUser;
+  session: AuthSession;
+}
+
+export interface SignupRequest {
+  email: string;
+  password: string;
+  full_name?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+// Token management
+const TOKEN_KEY = 'finwhiz_access_token';
+const REFRESH_TOKEN_KEY = 'finwhiz_refresh_token';
+
+export const getToken = (): string | null => {
+  return localStorage.getItem(TOKEN_KEY);
+};
+
+export const setToken = (token: string): void => {
+  localStorage.setItem(TOKEN_KEY, token);
+};
+
+export const getRefreshToken = (): string | null => {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+};
+
+export const setRefreshToken = (token: string): void => {
+  localStorage.setItem(REFRESH_TOKEN_KEY, token);
+};
+
+export const removeTokens = (): void => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+};
+
+const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === 'true';
 
 // Get base URL from environment or default to relative paths
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
@@ -28,6 +84,18 @@ const llmAPI = axios.create({
   },
   timeout: 60000, // 60 second timeout
 });
+
+// Add request interceptor to include JWT token in Authorization header
+const addAuthHeader = (config: any) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+agentAPI.interceptors.request.use(addAuthHeader);
+llmAPI.interceptors.request.use(addAuthHeader);
 
 // Add response interceptor for better error handling
 const handleApiError = (error: any) => {
@@ -53,9 +121,56 @@ llmAPI.interceptors.response.use(
 );
 
 const realApi = {
+  // Authentication
+  async signup(data: SignupRequest): Promise<AuthResponse> {
+    const response = await agentAPI.post<AuthResponse>('/auth/signup', data);
+    const { session } = response.data;
+    if (session?.access_token) {
+      setToken(session.access_token);
+      setRefreshToken(session.refresh_token);
+    }
+    return response.data;
+  },
+
+  async login(data: LoginRequest): Promise<AuthResponse> {
+    const response = await agentAPI.post<AuthResponse>('/auth/signin', data);
+    const { session } = response.data;
+    if (session?.access_token) {
+      setToken(session.access_token);
+      setRefreshToken(session.refresh_token);
+    }
+    return response.data;
+  },
+
+  async logout(): Promise<void> {
+    try {
+      await agentAPI.post('/auth/signout');
+    } finally {
+      removeTokens();
+    }
+  },
+
+  async getCurrentUser(): Promise<AuthUser> {
+    const response = await agentAPI.get<AuthUser>('/auth/me');
+    return response.data;
+  },
+
+  async refreshSession(): Promise<AuthSession> {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+    const response = await agentAPI.post<AuthSession>('/auth/refresh', {
+      refresh_token: refreshToken,
+    });
+    setToken(response.data.access_token);
+    setRefreshToken(response.data.refresh_token);
+    return response.data;
+  },
+
   // Session Management
-  async createSession(userId: string): Promise<Session> {
-    const response = await agentAPI.post<Session>('/sessions/', { user_id: userId });
+  async createSession(): Promise<Session> {
+    const response = await agentAPI.post<Session>('/sessions/', {});
     return response.data;
   },
 

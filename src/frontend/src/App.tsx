@@ -1,24 +1,27 @@
 import { useState, useEffect } from 'react';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
+import { Login } from './components/Login';
+import { Signup } from './components/Signup';
+import { useAuth } from './contexts/AuthContext';
 import { api } from './services/api';
 import type { UserProfile, Session } from './types';
 import { Loader2 } from 'lucide-react';
 
 function App() {
+  const { loading: authLoading, logout: authLogout, isAuthenticated } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   const handleOnboardingComplete = async (userProfile: UserProfile) => {
     setIsLoading(true);
     try {
-      // Generate a unique user ID
-      const userId = crypto.randomUUID();
-      console.log('Creating session for user:', userId);
+      console.log('Creating session for authenticated user');
 
-      // Create session with backend
-      const newSession = await api.createSession(userId);
+      // Create session with backend (user authentication handled by JWT)
+      const newSession = await api.createSession();
       console.log('Session created:', newSession);
 
       setProfile(userProfile);
@@ -38,6 +41,7 @@ function App() {
   };
 
   const handleLogout = () => {
+    authLogout();
     setProfile(null);
     setSession(null);
     localStorage.removeItem('finwhiz_profile');
@@ -95,21 +99,35 @@ function App() {
     validateSession();
   }, []);
 
-  if (isLoading) {
+  // Show loading spinner while checking authentication
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-primary-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Setting up your session...</p>
+          <p className="text-gray-600">
+            {isLoading ? 'Setting up your session...' : 'Loading...'}
+          </p>
         </div>
       </div>
     );
   }
 
+  // Show Login/Signup if not authenticated
+  if (!isAuthenticated) {
+    return showSignup ? (
+      <Signup onSwitchToLogin={() => setShowSignup(false)} />
+    ) : (
+      <Login onSwitchToSignup={() => setShowSignup(true)} />
+    );
+  }
+
+  // Show Onboarding if authenticated but no profile/session
   if (!profile || !session) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
+  // Show Dashboard if authenticated and has profile/session
   console.log('Rendering Dashboard with session:', session);
   console.log('Session ID being passed:', session.id);
 

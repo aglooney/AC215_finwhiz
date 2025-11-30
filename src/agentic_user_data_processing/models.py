@@ -42,6 +42,11 @@ class User(Base):
         db.refresh(instance)
         return instance
 
+    @classmethod
+    def get_by_external_id(cls, db: Session, external_id: str) -> Optional["User"]:
+        """Get a user by their external_id (Supabase user ID)."""
+        return db.query(cls).filter_by(external_id=external_id).first()
+
 
 class Session(Base):
     __tablename__ = "sessions"
@@ -69,6 +74,11 @@ class Session(Base):
         except (ValueError, TypeError):
             return None
         return db.get(cls, key)
+
+    @classmethod
+    def get_all_for_user(cls, db: Session, user_id: uuid.UUID) -> Iterable["Session"]:
+        """Get all sessions for a specific user, ordered by creation date (newest first)."""
+        return db.query(cls).filter(cls.user_id == user_id).order_by(cls.created_at.desc()).all()
 
 
 class Message(Base):

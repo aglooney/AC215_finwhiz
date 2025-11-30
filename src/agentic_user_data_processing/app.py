@@ -11,7 +11,7 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import logging
-from . import models, schemas
+from . import models, schemas, supabase_auth
 from .db import get_db, init_db
 from .services import context as context_service
 from .services import storage as storage_service
@@ -27,6 +27,35 @@ from datetime import datetime
 
 app = FastAPI(title="Agentic User Data Processing Service")
 logger = logging.getLogger(__name__)
+
+
+# Helper function to verify session ownership
+def verify_session_ownership(session_id: str, current_user: dict, db: Session) -> models.Session:
+    """
+    Verify that the session belongs to the current authenticated user.
+
+    Args:
+        session_id: The session ID to verify
+        current_user: The current authenticated user from Supabase
+        db: Database session
+
+    Returns:
+        The Session object if verification succeeds
+
+    Raises:
+        HTTPException: If session not found or doesn't belong to user
+    """
+    session = models.Session.get(db, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Get the CloudSQL user by Supabase external_id
+    user = models.User.get_by_external_id(db, external_id=current_user["id"])
+    if user is None or session.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Access denied: session does not belong to user")
+
+    return session
+
 
 # CORS middleware for frontend communication
 app.add_middleware(
@@ -50,18 +79,72 @@ def health_check():
     return {"status": "ok"}
 
 
+# Authentication Endpoints
+@app.post("/auth/signup", response_model=schemas.AuthResponse)
+def signup(payload: schemas.SignUpRequest):
+    return supabase_auth.sign_up(payload.email, payload.password)
+
+
+@app.post("/auth/signin", response_model=schemas.AuthResponse)
+def signin(payload: schemas.SignInRequest):
+    return supabase_auth.sign_in(payload.email, payload.password)
+
+
+@app.post("/auth/signout", response_model=schemas.SimpleMessageResponse)
+def signout(current_user: dict = Depends(supabase_auth.get_current_user)):
+    # Note: We don't actually need the access_token since Supabase client handles it
+    return supabase_auth.sign_out("")
+
+
+@app.post("/auth/refresh", response_model=schemas.AuthSession)
+def refresh(payload: schemas.RefreshTokenRequest):
+    return supabase_auth.refresh_session(payload.refresh_token)
+
+
+@app.get("/auth/me")
+def get_me(current_user: dict = Depends(supabase_auth.get_current_user)):
+    return current_user
+
+
+# User Session History
+@app.get("/users/me/sessions", response_model=schemas.SessionListResponse)
+def get_user_sessions(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
+):
+    """Get all sessions for the authenticated user."""
+    user = models.User.get_by_external_id(db, external_id=current_user["id"])
+    if user is None:
+        return schemas.SessionListResponse(sessions=[], total=0)
+
+    sessions = models.Session.get_all_for_user(db, user_id=user.id)
+    return schemas.SessionListResponse(
+        sessions=[schemas.SessionResponse.from_orm(s) for s in sessions],
+        total=len(sessions)
+    )
+
+
 @app.post("/sessions/", response_model=schemas.SessionResponse)
-def create_session(payload: schemas.SessionCreate, db: Session = Depends(get_db)):
-    user = models.User.get_or_create(db, user_id=payload.user_id, external_id=str(payload.user_id))
+def create_session(
+    payload: schemas.SessionCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
+):
+    """Create a new session for the authenticated user."""
+    user = models.User.get_or_create(db, external_id=current_user["id"])
     session = models.Session.create(db, user_id=user.id)
     return schemas.SessionResponse.from_orm(session)
 
 
 @app.post("/sessions/{session_id}/messages", response_model=schemas.MessageResponse)
-def append_message(session_id: str, payload: schemas.MessageCreate, db: Session = Depends(get_db)):
-    session = models.Session.get(db, session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+def append_message(
+    session_id: str,
+    payload: schemas.MessageCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
+):
+    # Verify session ownership
+    session = verify_session_ownership(session_id, current_user, db)
 
     message = models.Message.create(
         db,
@@ -77,10 +160,10 @@ async def upload_w2(
     session_id: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
 ):
-    session = models.Session.get(db, session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # Verify session ownership
+    session = verify_session_ownership(session_id, current_user, db)
 
     contents = await file.read()
     flattened = pdf_utils.flatten_pdf(contents)
@@ -108,10 +191,10 @@ async def upload_1099(
     session_id: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
 ):
-    session = models.Session.get(db, session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # Verify session ownership
+    session = verify_session_ownership(session_id, current_user, db)
 
     contents = await file.read()
     flattened = pdf_utils.flatten_pdf(contents)
@@ -142,11 +225,11 @@ async def upload_portfolio(
     session_id: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
 ):
     """Upload and process a Fidelity portfolio summary for a session."""
-    session = models.Session.get(db, session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # Verify session ownership
+    session = verify_session_ownership(session_id, current_user, db)
 
     contents = await file.read()
     flattened = pdf_utils.flatten_pdf(contents)
@@ -173,10 +256,13 @@ async def upload_portfolio(
 
 
 @app.get("/sessions/{session_id}/context", response_model=schemas.SessionContext)
-def get_session_context(session_id: str, db: Session = Depends(get_db)):
-    session = models.Session.get(db, session_id)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+def get_session_context(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
+):
+    # Verify session ownership
+    session = verify_session_ownership(session_id, current_user, db)
 
     messages = models.Message.latest_for_session(db, session_id=session_id, limit=20)
     documents = db.query(models.Document).filter(models.Document.session_id == session_id).all()
@@ -184,17 +270,19 @@ def get_session_context(session_id: str, db: Session = Depends(get_db)):
 
 
 @app.get("/sessions/{session_id}/portfolio/live")
-def get_live_portfolio(session_id: str, db: Session = Depends(get_db)):
+def get_live_portfolio(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
+):
     """
     Get live portfolio data with current market prices.
     Follows the same pattern as get_session_context endpoint.
     """
     logger.info(f"[get_live_portfolio] Fetching live portfolio for session {session_id}")
 
-    session_obj = models.Session.get(db, session_id)
-    if session_obj is None:
-        logger.warning(f"[get_live_portfolio] Session not found: {session_id}")
-        raise HTTPException(status_code=404, detail="Session not found")
+    # Verify session ownership
+    session_obj = verify_session_ownership(session_id, current_user, db)
 
     # Get the latest portfolio document (matches Document.latest_for_session pattern)
     portfolio_doc = (
@@ -242,13 +330,16 @@ def get_live_portfolio(session_id: str, db: Session = Depends(get_db)):
 
 
 @app.get("/sessions/{session_id}/portfolio/analytics")
-def get_portfolio_analytics(session_id: str, db: Session = Depends(get_db)):
+def get_portfolio_analytics(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
+):
     """Get portfolio analytics and insights."""
     logger.info(f"[get_portfolio_analytics] Fetching analytics for session {session_id}")
 
-    session_obj = models.Session.get(db, session_id)
-    if session_obj is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # Verify session ownership
+    session_obj = verify_session_ownership(session_id, current_user, db)
 
     # Get the latest portfolio document
     portfolio_doc = (
