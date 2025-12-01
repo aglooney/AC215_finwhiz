@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Iterable, Optional, List
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
@@ -19,6 +19,13 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     external_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    # Profile fields
+    age: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    retirement_age: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    risk_tolerance: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    investment_goal: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    profile_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     sessions: Mapped[List["Session"]] = relationship("Session", back_populates="user")
 

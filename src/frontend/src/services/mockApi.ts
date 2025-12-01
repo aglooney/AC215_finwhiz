@@ -4,6 +4,7 @@ import type {
   QueryResponse,
   Document,
   UserProfile,
+  UserProfileResponse,
   SessionContext,
 } from '../types';
 import type { AuthUser, AuthResponse, AuthSession, SignupRequest, LoginRequest } from './api';
@@ -365,6 +366,26 @@ export const mockApi = {
         { date: '2024-11-02', open: 103, high: 106, low: 102, close: 105, volume: 1100000 }
       ]
     };
+  },
+
+  // User Profile
+  async saveProfile(profile: UserProfile): Promise<UserProfileResponse> {
+    await delay(300);
+    console.log('✓ Mock: Saved profile', profile);
+    return {
+      age: profile.age,
+      retirement_age: profile.retirementAge,
+      risk_tolerance: profile.riskTolerance,
+      investment_goal: profile.investmentGoal,
+      profile_completed_at: new Date().toISOString(),
+    };
+  },
+
+  async getProfile(): Promise<UserProfileResponse | null> {
+    await delay(100);
+    console.log('✓ Mock: Getting profile');
+    // Return null for mock since we don't persist profiles in mock mode
+    return null;
   },
 
 };

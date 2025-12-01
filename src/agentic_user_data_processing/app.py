@@ -124,6 +124,35 @@ def get_user_sessions(
     )
 
 
+# User Profile Endpoints
+@app.put("/profile", response_model=schemas.UserProfileResponse)
+def update_user_profile(
+    profile: schemas.UserProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
+):
+    """Save or update user profile after onboarding."""
+    user = models.User.get_or_create(db, external_id=current_user["id"])
+    user.age = profile.age
+    user.retirement_age = profile.retirement_age
+    user.risk_tolerance = profile.risk_tolerance
+    user.investment_goal = profile.investment_goal
+    user.profile_completed_at = datetime.utcnow()
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@app.get("/profile", response_model=schemas.UserProfileResponse)
+def get_user_profile(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(supabase_auth.get_current_user)
+):
+    """Retrieve user profile."""
+    user = models.User.get_or_create(db, external_id=current_user["id"])
+    return user
+
+
 @app.post("/sessions/", response_model=schemas.SessionResponse)
 def create_session(
     payload: schemas.SessionCreate,
@@ -132,6 +161,14 @@ def create_session(
 ):
     """Create a new session for the authenticated user."""
     user = models.User.get_or_create(db, external_id=current_user["id"])
+
+    # Enforce profile completion before session creation
+    if not user.profile_completed_at:
+        raise HTTPException(
+            status_code=400,
+            detail="Please complete your profile before creating a session"
+        )
+
     session = models.Session.create(db, user_id=user.id)
     return schemas.SessionResponse.from_orm(session)
 

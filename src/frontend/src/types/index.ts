@@ -5,6 +5,14 @@ export interface UserProfile {
   investmentGoal: string;
 }
 
+export interface UserProfileResponse {
+  age: number | null;
+  retirement_age: number | null;
+  risk_tolerance: string | null;
+  investment_goal: string | null;
+  profile_completed_at: string | null;
+}
+
 export interface Session {
   id: string;
   user_id: string;

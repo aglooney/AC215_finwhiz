@@ -48,56 +48,75 @@ function App() {
     localStorage.removeItem('finwhiz_session');
   };
 
-  // Check for existing session on mount
+  // Load user data from backend on mount when authenticated
   useEffect(() => {
-    const validateSession = async () => {
-      console.log('Checking for saved session...');
-      const savedProfile = localStorage.getItem('finwhiz_profile');
-      const savedSession = localStorage.getItem('finwhiz_session');
+    const loadUserData = async () => {
+      if (!isAuthenticated) {
+        console.log('Not authenticated, skipping profile load');
+        return;
+      }
 
-      console.log('Saved profile:', savedProfile);
-      console.log('Saved session:', savedSession);
+      setIsLoading(true);
+      try {
+        console.log('Loading profile from backend...');
 
-      if (savedProfile && savedSession) {
-        try {
-          const parsedProfile = JSON.parse(savedProfile);
-          const parsedSession = JSON.parse(savedSession);
+        // Fetch profile from backend
+        const backendProfile = await api.getProfile();
 
-          console.log('Parsed profile:', parsedProfile);
-          console.log('Parsed session:', parsedSession);
-          console.log('Session ID will be:', parsedSession.id);
+        if (backendProfile) {
+          console.log('Profile loaded from backend:', backendProfile);
 
-          // Validate session still exists on backend
-          if (parsedSession.id) {
+          // Convert backend format to frontend format
+          const profile: UserProfile = {
+            age: backendProfile.age!,
+            retirementAge: backendProfile.retirement_age!,
+            riskTolerance: backendProfile.risk_tolerance as 'conservative' | 'moderate' | 'aggressive',
+            investmentGoal: backendProfile.investment_goal!,
+          };
+          setProfile(profile);
+
+          // Cache in localStorage
+          localStorage.setItem('finwhiz_profile', JSON.stringify(profile));
+
+          // Load or create session
+          const savedSession = localStorage.getItem('finwhiz_session');
+          if (savedSession) {
             try {
-              console.log('Validating session with backend...');
+              const parsedSession = JSON.parse(savedSession);
+              // Validate session still exists on backend
               await api.getSessionContext(parsedSession.id);
-              console.log('Session is valid!');
-
-              setProfile(parsedProfile);
+              console.log('Existing session is valid');
               setSession(parsedSession);
             } catch (validationError) {
-              console.warn('Session no longer valid on backend, clearing...', validationError);
-              localStorage.removeItem('finwhiz_profile');
-              localStorage.removeItem('finwhiz_session');
+              console.warn('Session no longer valid, creating new one...', validationError);
+              const newSession = await api.createSession();
+              setSession(newSession);
+              localStorage.setItem('finwhiz_session', JSON.stringify(newSession));
             }
           } else {
-            console.warn('Session missing id, clearing...');
-            localStorage.removeItem('finwhiz_profile');
-            localStorage.removeItem('finwhiz_session');
+            console.log('No saved session, creating new one...');
+            const newSession = await api.createSession();
+            setSession(newSession);
+            localStorage.setItem('finwhiz_session', JSON.stringify(newSession));
           }
-        } catch (error) {
-          console.error('Error parsing saved data:', error);
+        } else {
+          console.log('No profile found, user needs to complete onboarding');
+          // Clear any stale localStorage data
           localStorage.removeItem('finwhiz_profile');
           localStorage.removeItem('finwhiz_session');
         }
-      } else {
-        console.log('No saved session found');
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+        // Clear localStorage on error
+        localStorage.removeItem('finwhiz_profile');
+        localStorage.removeItem('finwhiz_session');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    validateSession();
-  }, []);
+    loadUserData();
+  }, [isAuthenticated]);
 
   // Show loading spinner while checking authentication
   if (authLoading || isLoading) {

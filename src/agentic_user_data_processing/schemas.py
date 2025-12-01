@@ -178,3 +178,24 @@ class AuthResponse(BaseModel):
 
 class SimpleMessageResponse(BaseModel):
     message: str
+
+
+# User Profile Schemas
+class UserProfileUpdate(BaseModel):
+    """User profile data from onboarding survey."""
+    age: int = Field(..., ge=18, le=100, description="User's current age")
+    retirement_age: int = Field(..., ge=18, le=100, description="Planned retirement age")
+    risk_tolerance: Literal["conservative", "moderate", "aggressive"] = Field(..., description="Investment risk tolerance")
+    investment_goal: str = Field(..., min_length=1, description="Primary investment goal")
+
+
+class UserProfileResponse(BaseModel):
+    """User profile response including completion status."""
+    age: Optional[int] = None
+    retirement_age: Optional[int] = None
+    risk_tolerance: Optional[str] = None
+    investment_goal: Optional[str] = None
+    profile_completed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

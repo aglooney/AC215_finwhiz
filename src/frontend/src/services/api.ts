@@ -5,6 +5,7 @@ import type {
   Session,
   SessionContext,
   UserProfile,
+  UserProfileResponse,
   Message,
 } from '../types';
 import { mockApi } from './mockApi';
@@ -258,6 +259,27 @@ const realApi = {
       params: { period }
     });
     return response.data;
+  },
+
+  // User Profile
+  async saveProfile(profile: UserProfile): Promise<UserProfileResponse> {
+    const response = await agentAPI.put<UserProfileResponse>('/profile', {
+      age: profile.age,
+      retirement_age: profile.retirementAge,
+      risk_tolerance: profile.riskTolerance,
+      investment_goal: profile.investmentGoal,
+    });
+    return response.data;
+  },
+
+  async getProfile(): Promise<UserProfileResponse | null> {
+    try {
+      const response = await agentAPI.get<UserProfileResponse>('/profile');
+      return response.data.profile_completed_at ? response.data : null;
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+      return null;
+    }
   },
 
 };
