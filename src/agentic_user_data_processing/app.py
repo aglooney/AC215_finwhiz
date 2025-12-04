@@ -181,7 +181,7 @@ def append_message(
     current_user: dict = Depends(supabase_auth.get_current_user)
 ):
     # Verify session ownership
-    session = verify_session_ownership(session_id, current_user, db)
+    _ = verify_session_ownership(session_id, current_user, db)
 
     message = models.Message.create(
         db,
@@ -200,7 +200,7 @@ async def upload_w2(
     current_user: dict = Depends(supabase_auth.get_current_user)
 ):
     # Verify session ownership
-    session = verify_session_ownership(session_id, current_user, db)
+    _ = verify_session_ownership(session_id, current_user, db)
 
     contents = await file.read()
     flattened = pdf_utils.flatten_pdf(contents)
@@ -231,7 +231,7 @@ async def upload_1099(
     current_user: dict = Depends(supabase_auth.get_current_user)
 ):
     # Verify session ownership
-    session = verify_session_ownership(session_id, current_user, db)
+    _ = verify_session_ownership(session_id, current_user, db)
 
     contents = await file.read()
     flattened = pdf_utils.flatten_pdf(contents)
@@ -266,7 +266,7 @@ async def upload_portfolio(
 ):
     """Upload and process a Fidelity portfolio summary for a session."""
     # Verify session ownership
-    session = verify_session_ownership(session_id, current_user, db)
+    _ = verify_session_ownership(session_id, current_user, db)
 
     contents = await file.read()
     flattened = pdf_utils.flatten_pdf(contents)
@@ -319,7 +319,7 @@ def get_live_portfolio(
     logger.info(f"[get_live_portfolio] Fetching live portfolio for session {session_id}")
 
     # Verify session ownership
-    session_obj = verify_session_ownership(session_id, current_user, db)
+    _ = verify_session_ownership(session_id, current_user, db)
 
     # Get the latest portfolio document (matches Document.latest_for_session pattern)
     portfolio_doc = (
@@ -376,7 +376,7 @@ def get_portfolio_analytics(
     logger.info(f"[get_portfolio_analytics] Fetching analytics for session {session_id}")
 
     # Verify session ownership
-    session_obj = verify_session_ownership(session_id, current_user, db)
+    _ = verify_session_ownership(session_id, current_user, db)
 
     # Get the latest portfolio document
     portfolio_doc = (
