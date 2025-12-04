@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { TrendingUp, Shield } from 'lucide-react';
 import type { UserProfile } from '../types';
+import { api } from '../services/api';
 
 interface OnboardingProps {
   onComplete: (profile: UserProfile) => void;
@@ -11,13 +12,30 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const [profile, setProfile] = useState<Partial<UserProfile>>({
     riskTolerance: 'moderate',
   });
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) {
       setStep(2);
     } else {
-      onComplete(profile as UserProfile);
+      setError('');
+      setLoading(true);
+      try {
+        // Save profile to backend
+        await api.saveProfile(profile as UserProfile);
+
+        // Also save to localStorage as cache
+        localStorage.setItem('finwhiz_profile', JSON.stringify(profile));
+
+        onComplete(profile as UserProfile);
+      } catch (err: any) {
+        console.error('Failed to save profile:', err);
+        setError(err.response?.data?.detail || 'Failed to save profile. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -98,6 +116,12 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="rounded-md bg-red-50 p-4">
+                  <div className="text-sm text-red-700">{error}</div>
+                </div>
+              )}
+
               <div className="space-y-3">
                 <label className="block">
                   <input
@@ -146,11 +170,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               </div>
 
               <div className="flex gap-4 pt-4">
-                <button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1">
+                <button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1" disabled={loading}>
                   Back
                 </button>
-                <button type="submit" className="btn-primary flex-1">
-                  Get Started
+                <button type="submit" className="btn-primary flex-1" disabled={loading}>
+                  {loading ? 'Saving...' : 'Get Started'}
                 </button>
               </div>
             </form>

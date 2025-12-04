@@ -16,6 +16,7 @@ dependencies = [
     "scikit-learn>=1.7.2",
     "sentence-transformers>=5.1.1",
     "uvicorn>=0.37.0",
+    "einops>=0.8.0",
 ]
 
 [project.optional-dependencies]
