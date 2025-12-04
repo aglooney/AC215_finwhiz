@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 class SessionCreate(BaseModel):
     """Create a new session - user_id is extracted from JWT token."""
+
     pass
 
 
@@ -25,6 +26,7 @@ class SessionResponse(BaseModel):
 
 class SessionListResponse(BaseModel):
     """Response containing a list of sessions for the current user."""
+
     sessions: List[SessionResponse]
     total: int
 
@@ -183,6 +185,7 @@ class SimpleMessageResponse(BaseModel):
 # User Profile Schemas
 class UserProfileUpdate(BaseModel):
     """User profile data from onboarding survey."""
+
     age: int = Field(..., ge=18, le=100, description="User's current age")
     retirement_age: int = Field(..., ge=18, le=100, description="Planned retirement age")
     risk_tolerance: Literal["conservative", "moderate", "aggressive"] = Field(..., description="Investment risk tolerance")
@@ -191,6 +194,7 @@ class UserProfileUpdate(BaseModel):
 
 class UserProfileResponse(BaseModel):
     """User profile response including completion status."""
+
     age: Optional[int] = None
     retirement_age: Optional[int] = None
     risk_tolerance: Optional[str] = None

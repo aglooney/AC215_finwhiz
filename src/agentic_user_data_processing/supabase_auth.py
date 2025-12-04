@@ -38,10 +38,12 @@ def sign_up(email: str, password: str) -> Dict[str, Any]:
         HTTPException: If signup fails
     """
     try:
-        response = supabase.auth.sign_up({
-            "email": email,
-            "password": password,
-        })
+        response = supabase.auth.sign_up(
+            {
+                "email": email,
+                "password": password,
+            }
+        )
 
         if response.user is None:
             raise HTTPException(status_code=400, detail="Signup failed")
@@ -51,10 +53,14 @@ def sign_up(email: str, password: str) -> Dict[str, Any]:
                 "id": response.user.id,
                 "email": response.user.email,
             },
-            "session": {
-                "access_token": response.session.access_token if response.session else None,
-                "refresh_token": response.session.refresh_token if response.session else None,
-            } if response.session else None
+            "session": (
+                {
+                    "access_token": response.session.access_token if response.session else None,
+                    "refresh_token": response.session.refresh_token if response.session else None,
+                }
+                if response.session
+                else None
+            ),
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Signup failed: {str(e)}")
@@ -75,10 +81,12 @@ def sign_in(email: str, password: str) -> Dict[str, Any]:
         HTTPException: If sign in fails
     """
     try:
-        response = supabase.auth.sign_in_with_password({
-            "email": email,
-            "password": password,
-        })
+        response = supabase.auth.sign_in_with_password(
+            {
+                "email": email,
+                "password": password,
+            }
+        )
 
         if response.user is None:
             raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -88,10 +96,14 @@ def sign_in(email: str, password: str) -> Dict[str, Any]:
                 "id": response.user.id,
                 "email": response.user.email,
             },
-            "session": {
-                "access_token": response.session.access_token if response.session else None,
-                "refresh_token": response.session.refresh_token if response.session else None,
-            } if response.session else None
+            "session": (
+                {
+                    "access_token": response.session.access_token if response.session else None,
+                    "refresh_token": response.session.refresh_token if response.session else None,
+                }
+                if response.session
+                else None
+            ),
         }
     except HTTPException:
         raise

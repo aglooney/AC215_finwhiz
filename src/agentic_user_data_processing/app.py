@@ -108,29 +108,19 @@ def get_me(current_user: dict = Depends(supabase_auth.get_current_user)):
 
 # User Session History
 @app.get("/users/me/sessions", response_model=schemas.SessionListResponse)
-def get_user_sessions(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
-):
+def get_user_sessions(db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)):
     """Get all sessions for the authenticated user."""
     user = models.User.get_by_external_id(db, external_id=current_user["id"])
     if user is None:
         return schemas.SessionListResponse(sessions=[], total=0)
 
     sessions = models.Session.get_all_for_user(db, user_id=user.id)
-    return schemas.SessionListResponse(
-        sessions=[schemas.SessionResponse.from_orm(s) for s in sessions],
-        total=len(sessions)
-    )
+    return schemas.SessionListResponse(sessions=[schemas.SessionResponse.from_orm(s) for s in sessions], total=len(sessions))
 
 
 # User Profile Endpoints
 @app.put("/profile", response_model=schemas.UserProfileResponse)
-def update_user_profile(
-    profile: schemas.UserProfileUpdate,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
-):
+def update_user_profile(profile: schemas.UserProfileUpdate, db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)):
     """Save or update user profile after onboarding."""
     user = models.User.get_or_create(db, external_id=current_user["id"])
     user.age = profile.age
@@ -144,30 +134,20 @@ def update_user_profile(
 
 
 @app.get("/profile", response_model=schemas.UserProfileResponse)
-def get_user_profile(
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
-):
+def get_user_profile(db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)):
     """Retrieve user profile."""
     user = models.User.get_or_create(db, external_id=current_user["id"])
     return user
 
 
 @app.post("/sessions/", response_model=schemas.SessionResponse)
-def create_session(
-    payload: schemas.SessionCreate,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
-):
+def create_session(payload: schemas.SessionCreate, db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)):
     """Create a new session for the authenticated user."""
     user = models.User.get_or_create(db, external_id=current_user["id"])
 
     # Enforce profile completion before session creation
     if not user.profile_completed_at:
-        raise HTTPException(
-            status_code=400,
-            detail="Please complete your profile before creating a session"
-        )
+        raise HTTPException(status_code=400, detail="Please complete your profile before creating a session")
 
     session = models.Session.create(db, user_id=user.id)
     return schemas.SessionResponse.from_orm(session)
@@ -175,10 +155,7 @@ def create_session(
 
 @app.post("/sessions/{session_id}/messages", response_model=schemas.MessageResponse)
 def append_message(
-    session_id: str,
-    payload: schemas.MessageCreate,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
+    session_id: str, payload: schemas.MessageCreate, db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)
 ):
     # Verify session ownership
     _ = verify_session_ownership(session_id, current_user, db)
@@ -193,12 +170,7 @@ def append_message(
 
 
 @app.post("/sessions/{session_id}/w2", response_model=schemas.DocumentResponse)
-async def upload_w2(
-    session_id: str,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
-):
+async def upload_w2(session_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)):
     # Verify session ownership
     _ = verify_session_ownership(session_id, current_user, db)
 
@@ -225,10 +197,7 @@ async def upload_w2(
 
 @app.post("/sessions/{session_id}/1099", response_model=schemas.DocumentResponse)
 async def upload_1099(
-    session_id: str,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
+    session_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)
 ):
     # Verify session ownership
     _ = verify_session_ownership(session_id, current_user, db)
@@ -259,10 +228,7 @@ async def upload_1099(
 
 @app.post("/sessions/{session_id}/portfolio", response_model=schemas.DocumentResponse)
 async def upload_portfolio(
-    session_id: str,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
+    session_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)
 ):
     """Upload and process a Fidelity portfolio summary for a session."""
     # Verify session ownership
@@ -293,11 +259,7 @@ async def upload_portfolio(
 
 
 @app.get("/sessions/{session_id}/context", response_model=schemas.SessionContext)
-def get_session_context(
-    session_id: str,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
-):
+def get_session_context(session_id: str, db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)):
     # Verify session ownership
     session = verify_session_ownership(session_id, current_user, db)
 
@@ -307,11 +269,7 @@ def get_session_context(
 
 
 @app.get("/sessions/{session_id}/portfolio/live")
-def get_live_portfolio(
-    session_id: str,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
-):
+def get_live_portfolio(session_id: str, db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)):
     """
     Get live portfolio data with current market prices.
     Follows the same pattern as get_session_context endpoint.
@@ -367,11 +325,7 @@ def get_live_portfolio(
 
 
 @app.get("/sessions/{session_id}/portfolio/analytics")
-def get_portfolio_analytics(
-    session_id: str,
-    db: Session = Depends(get_db),
-    current_user: dict = Depends(supabase_auth.get_current_user)
-):
+def get_portfolio_analytics(session_id: str, db: Session = Depends(get_db), current_user: dict = Depends(supabase_auth.get_current_user)):
     """Get portfolio analytics and insights."""
     logger.info(f"[get_portfolio_analytics] Fetching analytics for session {session_id}")
 
