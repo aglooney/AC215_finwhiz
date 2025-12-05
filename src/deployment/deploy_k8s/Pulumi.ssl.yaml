@@ -1,0 +1,6 @@
+encryptionsalt: v1:vmgGxQyBMLw=:v1:vZuGFwZ7Y0y/nMOr:s1r530hWuVrwvMpJQ88UOOYecoaHVA==
+config:
+  gcp:project: finwhiz-ac215
+  deploy-k8s:imagesStackRef: organization/deploy-images/dev
+  security:gcp_service_account_email: finwhiz-api@finwhiz-ac215.iam.gserviceaccount.com
+  security:gcp_ksa_service_account_email: finwhiz-api@finwhiz-ac215.iam.gserviceaccount.com
