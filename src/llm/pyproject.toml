@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.118.0",
     "google-cloud-storage>=2.19.0",
     "langchain-google-vertexai>=2.1.2",
+    "einops>=0.8.0",
     "numpy>=2.3.3",
     "pydantic>=2.12.0",
     "python-dotenv>=1.1.1",
