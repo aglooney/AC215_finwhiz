@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Iterable, Optional, List
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, Session, mapped_column, relationship
 
@@ -19,6 +19,13 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     external_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
+
+    # Profile fields
+    age: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    retirement_age: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    risk_tolerance: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    investment_goal: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    profile_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     sessions: Mapped[List["Session"]] = relationship("Session", back_populates="user")
 
@@ -41,6 +48,11 @@ class User(Base):
         db.commit()
         db.refresh(instance)
         return instance
+
+    @classmethod
+    def get_by_external_id(cls, db: Session, external_id: str) -> Optional["User"]:
+        """Get a user by their external_id (Supabase user ID)."""
+        return db.query(cls).filter_by(external_id=external_id).first()
 
 
 class Session(Base):
@@ -69,6 +81,11 @@ class Session(Base):
         except (ValueError, TypeError):
             return None
         return db.get(cls, key)
+
+    @classmethod
+    def get_all_for_user(cls, db: Session, user_id: uuid.UUID) -> Iterable["Session"]:
+        """Get all sessions for a specific user, ordered by creation date (newest first)."""
+        return db.query(cls).filter(cls.user_id == user_id).order_by(cls.created_at.desc()).all()
 
 
 class Message(Base):

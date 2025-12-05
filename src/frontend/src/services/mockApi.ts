@@ -4,14 +4,21 @@ import type {
   QueryResponse,
   Document,
   UserProfile,
+  UserProfileResponse,
   SessionContext,
 } from '../types';
+import type { AuthUser, AuthResponse, AuthSession, SignupRequest, LoginRequest } from './api';
+import { setToken, setRefreshToken, removeTokens } from './api';
 
 // Mock delay to simulate API calls
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const mockDocumentsBySession = new Map<string, Document[]>();
 const mockSessionUsers = new Map<string, string>();
+
+// Mock user storage for authentication
+const mockUsers = new Map<string, { id: string; email: string; password: string; full_name?: string; created_at: string }>();
+let mockCurrentUser: AuthUser | null = null;
 
 const getSessionDocuments = (sessionId: string) => {
   if (!mockDocumentsBySession.has(sessionId)) {
@@ -43,15 +50,145 @@ function getMockResponse(query: string): string {
 }
 
 export const mockApi = {
+  // Authentication
+  async signup(data: SignupRequest): Promise<AuthResponse> {
+    await delay(500);
+
+    // Check if user already exists
+    if (Array.from(mockUsers.values()).some(u => u.email === data.email)) {
+      throw new Error('User already exists');
+    }
+
+    const userId = crypto.randomUUID();
+    const user = {
+      id: userId,
+      email: data.email,
+      password: data.password,
+      full_name: data.full_name,
+      created_at: new Date().toISOString(),
+    };
+
+    mockUsers.set(userId, user);
+
+    const authUser: AuthUser = {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      created_at: user.created_at,
+    };
+
+    mockCurrentUser = authUser;
+
+    const mockToken = `mock_token_${userId}`;
+    const mockRefreshToken = `mock_refresh_${userId}`;
+
+    setToken(mockToken);
+    setRefreshToken(mockRefreshToken);
+
+    console.log('✓ Mock: User signed up', authUser.email);
+
+    return {
+      user: authUser,
+      session: {
+        access_token: mockToken,
+        refresh_token: mockRefreshToken,
+        expires_in: 3600,
+        expires_at: Date.now() + 3600000,
+      },
+    };
+  },
+
+  async login(data: LoginRequest): Promise<AuthResponse> {
+    await delay(500);
+
+    const user = Array.from(mockUsers.values()).find(
+      u => u.email === data.email && u.password === data.password
+    );
+
+    if (!user) {
+      throw new Error('Invalid credentials');
+    }
+
+    const authUser: AuthUser = {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      created_at: user.created_at,
+    };
+
+    mockCurrentUser = authUser;
+
+    const mockToken = `mock_token_${user.id}`;
+    const mockRefreshToken = `mock_refresh_${user.id}`;
+
+    setToken(mockToken);
+    setRefreshToken(mockRefreshToken);
+
+    console.log('✓ Mock: User logged in', authUser.email);
+
+    return {
+      user: authUser,
+      session: {
+        access_token: mockToken,
+        refresh_token: mockRefreshToken,
+        expires_in: 3600,
+        expires_at: Date.now() + 3600000,
+      },
+    };
+  },
+
+  async logout(): Promise<void> {
+    await delay(200);
+    mockCurrentUser = null;
+    removeTokens();
+    console.log('✓ Mock: User logged out');
+  },
+
+  async getCurrentUser(): Promise<AuthUser> {
+    await delay(100);
+    if (!mockCurrentUser) {
+      throw new Error('Not authenticated');
+    }
+    console.log('✓ Mock: Got current user', mockCurrentUser.email);
+    return mockCurrentUser;
+  },
+
+  async refreshSession(): Promise<AuthSession> {
+    await delay(200);
+    if (!mockCurrentUser) {
+      throw new Error('Not authenticated');
+    }
+
+    const mockToken = `mock_token_${mockCurrentUser.id}_refreshed`;
+    const mockRefreshToken = `mock_refresh_${mockCurrentUser.id}_refreshed`;
+
+    setToken(mockToken);
+    setRefreshToken(mockRefreshToken);
+
+    console.log('✓ Mock: Session refreshed');
+
+    return {
+      access_token: mockToken,
+      refresh_token: mockRefreshToken,
+      expires_in: 3600,
+      expires_at: Date.now() + 3600000,
+    };
+  },
+
   // Session Management
-  async createSession(userId: string): Promise<Session> {
+  async createSession(): Promise<Session> {
     await delay(300);
+
+    if (!mockCurrentUser) {
+      throw new Error('Not authenticated');
+    }
+
     const sessionId = crypto.randomUUID();
     console.log('✓ Mock: Created session', sessionId);
-    mockSessionUsers.set(sessionId, userId);
+    mockSessionUsers.set(sessionId, mockCurrentUser.id);
     return {
       id: sessionId,
-      user_id: userId,
+      user_id: mockCurrentUser.id,
       created_at: new Date().toISOString(),
     };
   },
@@ -229,6 +366,26 @@ export const mockApi = {
         { date: '2024-11-02', open: 103, high: 106, low: 102, close: 105, volume: 1100000 }
       ]
     };
+  },
+
+  // User Profile
+  async saveProfile(profile: UserProfile): Promise<UserProfileResponse> {
+    await delay(300);
+    console.log('✓ Mock: Saved profile', profile);
+    return {
+      age: profile.age,
+      retirement_age: profile.retirementAge,
+      risk_tolerance: profile.riskTolerance,
+      investment_goal: profile.investmentGoal,
+      profile_completed_at: new Date().toISOString(),
+    };
+  },
+
+  async getProfile(): Promise<UserProfileResponse | null> {
+    await delay(100);
+    console.log('✓ Mock: Getting profile');
+    // Return null for mock since we don't persist profiles in mock mode
+    return null;
   },
 
 };
