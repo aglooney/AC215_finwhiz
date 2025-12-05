@@ -1,0 +1,14 @@
+encryptionsalt: v1:Ql1K//qmtaQ=:v1:fhFyMtpDtq0O41hJ:fA2sI27np3naGsGEOOg3GMoHM2TJfw==
+config:
+  gcp:project: finwhiz-ac215
+  deploy-k8s:imagesStackRef: organization/deploy-images/dev
+  security:ssh_user: sa_100110341521630214262
+  security:gcp_service_account_email: finwhiz-api@finwhiz-ac215.iam.gserviceaccount.com
+  security:gcp_ksa_service_account_email: finwhiz-api@finwhiz-ac215.iam.gserviceaccount.com
+  deploy-k8s:setupSSL: "false"
+  deploy-k8s:dbPassword:
+    secure: v1:denZOZEtnoTHJFKb:MDm14vpYfqrPxeeeYteiA3nMZ/qXutcSC1D4qjc=
+  deploy-k8s:dbUser: user
+  deploy-k8s:dbName: finwhiz_db
+  deploy-k8s:dbHost: cloudsql-proxy
+  deploy-k8s:dbPort: "5432"

@@ -1,0 +1,4 @@
+encryptionsalt: v1:63N7Ei1beIs=:v1:s/KFADRyvuRtcE2g:xI5R02dVQ5OSIET+2SntRVmGwFqfIA==
+config:
+  gcp:project: finwhiz-ac215
+  gcp:region: us-central1
