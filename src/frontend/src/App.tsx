@@ -5,6 +5,52 @@ import { api } from './services/api';
 import type { UserProfile, Session } from './types';
 import { Loader2 } from 'lucide-react';
 
+const generateUserId = () => {
+  if (typeof crypto !== 'undefined') {
+    if (typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+
+    if (typeof crypto.getRandomValues === 'function') {
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+      const byteToHex: string[] = [];
+      for (let i = 0; i < 256; i += 1) {
+        byteToHex[i] = (i + 0x100).toString(16).substring(1);
+      }
+
+      return (
+        byteToHex[bytes[0]] +
+        byteToHex[bytes[1]] +
+        byteToHex[bytes[2]] +
+        byteToHex[bytes[3]] +
+        '-' +
+        byteToHex[bytes[4]] +
+        byteToHex[bytes[5]] +
+        '-' +
+        byteToHex[bytes[6]] +
+        byteToHex[bytes[7]] +
+        '-' +
+        byteToHex[bytes[8]] +
+        byteToHex[bytes[9]] +
+        '-' +
+        byteToHex[bytes[10]] +
+        byteToHex[bytes[11]] +
+        byteToHex[bytes[12]] +
+        byteToHex[bytes[13]] +
+        byteToHex[bytes[14]] +
+        byteToHex[bytes[15]]
+      );
+    }
+  }
+
+  return `fallback-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
 function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -14,7 +60,7 @@ function App() {
     setIsLoading(true);
     try {
       // Generate a unique user ID
-      const userId = crypto.randomUUID();
+      const userId = generateUserId();
       console.log('Creating session for user:', userId);
 
       // Create session with backend

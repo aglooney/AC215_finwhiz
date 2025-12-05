@@ -3,6 +3,7 @@ FROM python:3.12-slim
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app:/app/src
 
 ENV UV_LINK_MODE=copy
 ENV UV_PROJECT_ENVIRONMENT=/home/app/.venv
@@ -24,7 +25,7 @@ RUN pip install --no-cache-dir --upgrade pip uv && \
     chown -R app:app /app /home/app/.venv
 
 USER app
-WORKDIR /app
+WORKDIR /app/src/agentic_user_data_processing
 
 COPY --chown=app:app pyproject.toml uv.lock ./
 RUN uv sync
@@ -32,5 +33,7 @@ RUN uv sync
 COPY --chown=app:app . .
 
 EXPOSE 8010
+
+WORKDIR /app
 
 CMD ["bash", "-c", "source /home/app/.venv/bin/activate && uvicorn agentic_user_data_processing.app:app --host 0.0.0.0 --port 8010"]

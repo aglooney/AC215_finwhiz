@@ -243,3 +243,4 @@ docker-compose.override.yml
 tests/cloud_fixtures/
 LOCAL_TESTING_README.md
 LOCAL_TESTING_README.md
+src/deployment/pulumi-plugins/
