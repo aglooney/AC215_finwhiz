@@ -8,20 +8,35 @@ import pulumi_kubernetes as k8s
 def setup_containers(project, namespace, k8s_provider, ksa_name, app_name):
     deploy_config = pulumi.Config("deploy-k8s")
 
-    stack_ref_name = (
-        deploy_config.get("imagesStackRef")
-        or os.getenv("PULUMI_IMAGES_STACK")
-        or "organization/deploy-images/dev"
+    # Try to get images from config first, otherwise use defaults
+    frontend_image = (
+        deploy_config.get("frontendImage")
+        or os.getenv("FRONTEND_IMAGE")
+        or "us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz:frontend"
     )
-    images_stack = pulumi.StackReference(stack_ref_name)
+    agent_image = (
+        deploy_config.get("agentImage")
+        or os.getenv("AGENT_IMAGE")
+        or "us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz:agent"
+    )
+    llm_image = (
+        deploy_config.get("llmImage")
+        or os.getenv("LLM_IMAGE")
+        or "us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz:llm"
+    )
 
-    def latest_tag(output_name: str):
-        tags = images_stack.require_output(output_name)
-        return tags.apply(lambda arr: arr[-1])
+    # Optional: If you have an imagesStackRef configured, use it to override
+    stack_ref_name = deploy_config.get("imagesStackRef") or os.getenv("PULUMI_IMAGES_STACK")
+    if stack_ref_name:
+        images_stack = pulumi.StackReference(stack_ref_name)
 
-    frontend_image = latest_tag("finwhiz-frontend-tags")
-    agent_image = latest_tag("finwhiz-agent-tags")
-    llm_image = latest_tag("finwhiz-llm-tags")
+        def latest_tag(output_name: str):
+            tags = images_stack.require_output(output_name)
+            return tags.apply(lambda arr: arr[-1])
+
+        frontend_image = latest_tag("finwhiz-frontend-tags")
+        agent_image = latest_tag("finwhiz-agent-tags")
+        llm_image = latest_tag("finwhiz-llm-tags")
 
     def cfg(key: str, default: str, env_var: str | None = None):
         if env_var:
@@ -76,6 +91,10 @@ def setup_containers(project, namespace, k8s_provider, ksa_name, app_name):
     )
     vertex_credentials_json = cfg_secret("vertexCredentialsJson")
     db_password = cfg_secret("dbPassword", env_var="DB_PASS")
+
+    # Supabase authentication configuration
+    supabase_url = cfg("supabaseUrl", "", env_var="SUPABASE_URL")
+    supabase_key = cfg_secret("supabaseKey", env_var="SUPABASE_KEY")
 
     shared_secret_name = None
     shared_secret_volume = None
@@ -360,6 +379,11 @@ def setup_containers(project, namespace, k8s_provider, ksa_name, app_name):
             k8s.core.v1.EnvVarArgs(name="DB_PORT", value=db_port),
             k8s.core.v1.EnvVarArgs(name="DB_PASS", value="AC215-finwhiz"),
         ]
+        # Add Supabase authentication credentials
+        if supabase_url:
+            env.append(k8s.core.v1.EnvVarArgs(name="SUPABASE_URL", value=supabase_url))
+        if supabase_key:
+            env.append(k8s.core.v1.EnvVarArgs(name="SUPABASE_KEY", value=supabase_key))
         if shared_secret_mount:
             env.append(
                 k8s.core.v1.EnvVarArgs(
