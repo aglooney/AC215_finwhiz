@@ -36,7 +36,14 @@ async def test_w2_extractor_calls_vertex():
     pdf_bytes, using_real = _load_fixture(Path("src/synthetic_data/w2/outputs/w2_000.pdf"), "w2_000.pdf")
     source = json.loads((ROOT_DIR / "src" / "synthetic_data" / "w2" / "outputs" / "w2_000.json").read_text())
     result = await extraction.extract_w2_fields(pdf_bytes)
-    assert result.employee_name, "Vertex extraction returned empty employee_name"
+
+    # Updated assertion with debug info
+    assert result.employee_name, (
+        f"Vertex extraction returned empty employee_name. "
+        f"Check /tmp/vertex_w2_response.json for raw response. "
+        f"Result: {result}"
+    )
+
     assert result.employer_name, "Vertex extraction returned empty employer_name"
     if not using_real:
         expected_name = f"{source['employee']['first_name']} {source['employee']['last_name']}"
