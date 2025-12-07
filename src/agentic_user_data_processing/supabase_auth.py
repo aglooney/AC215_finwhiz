@@ -57,6 +57,8 @@ def sign_up(email: str, password: str) -> Dict[str, Any]:
                 {
                     "access_token": response.session.access_token if response.session else None,
                     "refresh_token": response.session.refresh_token if response.session else None,
+                    "expires_in": response.session.expires_in if response.session else None,
+                    "expires_at": response.session.expires_at if response.session else None,
                 }
                 if response.session
                 else None
@@ -100,6 +102,8 @@ def sign_in(email: str, password: str) -> Dict[str, Any]:
                 {
                     "access_token": response.session.access_token if response.session else None,
                     "refresh_token": response.session.refresh_token if response.session else None,
+                    "expires_in": response.session.expires_in if response.session else None,
+                    "expires_at": response.session.expires_at if response.session else None,
                 }
                 if response.session
                 else None

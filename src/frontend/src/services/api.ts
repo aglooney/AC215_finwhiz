@@ -219,10 +219,12 @@ const realApi = {
 
   // LLM Query
   async query(query: string, sessionId?: string, topK: number = 5): Promise<QueryResponse> {
+    const token = getToken();
     const response = await llmAPI.post<QueryResponse>('/query', {
       query,
       session_id: sessionId,
       top_k: topK,
+      token: token,
     });
     return response.data;
   },

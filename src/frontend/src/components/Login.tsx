@@ -27,19 +27,24 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome to FinWhiz
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-cream-100 to-cream-300">
+      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg border border-cream-300">
+        <div className="text-center">
+          <div className="inline-block bg-cream-100 rounded-2xl p-4 border border-cream-300 mb-4">
+            <img
+              src="/logo.png"
+              alt="FinWhiz"
+              className="h-36 w-auto object-contain"
+            />
+          </div>
+          <p className="text-sm text-gray-600">
             Sign in to your account
           </p>
         </div>
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
+            <div className="rounded-md bg-red-50 p-4 border border-red-200">
               <div className="text-sm text-red-700">{error}</div>
             </div>
           )}
@@ -56,7 +61,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-cream-400 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm bg-cream-50"
                 placeholder="Email address"
               />
             </div>
@@ -72,7 +77,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-cream-400 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm bg-cream-50"
                 placeholder="Password"
               />
             </div>
@@ -82,7 +87,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-700 hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-primary-400 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
@@ -92,7 +97,7 @@ export const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
             <button
               type="button"
               onClick={onSwitchToSignup}
-              className="text-sm text-indigo-600 hover:text-indigo-500"
+              className="text-sm text-primary-700 hover:text-primary-600 font-medium"
             >
               Don't have an account? Sign up
             </button>

@@ -24,19 +24,24 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-cream-100">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <header className="bg-white border-b border-cream-300 sticky top-0 z-10 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-8 h-8 text-primary-600" />
-              <h1 className="text-2xl font-bold text-gray-900">FinWhiz</h1>
+          <div className="flex justify-between items-center h-20">
+            <div className="bg-cream-100 rounded-lg p-2 border border-cream-300">
+              <img
+                src="/logo-icon.png"
+                alt="FinWhiz"
+                className="h-12 object-contain"
+              />
             </div>
 
+
+
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
-                <User className="w-5 h-5 text-gray-600" />
+              <div className="flex items-center gap-2 px-4 py-2 bg-cream-100 rounded-lg border border-cream-300">
+                <User className="w-5 h-5 text-primary-600" />
                 <div className="text-sm">
                   <p className="font-semibold text-gray-900">Age {profile.age}</p>
                   <p className="text-xs text-gray-600">Retires at {profile.retirementAge}</p>
@@ -44,7 +49,7 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
               </div>
               <button
                 onClick={onLogout}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-cream-200 rounded-lg transition-colors"
               >
                 <LogOut className="w-5 h-5" />
                 <span className="text-sm font-medium">Logout</span>
@@ -53,6 +58,7 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
           </div>
         </div>
       </header>
+
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -66,8 +72,8 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
                   onClick={() => setActiveTab('chat')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === 'chat'
-                      ? 'bg-primary-600 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary-700 text-white'
+                      : 'text-gray-700 hover:bg-cream-100'
                   }`}
                 >
                   <MessageSquare className="w-5 h-5" />
@@ -78,8 +84,8 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
                   onClick={() => setActiveTab('upload')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === 'upload'
-                      ? 'bg-primary-600 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary-700 text-white'
+                      : 'text-gray-700 hover:bg-cream-100'
                   }`}
                 >
                   <Upload className="w-5 h-5" />
@@ -95,8 +101,8 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
                   onClick={() => setActiveTab('portfolio')}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     activeTab === 'portfolio'
-                      ? 'bg-primary-600 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary-700 text-white'
+                      : 'text-gray-700 hover:bg-cream-100'
                   }`}
                 >
                   <PieChartIcon className="w-5 h-5" />
@@ -107,7 +113,7 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
 
             {/* Quick Info */}
             <div className="card hidden lg:block">
-              <h3 className="text-lg font-bold mb-3">Your Profile</h3>
+              <h3 className="text-lg font-bold mb-3 text-primary-700">Your Profile</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Age:</span>
@@ -121,7 +127,7 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
                   <span className="text-gray-600">Risk Tolerance:</span>
                   <span className="font-semibold capitalize">{profile.riskTolerance}</span>
                 </div>
-                <div className="pt-2 border-t border-gray-200">
+                <div className="pt-2 border-t border-cream-300">
                   <p className="text-gray-600">Goal:</p>
                   <p className="font-medium mt-1">{profile.investmentGoal}</p>
                 </div>
@@ -131,28 +137,38 @@ export default function Dashboard({ profile, sessionId, onLogout }: DashboardPro
 
           {/* Main Content Area */}
           <div className="lg:col-span-2">
-            <div className="card h-[calc(100vh-200px)]">
-              {activeTab === 'chat' && <ChatInterface sessionId={sessionId} />}
+            <div className="card h-[calc(100vh-200px)] overflow-hidden">
+
+              {/* Chat - keep mounted to preserve sources */}
+              <div className={activeTab === 'chat' ? 'block h-full' : 'hidden'}>
+                <ChatInterface sessionId={sessionId} />
+              </div>
+
+              {/* Upload - conditional render is fine */}
               {activeTab === 'upload' && (
-                <div className="overflow-y-auto h-full">
+                <div className="h-full overflow-y-auto">
                   <DocumentUpload
                     sessionId={sessionId}
                     onDocumentsChange={handleDocumentsChange}
                   />
                 </div>
               )}
+
+              {/* Portfolio - conditional render so it fetches fresh data each time */}
               {activeTab === 'portfolio' && (
-              <div className="overflow-y-auto h-full p-4 space-y-6">
-                <MarketOverview />
-                <LivePortfolio sessionId={sessionId} />
-                <div className="pt-4 border-t border-gray-200">
-                  <h3 className="font-bold mb-3">Recommended Allocation</h3>
-                  <PortfolioRecommendation profile={profile} />
+                <div className="h-full overflow-y-auto p-4 space-y-6">
+                  <MarketOverview />
+                  <LivePortfolio sessionId={sessionId} />
+                  <div className="pt-4 border-t border-cream-300">
+                    <h3 className="font-bold mb-3 text-primary-700">Recommended Allocation</h3>
+                    <PortfolioRecommendation profile={profile} />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+
             </div>
           </div>
+
         </div>
       </div>
     </div>

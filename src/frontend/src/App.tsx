@@ -115,6 +115,11 @@ function App() {
         if (backendProfile) {
           console.log('Profile loaded from backend:', backendProfile);
 
+          if (!backendProfile.age || !backendProfile.retirement_age || !backendProfile.risk_tolerance || !backendProfile.investment_goal) {
+            console.error('Incomplete profile data received:', backendProfile);
+            throw new Error('Incomplete profile data');
+          }
+
           // Convert backend format to frontend format
           const profile: UserProfile = {
             age: backendProfile.age!,

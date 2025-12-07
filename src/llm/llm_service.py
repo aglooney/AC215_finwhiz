@@ -74,6 +74,7 @@ class QueryRequest(BaseModel):
     session_id: uuid.UUID | None = None
     user_id: uuid.UUID | None = None
     top_k: int = 5
+    token: str | None = None
 
 
 def reciprocal_rank_fusion(rank_lists, k=60):
@@ -153,7 +154,7 @@ def retrieve_context(query: str, top_k: int = 5, method: str = "rrf") -> tuple[s
             logging.error(f"Issue with RRF: {e}")
 
     else:
-        raise ValueError(f"Unkown retrieval method: {method}")
+        raise ValueError(f"Unknown retrieval method: {method}")
 
     if not results["documents"] or not results["documents"][0]:
         logger.warning("No context retrieved from Chroma.")
@@ -184,7 +185,7 @@ def retrieve_context(query: str, top_k: int = 5, method: str = "rrf") -> tuple[s
     return context, citations
 
 
-def retrieve_agent_context(session_id: str | None) -> tuple[str, dict]:
+def retrieve_agent_context(session_id: str | None, token: str | None = None) -> tuple[str, dict]:
     """
     Fetch chat and uploaded document context from agent.
     Now also fetches live portfolio data and market overview.
@@ -198,9 +199,14 @@ def retrieve_agent_context(session_id: str | None) -> tuple[str, dict]:
     context_parts = []
     raw_data = {}
 
+    # Build headers with auth token
+    headers = {}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
     try:
         # 1. Get basic session context (messages, documents)
-        response = requests.get(f"{AGENT_URL}/sessions/{session_id}/context")
+        response = requests.get(f"{AGENT_URL}/sessions/{session_id}/context", headers=headers)
         response.raise_for_status()
         data = response.json()
         raw_data["session"] = data
@@ -212,7 +218,7 @@ def retrieve_agent_context(session_id: str | None) -> tuple[str, dict]:
 
         # 2. Get live portfolio data (current prices, gains/losses)
         try:
-            portfolio_response = requests.get(f"{AGENT_URL}/sessions/{session_id}/portfolio/live")
+            portfolio_response = requests.get(f"{AGENT_URL}/sessions/{session_id}/portfolio/live", headers=headers)
             if portfolio_response.status_code == 200:
                 live_portfolio = portfolio_response.json()
                 raw_data["live_portfolio"] = live_portfolio
@@ -224,7 +230,21 @@ def retrieve_agent_context(session_id: str | None) -> tuple[str, dict]:
         except Exception as e:
             logger.warning(f"Could not fetch live portfolio data: {e}")
 
-        # 3. Get market overview (indices)
+        # 3. Get portfolio analytics
+        try:
+            analytics_response = requests.get(f"{AGENT_URL}/sessions/{session_id}/portfolio/analytics", headers=headers)
+            if analytics_response.status_code == 200:
+                analytics = analytics_response.json()
+                raw_data["portfolio_analytics"] = analytics
+
+                # Format analytics for context
+                analytics_context = format_portfolio_analytics(analytics)
+                if analytics_context:
+                    context_parts.append(analytics_context)
+        except Exception as e:
+            logger.warning(f"Could not fetch portfolio analytics: {e}")
+
+        # 4. Get market overview (indices) - no auth needed
         try:
             market_response = requests.get(f"{AGENT_URL}/market/indices")
             if market_response.status_code == 200:
@@ -238,7 +258,7 @@ def retrieve_agent_context(session_id: str | None) -> tuple[str, dict]:
         except Exception as e:
             logger.warning(f"Could not fetch market overview: {e}")
 
-        # 4. Add W-2 and 1099 data if available
+        # 5. Add W-2 and 1099 data if available
         w2 = data.get("w2_fields", {})
         f1099 = data.get("form1099_fields", {})
 
@@ -252,11 +272,64 @@ def retrieve_agent_context(session_id: str | None) -> tuple[str, dict]:
             if f1099_text:
                 context_parts.append(f1099_text)
 
+        # 6. Add portfolio fields from session context (fallback/additional data)
+        portfolio = data.get("portfolio_fields", {})
+        if portfolio and isinstance(portfolio, dict):
+            portfolio_summary = {k: v for k, v in portfolio.items() if v is not None}
+            if portfolio_summary:
+                portfolio_text = format_tax_fields(portfolio_summary, "Portfolio Document Data")
+                if portfolio_text:
+                    context_parts.append(portfolio_text)
+
         return "\n\n".join(context_parts), raw_data
 
     except Exception as e:
         logger.warning(f"Failed to fetch agent context: {e}")
         return "", {}
+
+
+def format_portfolio_analytics(analytics: dict) -> str:
+    """Format portfolio analytics for LLM context."""
+    if not analytics:
+        return ""
+
+    lines = ["=== PORTFOLIO ANALYTICS ==="]
+
+    # Top performers
+    top_performers = analytics.get("top_performers", [])
+    if top_performers:
+        lines.append("\nTop Performers:")
+        for stock in top_performers[:5]:
+            ticker = stock.get("ticker", "N/A")
+            gain_pct = stock.get("gain_loss_percent", 0)
+            lines.append(f"  - {ticker}: {gain_pct:+.2f}%")
+
+    # Bottom performers
+    bottom_performers = analytics.get("bottom_performers", [])
+    if bottom_performers:
+        lines.append("\nNeeds Attention:")
+        for stock in bottom_performers[:5]:
+            ticker = stock.get("ticker", "N/A")
+            gain_pct = stock.get("gain_loss_percent", 0)
+            lines.append(f"  - {ticker}: {gain_pct:+.2f}%")
+
+    # Risk metrics
+    risk_metrics = analytics.get("risk_metrics", {})
+    if risk_metrics:
+        lines.append("\nRisk Metrics:")
+        concentration = risk_metrics.get("concentration_risk", "N/A")
+        top_holding_pct = risk_metrics.get("top_holding_percentage", 0)
+        lines.append(f"  - Concentration Risk: {concentration}")
+        lines.append(f"  - Top Holding: {top_holding_pct:.1f}% of portfolio")
+
+    # Sector allocation
+    sector_allocation = analytics.get("sector_allocation", {})
+    if sector_allocation:
+        lines.append("\nSector Allocation:")
+        for sector, pct in sorted(sector_allocation.items(), key=lambda x: x[1], reverse=True)[:5]:
+            lines.append(f"  - {sector}: {pct:.1f}%")
+
+    return "\n".join(lines) if len(lines) > 1 else ""
 
 
 def format_live_portfolio(portfolio_data: dict) -> str:
@@ -364,8 +437,8 @@ def generate_answer(prompt: str) -> str:
 # API endpoint
 @app.post("/query")
 async def handle_query(req: QueryRequest):
-    # Fetch agentic context (chat messages + documents + LIVE portfolio + market data)
-    agent_context, raw_agent_data = retrieve_agent_context(req.session_id)
+    # Fetch agentic context with token
+    agent_context, raw_agent_data = retrieve_agent_context(req.session_id, req.token)
 
     # Fetch Chroma context but fail gracefully if embeddings/chroma are unavailable
     try:

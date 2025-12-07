@@ -195,7 +195,7 @@ if __name__ == "__main__":
 
     git_commit = get_git_commit()
     metadata = {
-        "timestampt": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
         "collection": COLLECTION_NAME,
         "embedding_model": EMBEDDING_MODEL,
         "batch_size": BATCH_SIZE,

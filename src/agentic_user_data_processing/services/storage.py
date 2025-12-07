@@ -73,6 +73,7 @@ def save_document_bytes(
         blob = bucket.blob(object_name)
     except Exception as e:
         logging.error(f"Could not get GCS Client: {e}")
+        raise RuntimeError(f"Failed to initialize GCS client: {e}")
     try:
         blob.upload_from_string(contents, content_type=content_type)
         gcs_uri = f"gs://{BUCKET_NAME}/{object_name}"
