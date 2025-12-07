@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import type { UserProfile } from '../types';
 import { api } from '../services/api';
 
@@ -40,17 +40,21 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-600 to-primary-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary-700 to-primary-900 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full">
         {step === 1 ? (
           <div className="card">
             <div className="text-center mb-8">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <TrendingUp className="w-12 h-12 text-primary-600" />
-                <h1 className="text-4xl font-bold text-gray-900">FinWhiz</h1>
+              <div className="inline-block bg-cream-100 rounded-2xl p-5 border border-cream-300 mb-4">
+                <img
+                  src="/logo.png"
+                  alt="FinWhiz"
+                  className="h-40 w-auto object-contain"
+                />
               </div>
               <p className="text-xl text-gray-600">Your AI-Powered Financial Education Assistant</p>
             </div>
+
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -110,60 +114,60 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         ) : (
           <div className="card">
             <div className="text-center mb-8">
-              <Shield className="w-12 h-12 text-primary-600 mx-auto mb-4" />
+              <Shield className="w-12 h-12 text-primary-700 mx-auto mb-4" />
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Risk Assessment</h2>
               <p className="text-gray-600">Help us understand your investment comfort level</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="rounded-md bg-red-50 p-4">
+                <div className="rounded-md bg-red-50 p-4 border border-red-200">
                   <div className="text-sm text-red-700">{error}</div>
                 </div>
               )}
 
               <div className="space-y-3">
-                <label className="block">
+                <label className="block p-4 rounded-lg border border-cream-300 hover:border-primary-400 cursor-pointer transition-colors has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
                   <input
                     type="radio"
                     name="riskTolerance"
                     value="conservative"
                     checked={profile.riskTolerance === 'conservative'}
                     onChange={() => setProfile({ ...profile, riskTolerance: 'conservative' })}
-                    className="mr-3"
+                    className="mr-3 accent-primary-700"
                   />
-                  <span className="font-semibold">Conservative</span>
-                  <p className="ml-6 text-sm text-gray-600">
+                  <span className="font-semibold text-gray-900">Conservative</span>
+                  <p className="ml-6 text-sm text-gray-600 mt-1">
                     I prefer to minimize risk and protect my capital, even if it means lower returns.
                   </p>
                 </label>
 
-                <label className="block">
+                <label className="block p-4 rounded-lg border border-cream-300 hover:border-primary-400 cursor-pointer transition-colors has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
                   <input
                     type="radio"
                     name="riskTolerance"
                     value="moderate"
                     checked={profile.riskTolerance === 'moderate'}
                     onChange={() => setProfile({ ...profile, riskTolerance: 'moderate' })}
-                    className="mr-3"
+                    className="mr-3 accent-primary-700"
                   />
-                  <span className="font-semibold">Moderate</span>
-                  <p className="ml-6 text-sm text-gray-600">
+                  <span className="font-semibold text-gray-900">Moderate</span>
+                  <p className="ml-6 text-sm text-gray-600 mt-1">
                     I'm comfortable with some risk to achieve a balance between growth and stability.
                   </p>
                 </label>
 
-                <label className="block">
+                <label className="block p-4 rounded-lg border border-cream-300 hover:border-primary-400 cursor-pointer transition-colors has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
                   <input
                     type="radio"
                     name="riskTolerance"
                     value="aggressive"
                     checked={profile.riskTolerance === 'aggressive'}
                     onChange={() => setProfile({ ...profile, riskTolerance: 'aggressive' })}
-                    className="mr-3"
+                    className="mr-3 accent-primary-700"
                   />
-                  <span className="font-semibold">Aggressive</span>
-                  <p className="ml-6 text-sm text-gray-600">
+                  <span className="font-semibold text-gray-900">Aggressive</span>
+                  <p className="ml-6 text-sm text-gray-600 mt-1">
                     I'm willing to accept higher risk for the potential of greater long-term returns.
                   </p>
                 </label>

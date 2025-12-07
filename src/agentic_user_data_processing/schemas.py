@@ -171,6 +171,8 @@ class AuthUser(BaseModel):
 class AuthSession(BaseModel):
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
+    expires_in: Optional[int] = None
+    expires_at: Optional[int] = None
 
 
 class AuthResponse(BaseModel):

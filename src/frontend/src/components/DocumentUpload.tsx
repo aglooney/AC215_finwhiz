@@ -200,8 +200,9 @@ export default function DocumentUpload({
                 <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">
-                    {doc.document_type?.toString().toUpperCase()}
+                    {(doc.document_type ?? 'UNKNOWN').toUpperCase()}
                   </p>
+
                   <p className="text-xs text-gray-500">
                     Uploaded {new Date(doc.created_at).toLocaleString()}
                   </p>

@@ -59,28 +59,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
-  query_client:
-    image: us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz:client
-    container_name: finwhiz_query
-    depends_on:
-      #llm:
-        #condition: service_healthy
-      agent:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      - PYTHONPATH=/app
-      - LLM_URL=http://llm:8001
-      - AGENT_URL=http://agent:8010
-    command: /bin/bash -c "sleep 8 && source /home/app/.venv/bin/activate && python src/query_client/interactive_query.py"
-    volumes:
-      - .:/app
-    stdin_open: true
-    tty: true
-    networks:
-      - finwhiz_network
-    restart: on-failure
+
 
   frontend:
     image: us-central1-docker.pkg.dev/finwhiz-ac215/finwhiz-img/finwhiz:frontend
@@ -140,4 +119,3 @@ networks:
 volumes:
   chroma_data:
   postgres_data:
-    driver: bridge

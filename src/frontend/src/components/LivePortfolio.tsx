@@ -168,7 +168,7 @@ export default function LivePortfolio({ sessionId }: LivePortfolioProps) {
             <DollarSign className="w-5 h-5 text-primary-600" />
             <h3 className="font-semibold text-gray-700">Current Value</h3>
           </div>
-          <p className="text-3xl font-bold text-gray-900">
+          <p className="text-2xl font-bold text-gray-900">
             ${portfolioData.total_current_value.toLocaleString('en-US', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
@@ -191,13 +191,13 @@ export default function LivePortfolio({ sessionId }: LivePortfolioProps) {
             )}
             <h3 className="font-semibold text-gray-700">Total Gain/Loss</h3>
           </div>
-          <p className={`text-3xl font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-2xl font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
             {isPositive ? '+' : ''}${portfolioData.total_gain_loss.toLocaleString('en-US', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
           </p>
-          <p className={`text-lg font-semibold mt-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`text-sm font-semibold mt-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
             {isPositive ? '+' : ''}{portfolioData.total_gain_loss_percent.toFixed(2)}%
           </p>
         </div>
@@ -207,7 +207,7 @@ export default function LivePortfolio({ sessionId }: LivePortfolioProps) {
             <PieChart className="w-5 h-5 text-blue-600" />
             <h3 className="font-semibold text-gray-700">Holdings</h3>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{portfolioData.holdings.length}</p>
+          <p className="text-2xl font-bold text-gray-900">{portfolioData.holdings.length}</p>
           {analytics && (
             <p className="text-xs text-gray-600 mt-1">
               Risk: {analytics.risk_metrics?.concentration_risk || 'Unknown'}
@@ -215,6 +215,7 @@ export default function LivePortfolio({ sessionId }: LivePortfolioProps) {
           )}
         </div>
       </div>
+
 
       {/* Top/Bottom Performers */}
       {analytics && (

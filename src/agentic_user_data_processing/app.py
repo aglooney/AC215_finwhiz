@@ -387,6 +387,9 @@ def get_market_indices():
     return {"indices": indices, "updated_at": datetime.now().isoformat()}
 
 
+VALID_PERIODS = ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"]
+
+
 @app.get("/market/history/{ticker}")
 def get_stock_history(ticker: str, period: str = "1mo"):
     """
@@ -395,10 +398,14 @@ def get_stock_history(ticker: str, period: str = "1mo"):
     Query params:
         period: 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
     """
+    if period not in VALID_PERIODS:
+        raise HTTPException(status_code=400, detail=f"Invalid period '{period}'. Must be one of: {', '.join(VALID_PERIODS)}")
+
     logger.info(f"[get_stock_history] Fetching {period} history for {ticker}")
 
     history = yfinance_service.get_stock_history(ticker.upper(), period)
     if not history:
+
         logger.warning(f"[get_stock_history] Unable to fetch history for {ticker}")
         raise HTTPException(status_code=404, detail=f"Unable to fetch history for {ticker}")
 
