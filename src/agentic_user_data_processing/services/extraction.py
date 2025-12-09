@@ -51,6 +51,35 @@ Respond with JSON only.
 _llm: Optional[VertexAI] = None
 
 
+def _extract_json_from_response(raw: str) -> dict:
+    """Extract JSON from model response, handling various formats."""
+    text = raw.strip()
+
+    # Remove markdown code blocks like ```json ... ```
+    if "```" in text:
+        # Find content between code fences
+        match = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+        if match:
+            text = match.group(1).strip()
+
+    # Try direct parse first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Try to find JSON object in response using greedy match
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        try:
+            return json.loads(text[start : end + 1])
+        except json.JSONDecodeError:
+            pass
+
+    raise json.JSONDecodeError("Could not extract JSON from response", text, 0)
+
+
 def _get_llm() -> VertexAI:
     global _llm
     if _llm is None:
@@ -61,36 +90,6 @@ def _get_llm() -> VertexAI:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = VERTEXAI_CREDENTIALS
         _llm = VertexAI(model_name="gemini-2.5-pro")
     return _llm
-
-
-def _extract_json_from_response(raw: str) -> dict:
-    """Extract JSON from model response, handling various formats."""
-    text = raw.strip()
-
-    # Remove markdown code blocks
-    if text.startswith("```"):
-        text = text.strip("`")
-        if text.lower().startswith("json"):
-            text = text[4:].lstrip()
-        # Handle closing backticks
-        if text.endswith("```"):
-            text = text[:-3]
-
-    # Try direct parse first
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        pass
-
-    # Try to find JSON object in response
-    json_match = re.search(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", text, re.DOTALL)
-    if json_match:
-        try:
-            return json.loads(json_match.group(0))
-        except json.JSONDecodeError:
-            pass
-
-    raise json.JSONDecodeError("Could not extract JSON from response", text, 0)
 
 
 async def extract_w2_fields(pdf_bytes: bytes) -> schemas.W2Fields:
