@@ -1,0 +1,92 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT: finwhiz-ac215
+  GCP_REGION: us-central1
+  GCP_ZONE: us-central1-a
+  GAR_HOST: us-central1-docker.pkg.dev
+  APP_NAME: finwhiz
+  PULUMI_BACKEND_URL: gs://finwhiz-ac215-pulumi-state-bucket
+  PULUMI_STACK: dev
+  PULUMI_IMAGES_STACK: deploy-images/dev
+  CLOUDSDK_CORE_DISABLE_PROMPTS: "1"
+  USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v1
+
+      - name: Install Pulumi CLI
+        uses: pulumi/setup-pulumi@v5
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.VERTEXAI_SERVICE_ACCOUNT_JSON }}
+          create_credentials_file: true
+
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT }}
+          install_components: gke-gcloud-auth-plugin,kubectl
+
+      - name: Configure Artifact Registry auth
+        run: gcloud auth configure-docker $GAR_HOST --quiet
+
+      - name: Ensure Pulumi state bucket exists
+        run: |
+          if ! gsutil ls "${PULUMI_BACKEND_URL}" >/dev/null 2>&1; then
+            gsutil mb -p "${GCP_PROJECT}" -l "${GCP_REGION}" "${PULUMI_BACKEND_URL}"
+          fi
+
+      - name: Install deployment dependencies
+        working-directory: src/deployment
+        run: uv sync --frozen
+
+      - name: Pulumi login
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ""
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+        run: pulumi login "${PULUMI_BACKEND_URL}"
+
+      - name: Prime kubeconfig (best-effort for LLM delete)
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+        run: |
+          gcloud container clusters get-credentials "${APP_NAME}-cluster" --zone "${GCP_ZONE}" --project "${GCP_PROJECT}" || echo "Cluster not ready yet; continuing"
+
+      - name: Deploy
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+          PULUMI_CONFIG_PASSPHRASE: ""
+        run: |
+          cd src/deployment
+          if [ -d .venv ]; then
+            source .venv/bin/activate
+          fi
+          bash deploy.sh
