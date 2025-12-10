@@ -82,6 +82,9 @@ def get_multiple_quotes(tickers: List[str]) -> Dict[str, Dict[str, Any]]:
     return quotes
 
 
+MONEY_MARKET_FUNDS = {"SPAXX", "FDRXX", "VMFXX", "FZFXX", "SPRXX", "FTEXX", "FCASH", "CORE", "SWVXX", "SNVXX", "SNSXX"}
+
+
 def get_portfolio_live_data(holdings: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
     Calculate live portfolio metrics from holdings.
@@ -116,6 +119,30 @@ def get_portfolio_live_data(holdings: List[Dict[str, Any]]) -> Dict[str, Any]:
             continue
 
         quote = get_stock_quote(ticker)
+
+        if not quote:
+            ticker_upper = ticker.upper()
+            if ticker_upper in MONEY_MARKET_FUNDS:
+                # Money market funds maintain ~$1.00 NAV
+                logger.info(f"[get_portfolio_live_data] {ticker} is a money market fund, using $1.00/share")
+                quote = {
+                    "ticker": ticker,
+                    "name": holding.get("name", f"{ticker} (Money Market)"),
+                    "price": 1.00,
+                    "change": 0.0,
+                    "change_percent": 0.0,
+                }
+            elif original_value_float > 0 and shares_float > 0:
+                # Fallback: use original price from document
+                original_price = original_value_float / shares_float
+                logger.warning(f"[get_portfolio_live_data] {ticker} not found on yfinance, using original price ${original_price:.2f}")
+                quote = {
+                    "ticker": ticker,
+                    "name": holding.get("name", ticker),
+                    "price": round(original_price, 2),
+                    "change": 0.0,
+                    "change_percent": 0.0,
+                }
 
         if quote:
             current_value = quote["price"] * shares_float

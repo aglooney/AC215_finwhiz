@@ -51,7 +51,9 @@ def setup_containers(project, namespace, k8s_provider, ksa_name, app_name):
         secrets_dir = project_root / "secrets"
 
     gcs_bucket = cfg("gcsBucket", "finwhiz-storage", env_var="GCS_BUCKET")
-    gcs_prefix = cfg("gcsPrefix", "chroma_storage", env_var="GCS_PREFIX")
+    # gcs_prefix = cfg("gcsPrefix", "chroma_storage", env_var="GCS_PREFIX")
+    gcs_prefix = cfg("gcsPrefix", "chroma_storage_backup", env_var="GCS_PREFIX")
+
     user_upload_bucket = cfg(
         "userUploadBucket", "fw_user_uploads", env_var="USER_UPLOAD_BUCKET"
     )
@@ -69,6 +71,9 @@ def setup_containers(project, namespace, k8s_provider, ksa_name, app_name):
     )
     agent_url = cfg("agentUrl", "http://agent:8010", env_var="AGENT_URL")
     llm_url = cfg("llmUrl", "http://llm:8001", env_var="LLM_URL")
+    supabase_url = cfg("supabaseUrl", "", env_var="SUPABASE_URL")
+    supabase_key = cfg_secret("supabaseKey", env_var="SUPABASE_KEY")
+
     vertex_credentials_path = cfg(
         "vertexCredentials",
         "/app/secrets/service-account-key.json",
@@ -359,6 +364,8 @@ def setup_containers(project, namespace, k8s_provider, ksa_name, app_name):
             k8s.core.v1.EnvVarArgs(name="DB_HOST", value=db_host),
             k8s.core.v1.EnvVarArgs(name="DB_PORT", value=db_port),
             k8s.core.v1.EnvVarArgs(name="DB_PASS", value="AC215-finwhiz"),
+            k8s.core.v1.EnvVarArgs(name="SUPABASE_URL", value=supabase_url),
+            k8s.core.v1.EnvVarArgs(name="SUPABASE_KEY", value=supabase_key),
         ]
         if shared_secret_mount:
             env.append(
