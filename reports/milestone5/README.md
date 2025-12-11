@@ -215,8 +215,6 @@ This loop supports automated or semi-automated retraining triggered by new data 
 
 ## 5. Known Issues and Next Steps
 
-- **Coverage tracking** – Latest GitHub Actions: unit-only coverage ~57%; combined unit + integration >60% (meets target). Rerun `pytest --cov` after significant changes to keep coverage above the 60% threshold and note any newly uncovered areas.
+- **Coverage tracking** – Latest GitHub Actions: unit-only coverage ~57%; combined unit + integration >60%.
 - **Cloud dependencies and billing** – The deployment depends on GKE, Cloud SQL, GCS, and Vertex AI. If billing credits expire or a billing account changes, re-enable billing and re-provision the cluster/load balancer (public URL may change).
 - **System tests in CI** – Full system tests are wired into the workflow but disabled by default to avoid resource limits; they can be run locally when deeper end-to-end validation is needed.
-
-These items are tracked for future refinement but do not affect the core Milestone 5 deliverables (production deployment, CI/CD, ML workflow wiring, and public communication artifacts).
