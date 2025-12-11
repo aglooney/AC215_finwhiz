@@ -5,6 +5,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app:/app/src
+ENV UV_LINK_MODE=copy
+ENV UV_PROJECT_ENVIRONMENT=/home/app/.venv
+
 RUN set -ex && \
     apt-get update && \
     apt-get upgrade -y && \
@@ -12,7 +15,8 @@ RUN set -ex && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir --upgrade pip && \
+
+RUN pip install --no-cache-dir --upgrade pip uv && \
     useradd -ms /bin/bash app -d /home/app -u 1000 && \
     mkdir -p /app /home/app/.venv /app/src /app/data && \
     chown -R app:app /app /home/app
@@ -20,11 +24,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
 USER app
 WORKDIR /app/src/llm
 
-# Install dependencies into a venv; use CPU-only PyTorch wheel index
-RUN python -m venv /home/app/.venv && \
-    source /home/app/.venv/bin/activate && \
-    pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu .
+COPY --chown=app:app pyproject.toml uv.lock ./
+RUN uv sync
+
+# Force CPU-only torch build to keep image small for CI.
+RUN bash -c "source /home/app/.venv/bin/activate && \
+    pip uninstall -y torch || true && \
+    pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch==2.4.0"
 
 COPY --chown=app:app . .
 
