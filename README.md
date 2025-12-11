@@ -28,6 +28,23 @@ The system is fully containerized and orchestrated with Docker Compose to suppor
 
 See `QUICKSTART.md` for end-to-end setup (env vars), running the stack, and basic validation tests.
 
+## Usage Examples
+
+- **General education question**  
+  Open the app in your browser (local dev or the public URL), start a new session, and ask a question like:  
+  “What is a Roth IRA and how is it different from a traditional 401(k)?”  
+  The LLM service uses the financial knowledge base (RAG) to return an educational answer with citations.
+
+- **Personalized guidance from uploaded documents**  
+  From the “Upload Documents” section in the UI, upload a W‑2 or 1099 PDF, wait for processing to complete, then ask:  
+  “Based on the W‑2 I just uploaded, what is my total taxable wages and how much federal tax was withheld?”  
+  The agent service extracts structured fields, and the LLM uses them to tailor the explanation to your document.
+
+- **Portfolio dashboard and live market view**  
+  Complete the onboarding flow (age, retirement age, risk tolerance, goal) and navigate to the dashboard.  
+  Review the suggested allocation (stocks/bonds/cash), then open the portfolio tab to see your holdings with live yfinance prices and day‑to‑day performance.  
+  You can then ask the chat: “Looking at my current holdings, where am I most concentrated and what does that mean from a diversification perspective?”
+
 ### Testing
 To mirror CI locally:
 - `pytest` for unit tests
