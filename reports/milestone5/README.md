@@ -22,7 +22,7 @@ FinWhiz is deployed to a Google Kubernetes Engine (GKE) cluster using Pulumi:
   - **GCS** – Chroma snapshot bucket (`fw_ws`), user uploads bucket (`fw_user_uploads`), and DVC remote (`finwhiz-storage`).
   - **Chroma** – vector store running inside the `llm` container, synchronized from GCS on startup.
 
-The current public endpoint for the application is:
+The current public endpoint for the application is below. (Note: An active billing account may not be linked to FinWhiz to preserve billing costs incurred mainly through usage of CloudSQL).
 
 ```text
 https://136.116.192.125.sslip.io
@@ -107,6 +107,12 @@ GitHub Actions is used for linting, testing, and production deployment. Workflow
 
 Test coverage is collected with `pytest` and `pytest-cov`. Latest GitHub Actions results: unit-only coverage is ~57%, and combined unit + integration suites are above 60%, satisfying the Milestone 5 target of **≥ 60% line coverage** across services.
 
+Below are the code areas that are not covered by testing: 
+- Pulumi deployment code under src/deployment/
+- Some webscraping pipelines in src/webscraping/ingest_shared/* 
+- Fine-tuning scripts in src/llm/finetuning/ 
+- Synthetic data generators beyond basic smoke tests
+
 ### 2.2 Deployment Workflow
 
 - **Deploy** (`deploy.yml`)
@@ -171,7 +177,7 @@ Details of the fine-tuning experiments, dataset, and evaluation results are docu
 
 ### 3.3 Retraining and Promotion Strategy
 
-The intended production-ready workflow for ML models is:
+The workflow for ML models is:
 
 1. **Update data** – new FIQA-style data or proprietary datasets are added and tracked via DVC.
 2. **Pull & train** – run `train_gemini_full.py` (or a similar training entrypoint) to launch a new tuning job on Vertex AI.
@@ -189,11 +195,9 @@ This loop supports automated or semi-automated retraining triggered by new data 
 
 ### 4.1 Video and Blog Post
 
-Public-facing communication materials for the project are available at:
-
-- **Video walkthrough (6 minutes)** – problem, architecture, and live demo:
+- **Video walkthrough:
   - https://youtu.be/FL_5ymxJkDg
-- **Medium blog post (600–800 words)** – general-audience summary:
+- **Medium blog post:
   - https://medium.com/@gillianschriever_31774/finwhiz-an-ai-financial-education-assistant-for-millennials-and-gen-z-63da72dcc7f0?postPublishedType=repub
 
 ### 4.2 Demo Day Materials
@@ -204,16 +208,8 @@ Public-facing communication materials for the project are available at:
   https://136.116.192.125.sslip.io
   ```
 
-  This URL is suitable for QR codes and live demos during the showcase.
-
-- **Slide deck** – video, architecture overview, and user demo flow:
+- **Slide deck** – video and user demo materials:
   - https://docs.google.com/presentation/d/1XO2t_sbO1JommtVPfW4I4mOQRxzK_md43Igc1eTuA-c/edit?usp=sharing
-
-During the showcase booth, visitors can:
-
-- Scan a QR code pointing to the public URL.
-- Walk through onboarding, portfolio visualization, and chat.
-- See how document uploads and live portfolio data are incorporated into responses.
 
 ---
 
