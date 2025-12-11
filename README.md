@@ -5,9 +5,9 @@ FinWhiz is our end-to-end, Retrieval-Augmented Generation-Large Language Model (
 1. **General Knowledge** – the chatbot retrieves curated public resources (FINRA, IRS, Consumer Finance, etc.) through a vector database to provide additional context and augment LLM responses.
 2. **Personalized Guidance** – users can upload their own documents (currently supporting W‑2s, 1099 forms, and Fidelity portfolio summaries). An agentic service extracts key features, stores them securely, and blends that context with RAG results so answers stay user-specific.
 
-The system is fully containerized and orchestrated with Docker Compose to support repeatable deployments and testing.
+The deployed system includes a production web UI with a user-specific dashboard (portfolio holdings plus live yfinance market data) and synthetic portfolio data for comprehensive testing.
 
-Visit the ```reports/milestone2/README.md``` to see logs for milestone 2.
+The system is fully containerized and orchestrated with Docker Compose to support repeatable deployments and testing.
 
 ---
 
@@ -22,74 +22,16 @@ Visit the ```reports/milestone2/README.md``` to see logs for milestone 2.
 | **Webscraping Pipelines** | `src/webscraping/` | Data ingestion + chunking pipelines for public financial sources. | [README](src/webscraping/README.md) |
 | **GCS Utilities** | `src/gcp_storage/` | Shared GCS helper library and upload scripts for scraped data. | [README](src/gcp_storage/README.md) |
 | **Synthetic Data** | `src/synthetic_data/` | W‑2 and 1099 generator containers used for testing the agentic workflow. | [README](src/synthetic_data/README.md) |
-| **Milestone Reports** | `reports/` | Documentation and logs for milestones (e.g., pipeline runs). | [Milestone 2](reports/milestone2/README.md) |
+| **Milestone Reports** | `reports/` | Documentation and logs for milestones (e.g., pipeline runs). | [Milestone 2](reports/milestone2/README.md), [Milestone 4](reports/milestone4/README.md), [Milestone 5](reports/milestone5/README.md) |
 
 ---
 
-## Quick Start
+See `QUICKSTART.md` for end-to-end setup (env vars), running the stack, and basic validation tests.
 
-### Prerequisites
-- Docker Desktop (or Docker Engine) + docker-compose plugin
-- GCP service account with access to Vertex AI and the configured GCS buckets with local copies of JSON keys stored in `secrets/`
-
-### Environment Configuration
-Create a `.env` file at the repository root (see `.env.example` for a template). Minimum variables:
-
-```bash
-GOOGLE_APPLICATION_CREDENTIALS=secrets/<vertexai-service-account>.json
-VERTEXAI_CREDENTIALS=secrets/<vertexai-service-account>.json
-GCS_BUCKET=fw_ws
-GCS_PREFIX=chroma_storage
-DATABASE_URL=postgresql+psycopg://finwhiz:finwhiz@postgres:5432/finwhiz
-AGENT_URL=http://agent:8010
-LLM_URL=http://llm:8001
-```
-
-Put matching credentials for any additional buckets into `secrets/`.
-
-### Run the Pipeline
-```bash
-docker-compose up --build
-```
-This composes:
-- **postgres** – session + document metadata
-- **llm** – RAG/LLM API with Vertex AI + Chroma
-- **agent** – chat + W‑2 ingestion microservice
-- **query_client** – interactive user interface
-
-Once the services are healthy you can open a second terminal to validate the stack:
-```bash
-bash test_full_pipeline.sh
-```
-The script creates a session, uploads a synthetic W‑2, posts a user message, and queries the LLM. Sample logs are archived in `reports/milestone2/test_full_pipeline.log`.
-
-To test the new portfolio upload feature:
-```bash
-bash test_portfolio_upload.sh
-```
-This test uploads a Fidelity portfolio summary, verifies field extraction, and queries the LLM about portfolio details.
-
-Additional utilities:
-```bash
-# Verify GCS connectivity
-cd src/gcp_storage
-python test_gcs.py
-```
-
-### Run Tests
-```bash
-# From repository root
-pytest          # runs unit tests with coverage
-pytest -m system  # run heavier system tests (requires docker-compose stack)
-```
-
-To mirror the CI pipeline locally (unit + integration suites with combined coverage), run:
-
-```bash
-./scripts/run_tests_with_coverage.sh
-```
-
-The script wipes prior `.coverage*` files, runs both suites under `coverage run`, and emits merged HTML + XML reports under `coverage/`.
+### Testing
+To mirror CI locally:
+- `pytest` for unit tests
+- `pytest --cov=src --cov=tests --cov-report=term-missing` for coverage (latest GA: unit ~57%, combined >60%)
 
 ### Linting & Formatting (Black + Flake8 via pre-commit)
 We pin formatter/linter versions with [pre-commit](https://pre-commit.com), which keeps local runs in sync with CI.
@@ -121,16 +63,44 @@ We pin formatter/linter versions with [pre-commit](https://pre-commit.com), whic
 
 An interactive Figma prototype illustrates the planned UI flow (chat + document upload + backend context panels). The link and screenshots are documented in `reports/milestone2/README.md`.
 
+
 ---
 
-## Milestone 2 Artifacts
+## Production Deployment (GKE + Pulumi + CI/CD)
 
-- **Containers** – Each major service has a dedicated Dockerfile and `pyproject.toml`.
-- **Pipeline Proof** – `docker-compose.yaml`, `test_full_pipeline.sh`, and accompanying logs.
-- **Reports** – `reports/milestone2/` consolidates testing evidence, instructions, and outstanding TODOs (e.g., screenshot of running containers).
-- **Mock-up** – Updated Figma prototype demonstrating chat + upload flow.
+FinWhiz is deployed to Google Kubernetes Engine using Pulumi and GitHub Actions.
 
-See the [Milestone 2 report](reports/milestone2/README.md) for details, test output, and remaining tasks.
+### Public URL
+
+The current public endpoint for the production deployment is:
+
+```text
+https://136.116.192.125.sslip.io
+```
+
+### Deployment Options
+
+**Option 1 – GitHub Actions (recommended)**
+
+- Push or merge changes into the `main` branch.
+- The `Deploy` workflow (`.github/workflows/deploy.yml`) builds images, updates the GKE cluster, and refreshes the ingress.
+
+**Option 2 – Manual Pulumi deployment**
+
+From the repository root:
+
+```bash
+cd src/deployment
+sh docker-shell.sh
+
+cd deploy_images
+pulumi up --stack dev --refresh -y
+
+cd ../deploy_k8s
+pulumi up --stack dev --refresh -y
+```
+
+See `src/deployment/README.md` and `reports/milestone5/README.md` for more details about the cluster, services, and Pulumi stacks.
 
 ---
 
@@ -141,8 +111,8 @@ See the [Milestone 2 report](reports/milestone2/README.md) for details, test out
 
 ---
 
-## Next Steps
-- Expand integration tests (full RAG QA with multiple document types).
-- Generate synthetic portfolio data for comprehensive testing.
-- Create web-UI and backend.
-- Build user-specific dashboard displaying portfolio visualizations.
+## Known Issues & Limitations
+
+- **Billing and cluster lifecycle** – GKE/Vertex/Cloud SQL incur cost; if billing credits expire or the billing account changes, re-enable billing and re-provision the cluster (public URL may change when the load balancer is rebuilt).
+- **Secrets and CI scope** – Cloud-backed tests and deployments need GCP secrets (service account JSON, Cloud SQL credentials). Without them, cloud/system tests are skipped and only unit/integration tests run.
+- **Coverage tracking** – Latest GitHub Actions: unit-only coverage ~57%; combined unit + integration slightly over 60%. Therefore, smoke testing after deployment of major changes is recommended to confirm expected behavior and catch any faulty behavior not covered by code tests.

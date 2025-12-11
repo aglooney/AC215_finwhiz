@@ -49,5 +49,5 @@ The service exposes:
    ./test_full_pipeline.sh  # uploads W‑2, logs chat, queries the LLM
    ```
 4. Inspect logs: `docker-compose logs llm`.
-
-Sample output and Milestone 2 evidence are archived in `reports/ms2/`.
+   
+Sample output and Milestone 2 evidence are archived in `reports/milestone2/`.

@@ -1,6 +1,6 @@
 # Test Suite Overview
 
-This directory contains every test target executed by the CI workflow. Tests are grouped by scope so you can run only what you need while developing or debugging. We currently have 47% of the code covered by unit tests.
+This directory contains every test target executed by the CI workflow. Tests are grouped by scope so you can run only what you need while developing or debugging.
 
 ## 1. Unit Tests (`tests/unit`, `src/*/tests`)
 
@@ -54,12 +54,10 @@ CI automatically fetches the PDFs to `tests/cloud_fixtures/` before running thes
   ```
   The CI workflow will skip system tests gracefully if Docker fails because of disk limits (logs note the skip and other jobs still finish).
 
-## 6. Tests Coverage
+## 6. Test Coverage
 
-Unit Tests:
-![Unit Test Coverage](imgs/unit_tests.jpeg)
+The CI pipeline collects coverage using `pytest-cov` across service unit tests, integration tests, and (when enabled) cloud-backed tests. To view the current coverage locally, run:
 
-Cloud Backend Integration Tests:
-![Integration Test Coverage](imgs/integration_test.jpeg)
-
-Full System Tests still in progress
+```bash
+pytest --cov=src --cov=tests --cov-report=term-missing
+```

@@ -5,5 +5,7 @@ This directory houses milestone documentation, logs, and artifacts that support 
 Current contents:
 
 - `milestone2/` – Milestone 2 submission package (pipeline description, test outputs, UI mock-up links, outstanding TODOs).
+- `milestone4/` – Milestone 4 report (application design, data versioning, fine-tuning, and evaluation).
+- `milestone5/` – Milestone 5 report (final deployment, CI/CD, ML workflow, and showcase materials).
 
-Future milestones should follow the same pattern (`reports/milestone3/`, etc.) so reviewers can quickly find evidence of progress.
+Each milestone follows the same pattern so reviewers can quickly find evidence of progress.
