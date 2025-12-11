@@ -59,20 +59,13 @@ We pin formatter/linter versions with [pre-commit](https://pre-commit.com), whic
 
 ---
 
-## Application Mock-up
-
-An interactive Figma prototype illustrates the planned UI flow (chat + document upload + backend context panels). The link and screenshots are documented in `reports/milestone2/README.md`.
-
-
----
-
 ## Production Deployment (GKE + Pulumi + CI/CD)
 
-FinWhiz is deployed to Google Kubernetes Engine using Pulumi and GitHub Actions.
+FinWhiz is deployed to Google Kubernetes Engine using Pulumi and GitHub Actions. (Note: An active billing account may not be currently tied to FinWhiz to avoid large billing costs mainly incured by CloudSQL).
 
 ### Public URL
 
-The current public endpoint for the production deployment is:
+The public endpoint for the production deployment is:
 
 ```text
 https://136.116.192.125.sslip.io
