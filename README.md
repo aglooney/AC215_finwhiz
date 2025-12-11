@@ -7,6 +7,18 @@ FinWhiz is our end-to-end, Retrieval-Augmented Generation-Large Language Model (
 
 The system is fully containerized and orchestrated with Docker Compose to support repeatable deployments and testing.
 
+---
+
+## 🎥 Video Walkthrough
+
+**Watch our 6-minute project demo:**
+
+[![FinWhiz Demo Video](https://img.youtube.com/vi/FL_5ymxJkDg/maxresdefault.jpg)](https://youtu.be/FL_5ymxJkDg)
+
+👉 **[https://youtu.be/FL_5ymxJkDg](https://youtu.be/FL_5ymxJkDg)**
+
+---
+
 Visit the ```reports/milestone2/README.md``` to see logs for milestone 2.
 
 ---
