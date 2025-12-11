@@ -26,7 +26,31 @@ The system is fully containerized and orchestrated with Docker Compose to suppor
 
 ---
 
-See `QUICKSTART.md` for end-to-end setup (env vars), running the stack, and basic validation tests.
+## Prerequisites and Setup
+
+At a high level you will need:
+- Docker Desktop (or Docker Engine) with the docker-compose plugin.
+- A GCP project with service-account credentials that can access Vertex AI and the configured GCS buckets.
+- Node.js 20+ (for local frontend development).
+
+See `QUICKSTART.md` for detailed environment variables, how to bring up the stack, and how to run basic validation tests end to end.
+
+## Usage Details and Examples
+
+- **General education question**  
+  Open the app in your browser (local dev or the public URL), start a new session, and ask a question like:  
+  “What is a Roth IRA and how is it different from a traditional 401(k)?”  
+  The LLM service uses the financial knowledge base (RAG) to return an educational answer with citations.
+
+- **Personalized guidance from uploaded documents**  
+  From the “Upload Documents” section in the UI, upload a W‑2 or 1099 PDF, wait for processing to complete, then ask:  
+  “Based on the W‑2 I just uploaded, what is my total taxable wages and how much federal tax was withheld?”  
+  The agent service extracts structured fields, and the LLM uses them to tailor the explanation to your document.
+
+- **Portfolio dashboard and live market view**  
+  Complete the onboarding flow (age, retirement age, risk tolerance, goal), upload your Fidelity account summary PDF, and navigate to the dashboard.  
+  Review the suggested allocation (stocks/bonds/cash), then open the portfolio tab to see your holdings with live yfinance prices and day‑to‑day performance.  
+  You can then ask the chat: “Looking at my current holdings, where am I most concentrated and what does that mean from a diversification perspective?”
 
 ### Testing
 To mirror CI locally:
@@ -59,7 +83,7 @@ We pin formatter/linter versions with [pre-commit](https://pre-commit.com), whic
 
 ---
 
-## Production Deployment (GKE + Pulumi + CI/CD)
+## Deployment Instructions (GKE + Pulumi + CI/CD)
 
 FinWhiz is deployed to Google Kubernetes Engine using Pulumi and GitHub Actions. (Note: An active billing account may not be currently tied to FinWhiz to avoid large billing costs mainly incured by CloudSQL).
 
