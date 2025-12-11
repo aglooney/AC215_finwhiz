@@ -48,7 +48,7 @@ See `QUICKSTART.md` for detailed environment variables, how to bring up the stac
   The agent service extracts structured fields, and the LLM uses them to tailor the explanation to your document.
 
 - **Portfolio dashboard and live market view**  
-  Complete the onboarding flow (age, retirement age, risk tolerance, goal) and navigate to the dashboard.  
+  Complete the onboarding flow (age, retirement age, risk tolerance, goal), upload your Fidelity account summary PDF, and navigate to the dashboard.  
   Review the suggested allocation (stocks/bonds/cash), then open the portfolio tab to see your holdings with live yfinance prices and day‑to‑day performance.  
   You can then ask the chat: “Looking at my current holdings, where am I most concentrated and what does that mean from a diversification perspective?”
 
