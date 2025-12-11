@@ -26,9 +26,16 @@ The system is fully containerized and orchestrated with Docker Compose to suppor
 
 ---
 
-See `QUICKSTART.md` for end-to-end setup (env vars), running the stack, and basic validation tests.
+## Prerequisites and Setup
 
-## Usage Examples
+At a high level you will need:
+- Docker Desktop (or Docker Engine) with the docker-compose plugin.
+- A GCP project with service-account credentials that can access Vertex AI and the configured GCS buckets.
+- Node.js 20+ (for local frontend development).
+
+See `QUICKSTART.md` for detailed environment variables, how to bring up the stack, and how to run basic validation tests end to end.
+
+## Usage Details and Examples
 
 - **General education question**  
   Open the app in your browser (local dev or the public URL), start a new session, and ask a question like:  
@@ -76,7 +83,7 @@ We pin formatter/linter versions with [pre-commit](https://pre-commit.com), whic
 
 ---
 
-## Production Deployment (GKE + Pulumi + CI/CD)
+## Deployment Instructions (GKE + Pulumi + CI/CD)
 
 FinWhiz is deployed to Google Kubernetes Engine using Pulumi and GitHub Actions. (Note: An active billing account may not be currently tied to FinWhiz to avoid large billing costs mainly incured by CloudSQL).
 
